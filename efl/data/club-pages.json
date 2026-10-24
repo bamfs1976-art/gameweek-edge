@@ -1,12 +1,12 @@
 {
- "built": "2026-10-23T21:25:41.592Z",
+ "built": "2026-10-24T04:38:46.703Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-23T21:25:41.592Z",
+  "generatedAt": "2026-10-24T04:38:46.703Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1406,149 +1406,6 @@
    "cardRisk": []
   },
   {
-   "id": "77",
-   "name": "Mansfield Town",
-   "short": "MAN",
-   "slug": "mansfield-town",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 11,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "W"
-   ],
-   "rating": 53.1,
-   "summary": "7 points from the last 3. 1 blank round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.78
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.33
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 12,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Notts County",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Stevenage",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "M. Smith",
-     "position": "FWD",
-     "rating": 69.1,
-     "status": "available",
-     "minutesShare": 75,
-     "summary": "In and out of the side (9 starts in 12), playing at home."
-    },
-    {
-     "name": "L. Reed",
-     "position": "MID",
-     "rating": 68.1,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), 2 goals and 0 assists."
-    },
-    {
-     "name": "N. Moriah-Welsh",
-     "position": "MID",
-     "rating": 68.1,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), 3 goals and 2 assists."
-    },
-    {
-     "name": "A. Oshilaja",
-     "position": "DEF",
-     "rating": 65,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "R. Oates",
-     "position": "FWD",
-     "rating": 64.9,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), playing at home."
-    },
-    {
-     "name": "R. Sweeney",
-     "position": "DEF",
-     "rating": 64.8,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "L. Akins",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "D. McGoldrick",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock"
-    },
-    {
-     "name": "B. Cargill",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "5",
    "name": "Blackburn Rovers",
    "short": "BLA",
@@ -2426,6 +2283,154 @@
      "position": "MID",
      "status": "injured",
      "news": "ACL Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "77",
+   "name": "Mansfield Town",
+   "short": "MAN",
+   "slug": "mansfield-town",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 11,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "D",
+    "W"
+   ],
+   "rating": 52.4,
+   "summary": "7 points from the last 3. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.78
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.35
+    },
+    {
+     "label": "Home matches",
+     "value": 0.33
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Notts County",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Wigan Athletic",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Stevenage",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "M. Smith",
+     "position": "FWD",
+     "rating": 73.2,
+     "status": "available",
+     "minutesShare": 82,
+     "summary": "Started 9 of 11 (82%), playing at home."
+    },
+    {
+     "name": "L. Reed",
+     "position": "MID",
+     "rating": 72.9,
+     "status": "available",
+     "minutesShare": 91,
+     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "N. Moriah-Welsh",
+     "position": "MID",
+     "rating": 72.9,
+     "status": "available",
+     "minutesShare": 91,
+     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "A. Oshilaja",
+     "position": "DEF",
+     "rating": 71.2,
+     "status": "available",
+     "minutesShare": 91,
+     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. Sweeney",
+     "position": "DEF",
+     "rating": 71,
+     "status": "available",
+     "minutesShare": 91,
+     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. Oates",
+     "position": "FWD",
+     "rating": 69.2,
+     "status": "available",
+     "minutesShare": 91,
+     "summary": "Started 10 of 11 (91%), playing at home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "L. Akins",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "D. McGoldrick",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knock"
+    },
+    {
+     "name": "B. Cargill",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -3621,12 +3626,6 @@
    ],
    "unavailable": [
     {
-     "name": "O. Clarke",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 24 Oct"
-    },
-    {
      "name": "B. Middlemas",
      "position": "MID",
      "status": "injured",
@@ -4221,6 +4220,148 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "111",
+   "name": "Wigan Athletic",
+   "short": "WIG",
+   "slug": "wigan-athletic",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 24,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "W",
+    "L"
+   ],
+   "rating": 47.4,
+   "summary": "Next 3 rated 3.2 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.33
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.45
+    },
+    {
+     "label": "Home matches",
+     "value": 1
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Bromley",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Mansfield Town",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Barnsley",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "J. Weir",
+     "position": "MID",
+     "rating": 75.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "F. Burns",
+     "position": "DEF",
+     "rating": 74.2,
+     "status": "available",
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Mellish",
+     "position": "DEF",
+     "rating": 73.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "C. Barrett",
+     "position": "DEF",
+     "rating": 71.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "F. Murray",
+     "position": "MID",
+     "rating": 67.7,
+     "status": "available",
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Carragher",
+     "position": "DEF",
+     "rating": 67.7,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 8 of 10 (80%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "M. Power",
+     "position": "MID",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
+    {
+     "name": "D. Costelloe",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Groin Injury"
     }
    ],
    "cardRisk": []
@@ -5464,143 +5605,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "111",
-   "name": "Wigan Athletic",
-   "short": "WIG",
-   "slug": "wigan-athletic",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 24,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "W",
-    "L"
-   ],
-   "rating": 46,
-   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.33
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.4
-    },
-    {
-     "label": "Home matches",
-     "value": 1
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 12,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Bromley",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Barnsley",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "J. Weir",
-     "position": "MID",
-     "rating": 69,
-     "status": "available",
-     "minutesShare": 91,
-     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "F. Burns",
-     "position": "DEF",
-     "rating": 65.8,
-     "status": "available",
-     "minutesShare": 82,
-     "summary": "Started 9 of 11 (82%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Mellish",
-     "position": "DEF",
-     "rating": 64.6,
-     "status": "available",
-     "minutesShare": 91,
-     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "C. Barrett",
-     "position": "DEF",
-     "rating": 63.3,
-     "status": "available",
-     "minutesShare": 91,
-     "summary": "Started 10 of 11 (91%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "S. Perkins",
-     "position": "FWD",
-     "rating": 62.1,
-     "status": "available",
-     "minutesShare": 82,
-     "summary": "Started 9 of 11 (82%), playing at home."
-    },
-    {
-     "name": "F. Murray",
-     "position": "MID",
-     "rating": 61.5,
-     "status": "available",
-     "minutesShare": 82,
-     "summary": "Started 9 of 11 (82%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "M. Power",
-     "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury"
-    },
-    {
-     "name": "D. Costelloe",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Groin Injury"
     }
    ],
    "cardRisk": []
@@ -7388,12 +7392,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "B. Lubala",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Knee Injury, expected back 24 Oct"
-    },
     {
      "name": "J. Payne",
      "position": "MID",
