@@ -240,8 +240,10 @@ try{
   --conf-low:#8d97a3;  --conf-low-soft:rgba(141,151,163,.13);
 
   /* Type scale: 1.125 (major second). --fs-min is the floor; nothing under
-     10px survives a phone in daylight and dev/test-tokens.mjs holds the line. */
-     --fs-min is the floor: a data-dense terminal earns small type, but
+     10px survives a phone in daylight and dev/test-tokens.mjs holds the line.
+     A stray line of this comment once sat outside it, and the parser threw
+     away the declaration below with it, so every var(--fs-min) in the app
+     inherited its parent's size instead. Keep the comment closed. */
   --fs-min:10px;    /* floor — micro labels, table keys */
   --fs-xs:11px;     /* chips, captions, dense table cells */
   --fs-sm:12.5px;   /* secondary UI copy */
@@ -403,6 +405,32 @@ body[data-density="beginner"] .beginner-only{display:block}
 .ltf-hint summary::-webkit-details-marker{display:none}
 .ltf-hint summary::before{content:"?";display:inline-grid;place-items:center;width:16px;height:16px;
   margin-right:6px;border-radius:50%;background:var(--green-soft);font-size:11px;font-weight:800}
+.lf{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.lf .ltf-row .modal-in{flex:1;min-width:0}
+.lf-res{display:flex;flex-direction:column;gap:4px}
+.lf-hit{width:100%;text-align:left;border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface);font:inherit;color:inherit;cursor:pointer}
+.lf-hit:hover,.lf-hit:focus-visible{border-color:var(--green)}
+.prc-h{font-size:1.25rem;margin:0 0 6px}
+.prc-plans{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.prc-plan{border:1px solid var(--border-2);border-radius:var(--r-md);padding:14px;background:var(--surface-2)}
+.prc-edge{border-color:var(--green)}
+.prc-name{display:flex;align-items:center;gap:6px;font-weight:700;font-size:.85rem;color:var(--text-2)}
+.prc-price{font-size:1.6rem;font-weight:800;color:var(--text);margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.prc-price span{font-size:.8rem;font-weight:600;color:var(--text-3)}
+.prc-buy{display:flex;flex-wrap:wrap;gap:8px}
+.prc-on{display:flex;flex-wrap:wrap;align-items:center;gap:10px;color:var(--green);font-weight:600}
+.prc-tbl{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.prc-row{display:grid;grid-template-columns:1fr 110px 110px;align-items:center;padding:8px 12px;border-top:1px solid var(--border);font-size:.84rem}
+.prc-row span:not(:first-child){text-align:center}
+.prc-head{border-top:0;background:var(--surface-2);font-size:var(--fs-min);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.prc-grp{padding:10px 12px 4px;border-top:1px solid var(--border);font-weight:700;font-size:.78rem;color:var(--text-2);background:var(--surface-2)}
+.prc-paid{background:color-mix(in srgb,var(--green) 5%,transparent)}
+.prc-y{color:var(--green);font-weight:800}
+.prc-n{color:var(--text-4)}
+@media (max-width:560px){.prc-row{grid-template-columns:1fr 70px 70px;padding:8px 10px}.prc-price span{display:block;margin-top:2px}}
+.lf-hit .dl-grow{align-items:flex-start;text-align:left}
+.lf-me{font-size:.74rem;font-weight:700;color:var(--green);white-space:nowrap}
+.ltf-steps{margin:8px 0 0;padding-left:20px;font-size:12.5px;line-height:1.6;color:var(--text-2)}
 .ltf-hint p{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--text-2)}
 .ltf-browse{align-self:flex-start;background:none;border:0;padding:4px 0;cursor:pointer;
   font-size:12.5px;font-weight:600;color:var(--text-3);text-decoration:underline;
@@ -728,6 +756,30 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-team.mc-lost .crest,.mc-team.mc-lost img{opacity:.55}
 .mc-score.mc-pre{display:flex;flex-direction:column;align-items:center;line-height:1.15;padding:3px 10px}
 @media (max-width:560px){.mc-xgk{display:none}.mc-lw{display:none}.mc-score.mc-pre{padding:3px 6px}}
+.mc-side{display:none}
+.mc-fix.sel{border-color:var(--green)}
+@media (min-width:1100px){
+  .mc-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+  .mc-side{display:block;position:sticky;top:72px;max-height:calc(100vh - 92px);overflow:auto;
+    border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface);padding:16px}
+  .mc-split .mc-det,.mc-split .mc-ch{display:none!important}
+}
+.mcs-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-bottom:10px}
+.mcs-team{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:.9rem}
+.mcs-mid{text-align:center}
+.mcs-score{font-size:1.8rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
+.mcs-bars{display:flex;flex-direction:column;gap:10px;margin:6px 0 4px}
+.mcs-row{display:grid;grid-template-columns:56px 1fr 56px;align-items:center;row-gap:4px}
+.mcs-k{text-align:center;font-size:.78rem;color:var(--text-2)}
+.mcs-v{font-variant-numeric:tabular-nums;font-weight:600;color:var(--text-2)}
+.mcs-va{text-align:right}
+.mcs-hi{color:var(--text);font-weight:800}
+.mcs-bar{grid-column:1/-1;display:flex;gap:2px;height:6px}
+.mcs-bar i{display:block;height:100%;border-radius:3px}
+.mcs-h{background:var(--green)}
+.mcs-a{background:var(--blue)}
+.mcs-0{background:var(--border-2)}
+.mcs-det{margin-top:6px}
 .mc-xg{font-size:var(--fs-min);font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
 /* Club names: the full name where it fits, the three-letter FPL code on a
@@ -3542,13 +3594,14 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
     <h3 id="mid-title">Link your team</h3>
     <p id="mid-lead">Enter your FPL Manager ID to load your squad, points and rank. It's the number in your team's URL on the official site.</p>
     <input class="modal-in" id="mid-input" inputmode="numeric" autocomplete="off"
-      placeholder="e.g. 3500123" aria-label="Manager ID">
+      placeholder="e.g. 3500123, or paste your FPL link" aria-label="Manager ID">
     <div class="modal-err" id="mid-err" role="alert"></div>
     <div class="modal-row">
       <button class="btn btn-ghost" id="mid-cancel" data-mid-close>Cancel</button>
       <button class="btn btn-cta" id="mid-save">Link team</button>
     </div>
     <div class="modal-hint" id="mid-hint">Find it at fantasy.premierleague.com → Points → the number after <b>/entry/</b> in the address bar.</div>
+    <div id="mid-find"></div>
   </div>
 </div>
 
@@ -4972,7 +5025,8 @@ function openUpgrade(){
           '<button class="pro-price" onclick="startCheckout(\'season\')"><div class="pro-price-v">'+PRICE.season+'</div><div class="pro-price-l">season pass</div></button>'+
         '</div>'+
         '<div class="modal-err" id="pro-err" role="alert"></div>'+
-        '<p class="modal-hint">Secure card payment via Stripe. '+(SESSION?'':'You’ll be asked to sign in first. ')+'Cancel anytime.</p>')+
+        '<p class="modal-hint">Secure card payment via Stripe. '+(SESSION?'':'You’ll be asked to sign in first. ')+'Cancel anytime. '+
+          '<a href="/pricing" onclick="closeUpgrade();openPanel(\'pricing\');return false">Compare the plans in full</a>.</p>')+
     '<div class="modal-row"><button class="btn btn-ghost" data-pro-close>Close</button></div>';
   document.getElementById('pro-modal').classList.add('show');focusModal('pro-modal');
 }
@@ -4990,7 +5044,10 @@ async function manageOrCancel(){
 /* Start a Stripe Checkout. Falls back to an on-device preview unlock only
    if billing isn't configured yet on the server. */
 async function startCheckout(plan){
-  const err=document.getElementById('pro-err');
+  /* The upgrade sheet and the pricing page each carry a message line; use
+     whichever one the reader is looking at. */
+  const sheet=document.getElementById('pro-modal');
+  const err=document.getElementById(sheet&&sheet.classList.contains('show')?'pro-err':'prc-err')||document.getElementById('pro-err');
   if(!SESSION){closeUpgrade();openAccount();return;}
   track('checkout_started',{plan});
   if(err)err.textContent='Opening secure checkout…';
@@ -5715,6 +5772,9 @@ PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:
 /* Hidden panel: plain-English glossary at /glossary (reachable from the ? menu,
    the tour, and inline jargon). */
 PANELS.glossary={id:'glossary',label:'Glossary',icon:'question',tier:'free',areaId:'home',areaLabel:'Home'};
+/* Hidden panel: what is free, what The Edge adds and what it costs, at
+   /pricing. Reached from the upgrade sheet, More and the account sheet. */
+PANELS.pricing={id:'pricing',label:'Pricing',icon:'star',tier:'free',areaId:'home',areaLabel:'Home'};
 /* The More index — the fifth nav destination. A real, grouped screen
    (Plan · Research · Account &amp; help) rather than a drawer with a
    different vocabulary; every panel not on the four main tabs lives here. */
@@ -5800,19 +5860,114 @@ function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}apply
    back on success; a "where do I find this?" hint; and a secondary
    "just browse the model squad" path. Reused by the first-run screen and
    by every designed empty state. */
+/* ── Find your team ───────────────────────────────────────
+   FPL has no public search by name, and building one would mean reading
+   millions of managers off FPL's servers. So the app meets people where
+   they are: paste any FPL address and the ID is picked out of it, or search
+   a mini-league they know by name. */
+function fplIdFrom(text){
+  const t=String(text==null?'':text).trim();
+  const m=/\/entry\/(\d{1,9})(?=[\/?#]|$)/.exec(t);
+  if(m)return m[1];
+  return /^\d{1,9}$/.test(t)?t:null;
+}
+function leagueIdFrom(text){
+  const t=String(text==null?'':text).trim();
+  const m=/\/leagues\/(\d{1,9})(?=[\/?#]|$)/.exec(t);
+  if(m)return m[1];
+  return /^\d{1,9}$/.test(t)?t:null;
+}
+/* Accents and case folded, so "Muharemovic" finds "Muharemović". */
+function lfNorm(s){
+  return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+}
+/* Every word typed must appear in the manager's name or the team's name.
+   A name that starts with the search ranks first, then league position. */
+function lfMatch(rows,q){
+  const n=lfNorm(q);if(n.length<2)return [];
+  const words=n.split(' ');
+  return (rows||[]).filter(r=>{const hay=lfNorm((r.player_name||'')+' '+(r.entry_name||''));
+      return words.every(w=>hay.indexOf(w)>=0);})
+    .map(r=>({r,lead:lfNorm(r.player_name).indexOf(n)===0||lfNorm(r.entry_name).indexOf(n)===0}))
+    .sort((a,c)=>(c.lead-a.lead)||((a.r.rank||1e9)-(c.r.rank||1e9)))
+    .map(x=>x.r);
+}
+const LF_MAX_PAGES=10;
+function ltfGuideHtml(){
+  return '<ol class="ltf-steps">'+
+    '<li>Open <b>fantasy.premierleague.com</b> in your browser and sign in. The FPL app hides the address, so use the website.</li>'+
+    '<li>Tap <b>Points</b>.</li>'+
+    '<li>Copy the address and paste it in the box above. We pick out your ID, the number after <b>/entry/</b>.</li>'+
+    '</ol><p>Nothing to sign up for. The ID only reads your public team.</p>';
+}
+function findTeamHtml(pfx){
+  return '<details class="ltf-hint ltf-find"><summary>Find it by name in a mini-league</summary>'+
+    '<div class="lf">'+
+      '<input class="modal-in" id="'+pfx+'-lf-league" autocomplete="off" placeholder="League link or number" aria-label="Mini-league link or number">'+
+      '<div class="ltf-row"><input class="modal-in" id="'+pfx+'-lf-name" autocomplete="off" placeholder="Your name or team name" aria-label="Manager or team name" '+
+        'onkeydown="if(event.key===\'Enter\')lfSearch(\''+pfx+'\')">'+
+        '<button type="button" class="btn btn-ghost btn-sm" onclick="lfSearch(\''+pfx+'\')">Search</button></div>'+
+      '<div class="ltf-msg" id="'+pfx+'-lf-msg" role="status" aria-live="polite"></div>'+
+      '<div class="lf-res" id="'+pfx+'-lf-res"></div>'+
+      '<p>A league\u2019s number is in its address on the FPL site: \u2026/leagues/<b>123456</b>/standings/c. '+
+        'We search the top '+(LF_MAX_PAGES*50)+' places.</p>'+
+    '</div></details>';
+}
+async function lfSearch(pfx){
+  const L=leagueIdFrom((document.getElementById(pfx+'-lf-league')||{}).value);
+  const q=((document.getElementById(pfx+'-lf-name')||{}).value||'').trim();
+  const msg=document.getElementById(pfx+'-lf-msg'),res=document.getElementById(pfx+'-lf-res');
+  if(!msg||!res)return;
+  res.innerHTML='';
+  if(!L){msg.className='ltf-msg err';msg.textContent='Paste the league\u2019s link, or type its number.';return;}
+  if(lfNorm(q).length<2){msg.className='ltf-msg err';msg.textContent='Type at least two letters of a name.';return;}
+  msg.className='ltf-msg';msg.textContent='Searching the league\u2026';
+  const rows=[];let name='',more=false;
+  try{
+    for(let p=1;p<=LF_MAX_PAGES;p++){
+      const d=await cached('lgs-'+L+'-'+p,5*60e3,()=>api('leagues-classic/'+L+'/standings?page_standings='+p));
+      if(p===1)name=(d&&d.league&&d.league.name)||'';
+      const st=(d&&d.standings)||{};
+      rows.push(...(st.results||[]));
+      if(!st.has_next)break;
+      if(p===LF_MAX_PAGES)more=true;
+    }
+  }catch(e){
+    msg.className='ltf-msg err';
+    msg.textContent=(e&&e.status===404)?'No league found with that number. Check the link and try again.'
+      :'Could not reach the FPL API. Try again in a moment.';
+    return;
+  }
+  track('team_find_league',{n:rows.length});
+  const hits=lfMatch(rows,q).slice(0,8);
+  if(!hits.length){
+    msg.className='ltf-msg err';
+    msg.textContent='Nobody called \u201c'+q+'\u201d in '+(name||'that league')+(more?' in the top '+rows.length:'')+'. Try part of the name, or your team\u2019s name.';
+    return;
+  }
+  msg.className='ltf-msg';
+  msg.textContent=hits.length+' match'+(hits.length===1?'':'es')+' in '+(name||'the league')+'. Tap yours to link it.';
+  res.innerHTML=hits.map(r=>'<button type="button" class="dl-row lf-hit" onclick="lfPick(\''+pfx+'\','+(+r.entry)+')">'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(r.player_name||'')+'</span>'+
+    '<span class="dl-sub">'+esc(r.entry_name||'')+(r.rank?' \u00b7 position '+fmtNum(r.rank):'')+'</span></span>'+
+    '<span class="lf-me">This is me</span></button>').join('');
+}
+function lfPick(pfx,id){
+  if(pfx==='mid'){const i=document.getElementById('mid-input');if(i){i.value=String(id);saveMid();}return;}
+  const i=document.getElementById('ltf-input');if(i){i.value=String(id);ltfSave();}
+}
 function linkTeamFlowHtml(opts){
   opts=opts||{};
   return '<div class="ltf">'+
     '<div class="ltf-row">'+
       '<input class="ltf-in" id="ltf-input" inputmode="numeric" autocomplete="off" '+
-        'placeholder="Your Manager ID: e.g. 3500123" aria-label="FPL Manager ID">'+
+        'placeholder="Manager ID, or paste your FPL link" aria-label="FPL Manager ID or the address of your FPL Points page" '+
+        'onkeydown="if(event.key===\'Enter\')ltfSave()">'+
       '<button class="btn btn-cta" id="ltf-save" onclick="ltfSave()">Link team</button>'+
     '</div>'+
     '<div class="ltf-msg" id="ltf-msg" role="status" aria-live="polite"></div>'+
-    '<details class="ltf-hint"><summary>Where do I find my Manager ID?</summary>'+
-      '<p>Open <b>fantasy.premierleague.com</b>, go to the <b>Points</b> tab, and copy the '+
-      'number after <b>/entry/</b> in the address bar: e.g. \u2026/entry/<b>3500123</b>/event/2. '+
-      'Nothing to sign up for; the ID only reads your public team.</p></details>'+
+    '<details class="ltf-hint"><summary>Where do I find my Manager ID?</summary>'+ltfGuideHtml()+'</details>'+
+    findTeamHtml('ltf')+
     (opts.browse!==false
       ?'<button type="button" class="ltf-browse" onclick="openPanel(\'dashboard\')">Just browse the model squad \u2192</button>'
       :'')+
@@ -5823,8 +5978,10 @@ async function ltfSave(){
   const inp=document.getElementById('ltf-input'),msg=document.getElementById('ltf-msg'),
     btn=document.getElementById('ltf-save');
   if(!inp||!msg)return;
-  const val=(inp.value||'').trim().replace(/\D/g,'');
-  if(!val){msg.className='ltf-msg err';msg.textContent='Enter the numeric Manager ID from your FPL team URL.';return;}
+  /* A pasted address used to have every non-digit stripped, which glued
+     the gameweek onto the ID: \u2026/entry/3500123/event/8 became 35001238. */
+  const val=fplIdFrom(inp.value);
+  if(!val){msg.className='ltf-msg err';msg.textContent='Enter your Manager ID, or paste the address of your Points page on the FPL site.';return;}
   if(btn){btn.disabled=true;btn.textContent='Checking\u2026';}
   msg.className='ltf-msg';msg.textContent='Looking up manager '+val+'\u2026';
   try{
@@ -5867,6 +6024,64 @@ function peSkeleton(){
   return '<div class="card"><div class="card-title">Your team</div><div class="dl">'+rows+'</div></div>';
 }
 
+/* The plan table, built from the same tier flags the app gates on: the nav
+   panels, the Live views and the Players lenses. Written out by hand it
+   would drift the first time a panel moved tier; read from the registry it
+   cannot say anything the app does not do. Owner tools and panels the game
+   has no mechanic for are left out. */
+function pricingRows(nav,lvViews,lenses,caps){
+  const met=p=>!p.needs||p.needs.every(n=>caps(n));
+  const groups=(nav||[]).filter(a=>a.tier!=='owner').map(a=>{
+    const rows=[];
+    (a.panels||[]).filter(p=>p.tier!=='owner'&&met(p)).forEach(p=>{
+      if(p.id==='liverank'&&lvViews&&lvViews.length)
+        lvViews.forEach(v=>rows.push({name:'Live: '+v.label,paid:v.tier==='paid'}));
+      else rows.push({name:p.label,paid:p.tier==='paid'});
+      if(p.id==='allplayers'&&lenses&&lenses.length){
+        const paid=lenses.filter(l=>l.tier==='paid').map(l=>l.label);
+        const nFree=lenses.filter(l=>l.tier!=='paid').length;
+        rows.push({name:'Players table lenses: '+nFree+' free view'+(nFree===1?'':'s'),paid:false});
+        if(paid.length)rows.push({name:'Players table lenses: '+paid.join(', '),paid:true});
+      }
+    });
+    return {label:a.label,rows};
+  }).filter(g=>g.rows.length);
+  const all=[].concat(...groups.map(g=>g.rows));
+  return {groups,free:all.filter(r=>!r.paid).length,paid:all.filter(r=>r.paid).length};
+}
+async function hydratePricing(host){
+  const pro=isPro();
+  const T=pricingRows(NAV,typeof LV_VIEWS!=='undefined'?LV_VIEWS:[],typeof PL_LENSES!=='undefined'?PL_LENSES:[],hasCap);
+  track('pricing_view',{pro});
+  const tick='<span class="prc-y" aria-label="Included">✓</span>',dash='<span class="prc-n" aria-label="Not included">–</span>';
+  const table='<div class="prc-tbl" role="table" aria-label="What each plan includes">'+
+    '<div class="prc-row prc-head" role="row"><span role="columnheader">Feature</span><span role="columnheader">Standard</span><span role="columnheader">The Edge</span></div>'+
+    T.groups.map(g=>'<div class="prc-grp" role="row"><span role="cell">'+esc(g.label)+'</span></div>'+
+      g.rows.map(r=>'<div class="prc-row'+(r.paid?' prc-paid':'')+'" role="row"><span role="cell">'+esc(r.name)+'</span>'+
+        '<span role="cell">'+(r.paid?dash:tick)+'</span><span role="cell">'+tick+'</span></div>').join('')).join('')+
+    '</div>';
+  const cta=pro
+    ? '<div class="prc-on">'+svg(ICON.star,'width="14" height="14"')+' You are on The Edge. Thank you.'+
+      ' <button type="button" class="btn btn-ghost btn-sm" onclick="manageOrCancel()">Manage or cancel</button></div>'
+    : '<div class="prc-buy">'+
+        '<button type="button" class="btn btn-cta" onclick="startCheckout(\'season\')">Season pass '+PRICE.season+'</button>'+
+        '<button type="button" class="btn btn-ghost" onclick="startCheckout(\'monthly\')">Monthly '+PRICE.monthly+'</button>'+
+      '</div><div class="modal-err" id="prc-err" role="alert"></div>'+
+      '<p class="dl-sub" style="margin:6px 0 0">Secure card payment through Stripe. '+(SESSION?'':'You will be asked to sign in first. ')+'Cancel anytime.</p>';
+  host.innerHTML=
+    '<div class="card mb-20 prc-hero">'+
+      '<h2 class="prc-h">Core features always free</h2>'+
+      '<p class="dl-sub" style="margin:0 0 14px">'+T.free+' of the '+(T.free+T.paid)+' features below cost nothing, with no account needed: your squad, transfers, captaincy, chips, live points, fixtures and the full players table. The Edge adds '+T.paid+' more for managers who want the deeper read.</p>'+
+      '<div class="prc-plans">'+
+        '<div class="prc-plan"><div class="prc-name">Standard</div><div class="prc-price">£0</div><div class="dl-sub">Free, for good</div></div>'+
+        '<div class="prc-plan prc-edge"><div class="prc-name">'+svg(ICON.star,'width="12" height="12"')+' The Edge</div>'+
+          '<div class="prc-price">'+PRICE.season+'<span> a season</span></div>'+
+          '<div class="dl-sub">or '+PRICE.monthly+' a month</div></div>'+
+      '</div>'+cta+
+    '</div>'+
+    '<div class="card mb-20"><div class="card-title">What each plan includes</div>'+table+'</div>'+
+    '<div class="dl-sub">Prices in pounds. The Edge renews until you cancel, and you can cancel from your account at any time.</div>';
+}
 async function hydrateGlossary(host){
   const rows=Object.keys(GLOSSARY).map(k=>'<div class="dl-row" style="display:block;padding:11px 0">'+
     '<div class="dl-nm mono" style="text-transform:none;color:var(--green-bright)">'+esc(k)+'</div>'+
@@ -6003,6 +6218,7 @@ async function buildRightRail(){
 const PANEL_CONTENT = {
   more:{desc:'Everything beyond the four main tabs, planning tools, research, account and help, in one grouped index.',layout:'standard'},
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
+  pricing:{desc:'What is free, what The Edge adds, and what it costs. Core features stay free.',layout:'standard'},
   fplbasics:{desc:'How Fantasy Premier League works. The whole game in two minutes.',layout:'standard'},
   archive:{
     desc:'Ten seasons of Fantasy Premier League, 2016-17 to 2025-26. The all-time records, any two careers side by side, a new player to guess every day, and for Pro readers every season as a table with the whole career behind each player.',
@@ -6293,6 +6509,7 @@ const MORE_GROUPS=[
     ['__account','Sign in, sync and manage your plan'],
     ['accountability','The model, graded in public'],
     ['glossary','Every term, in plain English'],
+    ['pricing','What is free, and what The Edge adds'],
     ['fplbasics','New to FPL? The game in two minutes'],
     ['__feedback','Tell the person who builds this what broke']]}
 ];
@@ -6815,7 +7032,7 @@ function syncNav(){
    and a link to them opens the recipient's, not the sender's. */
 const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','heatmap','gwreport','price','archive','setpiece','rotation','news',
   'fixtures','results','titlerace','dossier','archive','seasonsim','eo','draft','gwdebrief','gw-actions',
-  'blog','accountability','glossary','fplbasics']);
+  'blog','accountability','glossary','fplbasics','pricing']);
 function pageLinkable(panelId){return LINKABLE_PANELS.has(panelId);}
 function copyViewLink(){
   track('copy_link',{panel:currentPanel});
@@ -18333,6 +18550,37 @@ function mcMinute(f){
   const label=n>=90?"90+'":n+"'";
   return {label,pct:Math.min(100,Math.round(n/90*100)),spoken:(n>=90?'90 plus':n)+' minutes'};
 }
+/* Team totals for one match, for the stat bars. Saves, defensive
+   contributions and cards come from the fixture's own stats; FPL points
+   from each player's points breakdown for THIS fixture, so a double
+   gameweek is split correctly. xG and xA exist only as gameweek totals per
+   player, so they are summed only when no player involved has a second
+   fixture that week, and flagged partial otherwise. */
+function mcTeamStats(f,live,els){
+  const sum=a=>(a||[]).reduce((t,x)=>t+(+x.value||0),0);
+  const fs=id=>{const s=(f.stats||[]).find(x=>x.identifier===id);return s?{h:sum(s.h),a:sum(s.a)}:{h:0,a:0};};
+  const side=el=>!el?null:el.team===f.team_h?'h':el.team===f.team_a?'a':null;
+  const acc={xg:{h:0,a:0},xa:{h:0,a:0},pts:{h:0,a:0}};
+  let partial=false,seen=false;
+  ((live&&live.elements)||[]).forEach(e=>{
+    const sd=side(els&&els[e.id]);if(!sd)return;
+    const ex=(e.explain||[]).filter(x=>x.fixture===f.id);
+    if(!ex.length)return;
+    seen=true;
+    ex.forEach(x=>(x.stats||[]).forEach(st=>{acc.pts[sd]+=(+st.points||0);}));
+    if((e.explain||[]).length>1){partial=true;return;}
+    const s=e.stats||{};
+    acc.xg[sd]+=parseFloat(s.expected_goals)||0;acc.xa[sd]+=parseFloat(s.expected_assists)||0;
+  });
+  const y=fs('yellow_cards'),r=fs('red_cards');
+  const rows=[];
+  if(seen&&!partial){rows.push({label:'xG',h:acc.xg.h,a:acc.xg.a,dp:2});rows.push({label:'xA',h:acc.xa.h,a:acc.xa.a,dp:2});}
+  if(seen)rows.push({label:'FPL points',h:acc.pts.h,a:acc.pts.a,dp:0});
+  rows.push({label:'Saves',...fs('saves'),dp:0});
+  rows.push({label:'Defensive contributions',...fs('defensive_contribution'),dp:0});
+  rows.push({label:'Cards',h:y.h+r.h,a:y.a+r.a,dp:0});
+  return {rows,partial:seen&&partial};
+}
 /* The side that lost a finished match, for greying it out: 'h', 'a', or
    null for a draw, a match still running or one with no score. */
 function mcLoser(f){
@@ -26608,6 +26856,13 @@ async function hydrateMatchForecast(host){
 let RES_GW=null;
 window._resOpen=window._resOpen||new Set();
 function resToggle(id){
+  /* At desktop width the side panel shows the match and the inline detail
+     is hidden by CSS, so the same tap serves both layouts. */
+  if(window._mcSide&&window._mcSide[id]){
+    window._mcSel=id;
+    document.querySelectorAll('.mc-fix[data-fix]').forEach(el=>el.classList.toggle('sel',+el.dataset.fix===id));
+    const sd=document.getElementById('mc-side');if(sd)sd.innerHTML=window._mcSide[id]();
+  }
   const S=window._resOpen;S.has(id)?S.delete(id):S.add(id);
   const d=document.getElementById('mc-d-'+id),ch=document.getElementById('mc-ch-'+id);
   if(d)d.style.display=S.has(id)?'':'none';
@@ -26871,9 +27126,9 @@ async function hydrateResults(host){
      is the shared one: started, not over, and not a row nobody has updated
      for hours, which is what kept the badge lit after an abandonment. */
   markLive(fx.some(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f)));
-  let livePts=null;
+  let livePts=null,liveData=null;
   if(fx.some(f=>f.started)){
-    try{const live=await loadLive(gw);livePts={};
+    try{const live=await loadLive(gw);liveData=live;livePts={};
       (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;});}catch(_){}
   }
   const R=plsimRatings(b,fixtures);
@@ -27000,7 +27255,7 @@ async function hydrateResults(host){
       score=m?'<span class="mc-score mc-pre" title="Our model\u2019s expected goals">v<span class="mc-xg"><span class="mc-xgk">xG </span>'+m.hx.toFixed(1)+'–'+m.ax.toFixed(1)+'</span></span>'
         :'<span class="mc-score">v</span>';
     }
-    return '<div class="mc-fix">'+
+    return '<div class="mc-fix'+(f.id===sel?' sel':'')+'" data-fix="'+f.id+'">'+
       '<div class="mc-head" onclick="resToggle('+f.id+')">'+
       '<span class="mc-badge">'+badge(f)+mine(f)+'</span>'+
         '<span class="mc-team h'+(lost==='h'?' mc-lost':'')+'"><span>'+teamName(f.team_h)+'</span> '+crest(b,f.team_h,18)+'</span>'+
@@ -27010,6 +27265,38 @@ async function hydrateResults(host){
       (mm?'<div class="mc-prog" role="img" aria-label="'+esc(mm.spoken)+' played"><i style="width:'+mm.pct+'%"></i></div>':'')+
       '<div class="mc-det" id="mc-d-'+f.id+'"'+(open?'':' style="display:none"')+'>'+detail(f)+'</div></div>';
   };
+  /* ── Desktop: the chosen match beside the list ─────────────
+     At desktop width the list and one match sit side by side, so reading a
+     match does not push the rest of the gameweek off the screen. The side
+     panel opens on the match most worth reading: one in play, else the
+     latest result, else the next kick-off. On a phone nothing changes. */
+  const side=f=>{
+    const lost=mcLoser(f),live=f.started&&!fixtureOver(f)&&!fixtureStuck(f),mm=live?mcMinute(f):null;
+    const nm=id=>esc((b.teams[id]||{}).name||teamShort(b,id));
+    const T=f.started?mcTeamStats(f,liveData,b.els):null;
+    const bars=T&&T.rows.length?'<div class="mc-sec">Team stats</div><div class="mcs-bars">'+T.rows.map(r=>{
+      const tot=r.h+r.a,hp=tot>0?Math.round(r.h/tot*100):50;
+      const fmt=v=>r.dp?v.toFixed(r.dp):String(v);
+      return '<div class="mcs-row"><span class="mcs-v'+(r.h>r.a?' mcs-hi':'')+'">'+fmt(r.h)+'</span>'+
+        '<span class="mcs-k">'+esc(r.label)+'</span><span class="mcs-v mcs-va'+(r.a>r.h?' mcs-hi':'')+'">'+fmt(r.a)+'</span>'+
+        '<span class="mcs-bar" role="img" aria-label="'+esc(r.label)+': '+esc(teamShort(b,f.team_h))+' '+fmt(r.h)+', '+esc(teamShort(b,f.team_a))+' '+fmt(r.a)+'">'+
+          (tot>0?'<i class="mcs-h" style="width:'+hp+'%"></i><i class="mcs-a" style="width:'+(100-hp)+'%"></i>':'<i class="mcs-0" style="width:100%"></i>')+'</span></div>';
+    }).join('')+'</div>'+(T.partial?'<div class="dl-sub" style="margin-top:6px">xG and xA are left out: a club playing twice this gameweek cannot be split by match.</div>':''):'';
+    return '<div class="mcs-head">'+
+      '<div class="mcs-team'+(lost==='h'?' mc-lost':'')+'">'+crest(b,f.team_h,34)+'<b>'+nm(f.team_h)+'</b></div>'+
+      '<div class="mcs-mid">'+(f.started?'<div class="mcs-score">'+(f.team_h_score!=null?f.team_h_score:0)+' – '+(f.team_a_score!=null?f.team_a_score:0)+'</div>':'<div class="mcs-score">v</div>')+
+        '<div class="dl-sub">'+(fixtureOver(f)?'Full time':live?'Live'+(mm&&mm.label?', '+mm.label:''):
+          (f.kickoff_time?new Date(f.kickoff_time).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Kick-off TBC'))+'</div></div>'+
+      '<div class="mcs-team'+(lost==='a'?' mc-lost':'')+'">'+crest(b,f.team_a,34)+'<b>'+nm(f.team_a)+'</b></div></div>'+
+      (mm?'<div class="mc-prog" role="img" aria-label="'+esc(mm.spoken)+' played"><i style="width:'+mm.pct+'%"></i></div>':'')+
+      bars+'<div class="mcs-det">'+detail(f)+'</div>';
+  };
+  const pick=fx.find(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f))
+    ||fx.filter(f=>fixtureOver(f)).slice(-1)[0]||fx.find(f=>!f.started)||fx[0];
+  const prev=window._mcSel&&fx.some(f=>f.id===window._mcSel)?window._mcSel:null;
+  const sel=prev||(pick&&pick.id);
+  window._mcSel=sel;
+  window._mcSide={};fx.forEach(f=>{window._mcSide[f.id]=()=>side(f);});
   let list='',lastDay='';
   fx.forEach(f=>{
     const d=f.kickoff_time?new Date(f.kickoff_time).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}):'Date TBC';
@@ -27028,7 +27315,10 @@ async function hydrateResults(host){
       (fx.some(f=>!f.started)?' Before kick-off, the figures under the <b>v</b> are our model\u2019s expected goals.':'')+
       (fx.some(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f))?' The live minute is FPL\u2019s match clock, which can run a few minutes behind the broadcast.':'')+
       (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
-    (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
+    (list
+      ? '<div class="mc-split"><div class="mc-list">'+list+'</div>'+
+        '<aside class="mc-side" id="mc-side" aria-live="polite" aria-label="Chosen match">'+(sel&&window._mcSide[sel]?window._mcSide[sel]():'')+'</aside></div>'
+      : '<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
     '</div>';
 }
 
@@ -28901,6 +29191,7 @@ const WIRED={
   accountability:hydrateModelHub,
   dashboard:hydrateDashboard,
   glossary:hydrateGlossary,
+  pricing:hydratePricing,
   fplbasics:hydrateFplBasics,
   methodology:hydrateMethodology,
   design:hydrateDesign,
@@ -29450,7 +29741,9 @@ function openMidModal(){
   const lead=document.getElementById('mid-lead'),hint=document.getElementById('mid-hint');
   if(lead)lead.textContent='Enter your '+GAME.entryLabel+' to load your squad, points and rank. '+
     "It's the number in your team's URL on the official site.";
-  if(hint)hint.innerHTML=GAME.entryHelp;
+  if(hint)hint.innerHTML=GAME.entryHelp+' Paste the whole address if that\u2019s easier.';
+  const find=document.getElementById('mid-find');
+  if(find&&!find.firstChild)find.innerHTML=findTeamHtml('mid');
   inp.setAttribute('aria-label',GAME.entryLabel);
   inp.value=getMid();
   m.classList.add('show');
@@ -29577,8 +29870,9 @@ async function submitFeedback(){
 async function saveMid(){
   const inp=document.getElementById('mid-input');
   const err=document.getElementById('mid-err');
-  const val=(inp.value||'').trim();
-  if(!/^[0-9]{1,9}$/.test(val)){err.textContent='Enter a valid Manager ID (numbers only).';return;}
+  const val=fplIdFrom(inp.value);
+  if(!val){err.textContent='Enter your Manager ID, or paste the address of your Points page.';return;}
+  inp.value=val;
   const saveBtn=document.getElementById('mid-save');
   saveBtn.disabled=true;saveBtn.textContent='Checking…';err.textContent='';
   try{

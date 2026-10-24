@@ -148,6 +148,20 @@ const floorDecl = html.match(/--fs-min:\s*([0-9.]+)px/);
 assert.ok(floorDecl, 'no --fs-min token — the type scale block is missing');
 assert.equal(+floorDecl[1], FLOOR, `--fs-min is ${floorDecl[1]}px but this guard enforces ${FLOOR}px`);
 
+/* Every statement in the :root token block must be a declaration. A line of
+   comment text that slips outside its comment is read as a broken
+   declaration, and the parser discards it together with the real one after
+   it: that is how --fs-min went undefined app-wide while this guard, which
+   reads the source rather than the cascade, still saw "10px" and passed. */
+{
+  const start = html.search(/:root\{\s*\n/);
+  let depth = 0, i = html.indexOf('{', start), end = -1;
+  for (; i < html.length; i++) { if (html[i] === '{') depth++; else if (html[i] === '}') { depth--; if (!depth) { end = i; break; } } }
+  const body = html.slice(html.indexOf('{', start) + 1, end).replace(/\/\*[\s\S]*?\*\//g, '');
+  const bad = body.split(';').map((d) => d.trim()).filter((d) => d && !/^--[a-z0-9-]+\s*:/i.test(d));
+  assert.equal(bad.length, 0, ':root has text that is not a declaration, which drops the next token: ' + (bad[0] || '').slice(0, 80));
+}
+
 const distinct = new Set(sizes.map((s) => s.px)).size;
 console.log(`token guard OK: ${checked} contrast pairs pass against --surface-3 in both themes; ` +
   `no font-size below ${FLOOR}px (${distinct} distinct literal sizes remain, migrating to --fs-* as components are touched)`);
