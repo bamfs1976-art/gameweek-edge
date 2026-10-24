@@ -2683,6 +2683,11 @@ section('the sidebar at tablet widths: no hover, so nothing may depend on it');
     const ctx = await browser.newContext({ viewport: { width: c.w, height: c.h }, hasTouch: c.touch });
     const p = await ctx.newPage();
     await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    /* Park the pointer away from the sidebar. Some Chromium builds start
+       with it at (0,0), which is ON the rail, so :hover opened it and the
+       collapsed width measured 212px in CI while passing locally. The case
+       under test is the rail at rest. */
+    if (!c.touch) await p.mouse.move(c.w - 20, c.h - 20);
     await p.waitForTimeout(900);
     const r = await p.evaluate(() => {
       const sb = document.querySelector('.sidebar');
