@@ -109,6 +109,44 @@ async function fetchEvents(supaUrl, serviceKey, sinceIso) {
   return rows;
 }
 
+/* The three funnels worth reading, as people rather than events:
+   - first run: who reached the Team ID step, and whether they linked,
+     browsed instead or left, plus why link attempts failed;
+   - upgrade: who saw the pricing page or the upgrade sheet, and who
+     started a checkout;
+   - sharing: which image cards get saved. */
+function funnels(ext) {
+  const ppl = (pred) => new Set(ext.filter(pred).map((r) => r.anon_id));
+  const count = (pred, key) => {
+    const o = {};
+    for (const r of ext) if (pred(r)) { const k = (r.props && r.props[key]) || 'unknown'; o[k] = (o[k] || 0) + 1; }
+    return o;
+  };
+  const step1 = ppl((r) => r.event === 'onboard_step' && r.props && String(r.props.step) === '1');
+  const linked = ppl((r) => r.event === 'team_linked');
+  const skipped = ppl((r) => r.event === 'onboard_done' && r.props && r.props.action === 'skip');
+  const inStep1 = (set) => [...set].filter((id) => step1.has(id)).length;
+  const left = [...step1].filter((id) => !linked.has(id) && !skipped.has(id)).length;
+  const pricing = ppl((r) => r.event === 'pricing_view');
+  const sheet = ppl((r) => r.event === 'upgrade_modal_shown');
+  const checkout = ppl((r) => r.event === 'checkout_started');
+  return {
+    firstRun: {
+      reachedIdStep: step1.size, linked: inStep1(linked), browsed: inStep1(skipped), left,
+      linkFailures: count((r) => r.event === 'link_failed', 'reason'),
+      linkedVia: count((r) => r.event === 'team_linked', 'via'),
+      idHelpOpened: ppl((r) => r.event === 'id_help_open').size,
+      leagueSearchOpened: ppl((r) => r.event === 'team_find_open').size,
+      leagueSearchFailures: count((r) => r.event === 'team_find_failed', 'reason')
+    },
+    upgrade: {
+      sawPricing: pricing.size, sawUpgradeSheet: sheet.size, startedCheckout: checkout.size,
+      checkoutPlans: count((r) => r.event === 'checkout_started', 'plan')
+    },
+    sharing: count((r) => r.event === 'share_card', 'card')
+  };
+}
+
 function summarise(rows, days) {
   /* Owner ids first: anyone who opened an owner-gated panel is the owner. */
   const owner = new Set();
@@ -194,7 +232,8 @@ function summarise(rows, days) {
       .sort((a, b) => b.people - a.people || b.views - a.views),
     /* Areas nobody touched are the finding, so they are returned explicitly
        rather than left as an absence the caller has to notice. */
-    untouchedAreas: Object.keys(AREA).filter((a) => a !== 'studio' && !areas[a])
+    untouchedAreas: Object.keys(AREA).filter((a) => a !== 'studio' && !areas[a]),
+    funnels: funnels(ext)
   };
 }
 
@@ -223,4 +262,4 @@ exports.handler = async (event) => {
   }
 };
 
-exports._internal = { summarise, AREA, AREA_OF, BOT, OWNER_PANELS };
+exports._internal = { summarise, funnels, AREA, AREA_OF, BOT, OWNER_PANELS };

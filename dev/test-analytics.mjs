@@ -190,6 +190,28 @@ console.log('• the area map matches the app');
   for (const a of mapAreas) ok(navAreas.includes(a), a + ': is a real nav area');
 }
 
+console.log('• the funnels count people, not clicks');
+{
+  const { funnels } = _internal;
+  const e = (anon, event, props) => ({ anon_id: anon, event, props, ts: '2026-10-24T10:00:00Z', ua: CHROME });
+  const F = funnels([
+    e('a', 'onboard_step', { step: 1 }), e('a', 'onboard_step', { step: 1 }), e('a', 'link_failed', { reason: 'not_found', via: 'id' }),
+    e('a', 'team_linked', { via: 'link' }),
+    e('b', 'onboard_step', { step: 1 }), e('b', 'onboard_done', { action: 'skip' }),
+    e('c', 'onboard_step', { step: 1 }), e('c', 'link_failed', { reason: 'empty', via: 'id' }), e('c', 'team_find_open', null),
+    e('d', 'team_linked', { via: 'id' }),
+    e('b', 'pricing_view', { pro: false }), e('b', 'checkout_started', { plan: 'season' }), e('c', 'upgrade_modal_shown', null),
+    e('a', 'share_card', { card: 'live_pitch' }), e('c', 'share_card', { card: 'live_pitch' })
+  ]);
+  ok(F.firstRun.reachedIdStep === 3, 'three people reached the ID step, however many times they saw it');
+  ok(F.firstRun.linked === 1 && F.firstRun.browsed === 1 && F.firstRun.left === 1, 'each one linked, browsed or left');
+  ok(F.firstRun.linkFailures.not_found === 1 && F.firstRun.linkFailures.empty === 1, 'failures are counted by reason');
+  ok(F.firstRun.linkedVia.link === 1 && F.firstRun.linkedVia.id === 1, 'links are counted by how the ID arrived, from any screen');
+  ok(F.firstRun.leagueSearchOpened === 1, 'league search opens are counted');
+  ok(F.upgrade.sawPricing === 1 && F.upgrade.sawUpgradeSheet === 1 && F.upgrade.startedCheckout === 1 && F.upgrade.checkoutPlans.season === 1, 'the upgrade funnel adds up');
+  ok(F.sharing.live_pitch === 2, 'saved images are counted by card');
+}
+
 console.log('• the owner gate is server-side');
 {
   const src = readFileSync(join(ROOT, 'netlify/functions/analytics.js'), 'utf8');

@@ -432,6 +432,10 @@ body[data-density="beginner"] .beginner-only{display:block}
 .lf-me{font-size:.74rem;font-weight:700;color:var(--green);white-space:nowrap}
 .ltf-steps{margin:8px 0 0;padding-left:20px;font-size:12.5px;line-height:1.6;color:var(--text-2)}
 .ltf-hint p{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--text-2)}
+.ob-or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--text-3);font-size:.78rem}
+.ob-or::before,.ob-or::after{content:"";flex:1;height:1px;background:var(--border)}
+.ob-browse{display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:460px}
+.ob-browse .dl-sub{margin:0}
 .ltf-browse{align-self:flex-start;background:none;border:0;padding:4px 0;cursor:pointer;
   font-size:12.5px;font-weight:600;color:var(--text-3);text-decoration:underline;
   text-underline-offset:3px}
@@ -1175,14 +1179,18 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .lg-mv.dn{color:var(--red)}
 #league-standings .dl-grow{flex-direction:column;align-items:stretch}
 .lg-form{display:block;min-height:0}
-.lg-pills{display:flex;gap:4px;margin-top:5px}
-.lg-pill{min-width:28px;padding:1px 5px;border-radius:999px;text-align:center;
+.lg-nudge{margin:0 0 10px;padding:8px 12px;border-radius:var(--r-md);font-weight:700;font-size:.86rem;border:1px solid}
+.lg-nudge.up{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent)}
+.lg-nudge.dn{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)}
+.lg-nudge .dl-sub{display:block;font-weight:500;margin-top:2px}
+.lg-fps{display:flex;gap:4px;margin-top:5px}
+.lg-fp{min-width:28px;padding:1px 5px;border-radius:999px;text-align:center;
   font:700 .7rem/1.5 var(--font-mono);border:1px solid}
-.lg-pill.up{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 55%,transparent);
+.lg-fp.up{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 55%,transparent);
   background:color-mix(in srgb,var(--green) 14%,transparent)}
-.lg-pill.dn{color:var(--red);border-color:color-mix(in srgb,var(--red) 55%,transparent);
+.lg-fp.dn{color:var(--red);border-color:color-mix(in srgb,var(--red) 55%,transparent);
   background:color-mix(in srgb,var(--red) 12%,transparent)}
-.lg-pill.na{color:var(--text-3);border-color:var(--border-2)}
+.lg-fp.na{color:var(--text-3);border-color:var(--border-2)}
 .lg-tools{display:flex;gap:8px;align-items:center;margin:4px 0 10px}
 .lg-search{flex:1;min-width:0;min-height:44px}
 .lg-find{flex-shrink:0;min-height:44px}
@@ -1928,6 +1936,10 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .lv-s small{font-size:.66rem;color:var(--text-3);margin-top:1px}
 /* Pitch tiles on the Live view are buttons: tap for the breakdown. */
 .pp-btn{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sqd-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin:12px 0}
+.sqd-facts>div{display:flex;flex-direction:column;gap:2px;padding:8px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2)}
+.sqd-facts b{font-variant-numeric:tabular-nums}
+.sqd-news{margin:0 0 10px;padding:8px 10px;border-left:3px solid var(--amber);font-size:.82rem;color:var(--text-2)}
 .pp-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset:3px;border-radius:12px}
 .lvp .pp-nm{padding:2px 2px;letter-spacing:0}
 @media(max-width:560px){.lvp-save{min-height:44px}}
@@ -2010,12 +2022,14 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   .bn-item.active .bn-ic{background:var(--green-soft)}
   /* One line, always: five items share a phone width, so labels stay on a
      single line and ellipsize rather than wrap under the icons. */
-  .bn-label{font-size:var(--fs-min);font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 11px, one step above the 10px floor. This is the main navigation and
+     is read at a glance in daylight; every label is one word of seven
+     letters or fewer (dev/test-simplenav.mjs holds that), so the extra
+     pixel never costs a truncation, even at 360px. */
+  .bn-label{font-size:var(--fs-xs);font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
-/* On the narrowest phones (~360px) the longest label ("Match Centre") would
-   ellipsize; tighten the label a touch so all five read in full. */
 @media(max-width:380px){
-  .bn-label{font-size:var(--fs-min);letter-spacing:0}
+  .bn-label{letter-spacing:0}
 }
 @media(max-width:560px){
   .g-2,.g-3,.g-4{grid-template-columns:minmax(0,1fr)}
@@ -3531,7 +3545,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       </button>
     </div>
     <div id="lpd-body"></div>
-    <div class="xpd-foot">From the official live feed. Bonus is provisional until FPL confirms it after the match.</div>
+    <div class="xpd-foot" id="lpd-foot">From the official live feed. Bonus is provisional until FPL confirms it after the match.</div>
   </div>
 </div>
 
@@ -4104,6 +4118,17 @@ async function cached(key,ttl,loader){
    caller carry on with what it has. Deliberately memory-only: touching
    localStorage here would put a JSON.parse of a megabyte of fixtures on
    that hot path, which is the cost this exists to avoid. */
+/* Memory-only cache for many small per-manager payloads. cached() also
+   writes to localStorage, which fifty squads would fill for nothing; these
+   only need to outlive the 45-second live refresh. A failure is never
+   stored, so the next call retries. */
+async function memo(key,ttl,loader){
+  const k=ck('m:'+key),e=MEM[k],now=Date.now();
+  if(e&&now-e.t<ttl&&e.t>=CACHE_FLOOR)return e.v;
+  const v=await loader();
+  MEM[k]={t:Math.max(now,CACHE_FLOOR),v};
+  return v;
+}
 function cachedPeek(key,ttl){
   const e=MEM[ck(key)];
   return (e&&Date.now()-e.t<ttl)?e.v:null;
@@ -5867,6 +5892,12 @@ function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}apply
    millions of managers off FPL's servers. So the app meets people where
    they are: paste any FPL address and the ID is picked out of it, or search
    a mini-league they know by name. */
+/* Why a link attempt did not land, so the step where most first visitors
+   stop can be read: the box left empty, something that is not an ID or an
+   FPL address, an ID FPL does not know, or FPL not answering. `via` says
+   how the ID arrived: typed, pasted as an address, or picked from a league. */
+function linkVia(raw){return /\/entry\//.test(String(raw||''))?'link':'id';}
+function linkFailed(reason,via,where){try{track('link_failed',{reason,via,where});}catch(_){}}
 function fplIdFrom(text){
   const t=String(text==null?'':text).trim();
   const m=/\/entry\/(\d{1,9})(?=[\/?#]|$)/.exec(t);
@@ -5903,7 +5934,7 @@ function ltfGuideHtml(){
     '</ol><p>Nothing to sign up for. The ID only reads your public team.</p>';
 }
 function findTeamHtml(pfx){
-  return '<details class="ltf-hint ltf-find"><summary>Find it by name in a mini-league</summary>'+
+  return '<details class="ltf-hint ltf-find" ontoggle="if(this.open)track(\'team_find_open\',{where:\''+pfx+'\'})"><summary>Find it by name in a mini-league</summary>'+
     '<div class="lf">'+
       '<input class="modal-in" id="'+pfx+'-lf-league" autocomplete="off" placeholder="League link or number" aria-label="Mini-league link or number">'+
       '<div class="ltf-row"><input class="modal-in" id="'+pfx+'-lf-name" autocomplete="off" placeholder="Your name or team name" aria-label="Manager or team name" '+
@@ -5921,8 +5952,9 @@ async function lfSearch(pfx){
   const msg=document.getElementById(pfx+'-lf-msg'),res=document.getElementById(pfx+'-lf-res');
   if(!msg||!res)return;
   res.innerHTML='';
-  if(!L){msg.className='ltf-msg err';msg.textContent='Paste the league\u2019s link, or type its number.';return;}
-  if(lfNorm(q).length<2){msg.className='ltf-msg err';msg.textContent='Type at least two letters of a name.';return;}
+  const fail=reason=>{try{track('team_find_failed',{reason});}catch(_){}};
+  if(!L){fail('no_league');msg.className='ltf-msg err';msg.textContent='Paste the league\u2019s link, or type its number.';return;}
+  if(lfNorm(q).length<2){fail('short_name');msg.className='ltf-msg err';msg.textContent='Type at least two letters of a name.';return;}
   msg.className='ltf-msg';msg.textContent='Searching the league\u2026';
   const rows=[];let name='',more=false;
   try{
@@ -5935,6 +5967,7 @@ async function lfSearch(pfx){
       if(p===LF_MAX_PAGES)more=true;
     }
   }catch(e){
+    fail(e&&e.status===404?'league_not_found':'network');
     msg.className='ltf-msg err';
     msg.textContent=(e&&e.status===404)?'No league found with that number. Check the link and try again.'
       :'Could not reach the FPL API. Try again in a moment.';
@@ -5943,6 +5976,7 @@ async function lfSearch(pfx){
   track('team_find_league',{n:rows.length});
   const hits=lfMatch(rows,q).slice(0,8);
   if(!hits.length){
+    fail('no_match');
     msg.className='ltf-msg err';
     msg.textContent='Nobody called \u201c'+q+'\u201d in '+(name||'that league')+(more?' in the top '+rows.length:'')+'. Try part of the name, or your team\u2019s name.';
     return;
@@ -5954,7 +5988,9 @@ async function lfSearch(pfx){
     '<span class="dl-sub">'+esc(r.entry_name||'')+(r.rank?' \u00b7 position '+fmtNum(r.rank):'')+'</span></span>'+
     '<span class="lf-me">This is me</span></button>').join('');
 }
+let LF_PICKED=false;
 function lfPick(pfx,id){
+  LF_PICKED=true;
   if(pfx==='mid'){const i=document.getElementById('mid-input');if(i){i.value=String(id);saveMid();}return;}
   const i=document.getElementById('ltf-input');if(i){i.value=String(id);ltfSave();}
 }
@@ -5963,12 +5999,12 @@ function linkTeamFlowHtml(opts){
   return '<div class="ltf">'+
     '<div class="ltf-row">'+
       '<input class="ltf-in" id="ltf-input" inputmode="numeric" autocomplete="off" '+
-        'placeholder="Manager ID, or paste your FPL link" aria-label="FPL Manager ID or the address of your FPL Points page" '+
+        'placeholder="Manager ID or FPL link" aria-label="FPL Manager ID or the address of your FPL Points page" '+
         'onkeydown="if(event.key===\'Enter\')ltfSave()">'+
       '<button class="btn btn-cta" id="ltf-save" onclick="ltfSave()">Link team</button>'+
     '</div>'+
     '<div class="ltf-msg" id="ltf-msg" role="status" aria-live="polite"></div>'+
-    '<details class="ltf-hint"><summary>Where do I find my Manager ID?</summary>'+ltfGuideHtml()+'</details>'+
+    '<details class="ltf-hint" ontoggle="if(this.open)track(\'id_help_open\')"><summary>Where do I find my Manager ID?</summary>'+ltfGuideHtml()+'</details>'+
     findTeamHtml('ltf')+
     (opts.browse!==false
       ?'<button type="button" class="ltf-browse" onclick="openPanel(\'dashboard\')">Just browse the model squad \u2192</button>'
@@ -5983,7 +6019,9 @@ async function ltfSave(){
   /* A pasted address used to have every non-digit stripped, which glued
      the gameweek onto the ID: \u2026/entry/3500123/event/8 became 35001238. */
   const val=fplIdFrom(inp.value);
-  if(!val){msg.className='ltf-msg err';msg.textContent='Enter your Manager ID, or paste the address of your Points page on the FPL site.';return;}
+  const via=LF_PICKED?'league':linkVia(inp.value);LF_PICKED=false;
+  if(!val){linkFailed((inp.value||'').trim()?'invalid':'empty',via,'flow');
+    msg.className='ltf-msg err';msg.textContent='Enter your Manager ID, or paste the address of your Points page on the FPL site.';return;}
   if(btn){btn.disabled=true;btn.textContent='Checking\u2026';}
   msg.className='ltf-msg';msg.textContent='Looking up manager '+val+'\u2026';
   try{
@@ -5993,11 +6031,12 @@ async function ltfSave(){
     msg.textContent='Found: '+(nm||('manager '+val))+': linking\u2026';
     setMid(val);
     refreshIdentity(entry);
-    track('team_linked');
+    track('team_linked',{via,where:'flow'});
     toast('Linked to '+(nm||'your team'));
     window.GENative&&GENative.hapticSuccess();
     setTimeout(()=>{try{renderPage(currentPanel);}catch(_){}},450);
   }catch(e){
+    linkFailed(e&&e.status===404?'not_found':'network',via,'flow');
     msg.className='ltf-msg err';
     msg.textContent=(e&&e.status===404)
       ?'No manager found with that ID. Check the number and try again.'
@@ -7301,7 +7340,7 @@ function renderPage(panelId){
    and the tab is visible, so the numbers stay fresh without a manual
    reload. Each live hydrator calls markLive(true/false); the tick only
    refetches when something is live, and liveStamp() shows the pill. */
-const LIVE_PANELS=new Set(['liverank','results']);
+const LIVE_PANELS=new Set(['liverank','results','leagues']);
 /* A hub refreshes its ACTIVE VIEW in place. Re-running the hub's own
    hydrator would rebuild the chip row and repaint a skeleton every 45
    seconds — a live screen that blinks is worse than one that lags. */
@@ -7309,7 +7348,14 @@ const LIVE_REFRESH={
   liverank:()=>lvRenderBody({quiet:true}),
   /* Only the Results view moves during a match. Re-running the forecasts or
      the projected XI every 45 seconds would be work for nothing. */
-  results:()=>{if(mcView(MC_VIEW).live)mcRenderBody({quiet:true});}
+  results:()=>{if(mcView(MC_VIEW).live)mcRenderBody({quiet:true});},
+  /* Only the detailed view sums the live feed; the compact table is FPL's
+     own figures, which FPL freezes until it scores the week. */
+  leagues:()=>{
+    if(!LEAGUE_SEL||LEAGUE_TYPE==='h2h'||LEAGUE_VIEW!=='detailed')return;
+    const h=document.getElementById('ge-data');
+    if(h)renderLeagueStandings(h,LEAGUE_SEL,getMid(),LEAGUE_TYPE,{quiet:true}).catch(()=>{});
+  }
 };
 let LIVE_TIMER=null;
 function armLiveRefresh(panelId){
@@ -7763,9 +7809,16 @@ async function hydrateOnboard(host){
   if(step===1){
     host.innerHTML='<div class="ltf-hero card ob">'+obSteps(1)+
       '<h2 class="ltf-hero-t">Rate my squad</h2>'+
-      '<p class="ltf-hero-s">Enter your Manager ID and the model rates your eleven against its own, then tells you the one thing worth doing this week. Under a minute, no account needed.</p>'+
+      '<p class="ltf-hero-s">Paste your FPL link or enter your Manager ID, and the model rates your eleven against its own, then tells you the one thing worth doing this week. Under a minute, no account needed.</p>'+
       linkTeamFlowHtml({browse:false})+
-      '<button type="button" class="ltf-browse" onclick="obSkip()">Look around first \u2192</button>'+
+      /* A real second choice, not a faint link. Six in seven first visitors
+         left at this step without linking or skipping; the old "Look around
+         first" underline was used by none of them. */
+      '<div class="ob-or"><span>or</span></div>'+
+      '<div class="ob-browse">'+
+        '<button type="button" class="btn btn-ghost" onclick="obSkip()">Browse without a team</button>'+
+        '<p class="dl-sub">See the model\u2019s team, this week\u2019s captain picks, price changes and fixtures. Link your team any time from the top bar.</p>'+
+      '</div>'+
       '</div>';
     return;
   }
@@ -8061,7 +8114,7 @@ async function hydrateAccountability(host){
           (cal.brier!=null?'<div class="stat"><div class="stat-l">Haul Brier</div><div class="stat-v">'+cal.brier.toFixed(3)+'</div></div>':'')+
           (cal.rankCorr!=null?'<div class="stat"><div class="stat-l">Rank correlation</div><div class="stat-v">'+cal.rankCorr.toFixed(2)+'</div></div>':'')+
           (cal.top10Hit!=null?'<div class="stat"><div class="stat-l">Top-10 hit rate</div><div class="stat-v">'+Math.round(cal.top10Hit*100)+'%</div></div>':'')+
-        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). Rank correlation (1 is perfect, 0 is random) says how well it ordered the players each gameweek; the top-10 hit rate is how many of its ten highest projections finished among the week\u2019s ten best scores. The model, graded on live results.</div></div>';
+        '</div>'+haulRecalNote(cal.haulSinceRecal)+'<div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). Rank correlation (1 is perfect, 0 is random) says how well it ordered the players each gameweek; the top-10 hit rate is how many of its ten highest projections finished among the week\u2019s ten best scores. The model, graded on live results.</div></div>';
     }
   }catch(_){}
   /* Prediction-logger health — shown until graded accuracy exists, so you
@@ -9435,9 +9488,10 @@ async function hydrateSquad(host){
   const [picks,live,fixtures]=await Promise.all([loadPicks(mid,gw),loadLive(gw),loadFixtures()]);
   await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes for the projection */
   const nf=buildNextFix(b,fixtures);
-  const livePts={},liveMins={};
-  (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;liveMins[e.id]=e.stats?e.stats.minutes:0;});
+  const livePts={},liveMins={},liveExpl={};
+  (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;liveMins[e.id]=e.stats?e.stats.minutes:0;liveExpl[e.id]=e.explain||[];});
   const eh=picks.entry_history||{};
+  SQ_DATA={};
   const cell=(pk)=>{
     const el=b.els[pk.element]||{};
     const base=livePts[pk.element]||0;
@@ -9448,13 +9502,23 @@ async function hydrateSquad(host){
     const mark=pts>=8?'<span class="pp-mark" title="Hauling">🔥</span>'
       :(mins>=60&&base<=2?'<span class="pp-mark" title="Played and blanked">👎</span>':'');
     const tsb=el.selected_by_percent!=null?el.selected_by_percent+'%':'–';
-    return '<div class="pp'+(pk.is_captain?' is-cap':'')+'">'+
-      (badge?'<span class="pp-badge">'+badge+'</span>':'')+mark+
+    /* The same tap card as the Live pitch, with the planning facts a squad
+       screen is opened for: what this week has paid, what comes next, and
+       what the player costs and carries. */
+    const nx=nf[el.team];
+    SQ_DATA[pk.element]={id:pk.element,name:el.web_name||'',team:teamShort(b,el.team),pos:posShort(b,el.element_type),
+      price:money(el.now_cost||0),own:tsb,form:el.form,news:el.news||'',
+      next:nx?{opp:nx.opp,home:nx.home,gw:nx.event,xp:xP(b,el,nx)}:null,
+      role:pk.is_captain?'Captain':pk.is_vice_captain?'Vice-captain':pk.position>11?'Bench':'Starting XI',
+      bd:lpBreakdown(liveExpl[pk.element],0,pk.multiplier||1)};
+    return '<button type="button" class="pp pp-btn'+(pk.is_captain?' is-cap':'')+'" data-sq="'+pk.element+'" '+
+      'aria-label="'+esc(el.web_name||'')+(badge==='C'?', captain':badge==='V'?', vice-captain':'')+', '+pts+' points. Show the details">'+
+      (badge?'<span class="pp-badge" aria-hidden="true">'+badge+'</span>':'')+mark+
       ppFigure(b,el)+
       '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
       '<span class="pp-pt">'+pts+'</span>'+
       '<span class="pp-sub"><span class="l" title="Selected by '+tsb+' of managers">'+tsb+'</span>'+
-      '<span class="r" title="Price">'+money(el.now_cost||0)+'</span></span></div>';
+      '<span class="r" title="Price">'+money(el.now_cost||0)+'</span></span></button>';
   };
   const starters=picks.picks.filter(p=>p.position<=11);
   const bench=picks.picks.filter(p=>p.position>11);
@@ -9520,6 +9584,7 @@ async function hydrateSquad(host){
       '</div>'+
     '</div>'+
     squadStartCard(b,picks.picks,nf);
+  host.querySelectorAll('[data-sq]').forEach(btn=>btn.addEventListener('click',()=>openSqDrawer(btn.dataset.sq,btn)));
 }
 /* Start chance for the whole squad, riskiest first: the fifteen numbers the
    projections above already use, shown so a doubt is spotted before the
@@ -9642,6 +9707,7 @@ async function shareSquadCard(){
   if(S.top&&S.top.nm)center('Star player: '+S.top.nm+' · '+S.top.pts+' pts',830,'600 34px system-ui,sans-serif','rgba(255,255,255,.8)');
   center('gameweekedge.co.uk',965,'700 30px system-ui,sans-serif','#4ade80');
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  track('share_card',{card:'gameweek',gw:S.gw});
   await saveBlob(blob,'gameweek-'+S.gw+'.png','image/png','Share card downloaded');
 }
 
@@ -9660,6 +9726,7 @@ async function shareTeamReveal(){
     bench:(S.bench||[]).map(p=>p.nm),
     foot:S.value!=null?'Squad value £'+(S.value/10).toFixed(1)+'m'+(S.bank!=null?'  ·  Bank £'+(S.bank/10).toFixed(1)+'m':''):''
   });
+  track('share_card',{card:'team_reveal',gw:S.gw});
   await saveBlob(blob,'team-reveal-gw'+S.gw+'.png','image/png','Team Reveal downloaded');
 }
 /* The live version of the same card: each token carries the player's live
@@ -12229,7 +12296,39 @@ async function hydrateAnalytics(host){
     pl+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Counts this small are noise individually. One person versus two means nothing. The shape is what to read.</div></div>';
 
-  out.innerHTML=kpis+daily+areas+panels;
+  out.innerHTML=kpis+analyticsFunnels(d.funnels)+daily+areas+panels;
+}
+/* The three funnels, as plain rows of people. Reasons are listed by count so
+   the commonest way a link fails reads first. */
+const AN_REASON={empty:'Left the box empty',invalid:'Typed something that is not an ID',not_found:'ID not found on FPL',
+  network:'FPL did not answer',no_league:'No league given',short_name:'Name too short',
+  league_not_found:'League not found',no_match:'No name matched',link:'Pasted an FPL link',id:'Typed the ID',
+  league:'Picked from a league',monthly:'Monthly',season:'Season pass'};
+function analyticsFunnels(F){
+  if(!F)return '';
+  const row=(label,n,sub)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(label)+'</span>'+
+    (sub?'<span class="dl-sub">'+sub+'</span>':'')+'</span><span class="dl-col mono">'+n+'</span></div>';
+  const list=o=>{const k=Object.keys(o||{}).sort((a,c)=>o[c]-o[a]);
+    return k.length?k.map(x=>esc(AN_REASON[x]||x)+' '+o[x]).join(' · '):'none recorded';};
+  const f=F.firstRun||{},u=F.upgrade||{};
+  const share=Object.keys(F.sharing||{}).sort((a,c)=>F.sharing[c]-F.sharing[a]);
+  return '<div class="card mb-20"><div class="card-title">First run: the Team ID step</div><div class="dl desc">'+
+      row('Reached the Team ID step',f.reachedIdStep||0,'people')+
+      row('Linked a team',f.linked||0,'how: '+list(f.linkedVia))+
+      row('Browsed without a team',f.browsed||0,'')+
+      row('Left without either',f.left||0,'')+
+      row('Link attempts that failed',Object.values(f.linkFailures||{}).reduce((a,b)=>a+b,0),list(f.linkFailures))+
+      row('Opened "Where do I find it?"',f.idHelpOpened||0,'people')+
+      row('Opened league search',f.leagueSearchOpened||0,'failed searches: '+list(f.leagueSearchFailures))+
+    '</div></div>'+
+    '<div class="card mb-20"><div class="card-title">Upgrade</div><div class="dl desc">'+
+      row('Saw the pricing page',u.sawPricing||0,'people')+
+      row('Saw the upgrade sheet',u.sawUpgradeSheet||0,'people')+
+      row('Started a checkout',u.startedCheckout||0,list(u.checkoutPlans))+
+    '</div><div class="dl-sub" style="margin-top:8px">Only people who accepted analytics are counted, so every figure here is a floor.</div></div>'+
+    '<div class="card mb-20"><div class="card-title">Images saved</div>'+
+      (share.length?'<div class="dl desc">'+share.map(k=>row(k.replace(/_/g,' '),F.sharing[k],'')).join('')+'</div>'
+        :'<div class="dl-sub">No share images saved in this window.</div>')+'</div>';
 }
 
 /* The linked manager's picks and entry for one gameweek. Null rather than a
@@ -14267,6 +14366,7 @@ function exportPlayersCSV(){
   const S=window._pl;if(!S)return;
   const list=plFilteredSorted();
   if(!list.length){toast('No players to export');return;}
+  track('players_export',{rows:list.length});
   const csv=playersCsv(S.b,S.xpMap,list,{...(S.ctx||{}),pro:isPro()});
   try{
     const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
@@ -18798,6 +18898,37 @@ function openLpDrawer(id,from){
       (hit?' · +2 banked':'')+'</b></div><span class="dc-bar" role="img" aria-label="'+d.dc+' of '+d.thr+' towards the +2"><i style="width:'+pct+'%"></i></span></div>';
   }
   document.getElementById('lpd-body').innerHTML=html;
+  const foot=document.getElementById('lpd-foot');
+  if(foot)foot.textContent='From the official live feed. Bonus is provisional until FPL confirms it after the match.';
+  dr.classList.add('open');
+  LP_RETURN=from||null;
+  const x=dr.querySelector('.lr-x');if(x)try{x.focus();}catch(_){}
+}
+/* My Squad's tap card, in the same drawer as the Live one. */
+let SQ_DATA={};
+function openSqDrawer(id,from){
+  const d=SQ_DATA[id];const dr=document.getElementById('lp-drawer');if(!d||!dr)return;
+  const bd=d.bd;
+  document.getElementById('lpd-title').textContent=d.name;
+  document.getElementById('lpd-sub').textContent=d.team+' · '+d.pos+' · '+d.role;
+  document.getElementById('lpd-pts').textContent=bd.total+' pts';
+  const row=(l,v,pt,cls)=>'<div class="lpd-row'+(cls?' '+cls:'')+'"><span>'+l+'</span><span class="num">'+v+'</span><span class="num lpd-p">'+pt+'</span></div>';
+  let html='<div class="lpd-row lpd-hd"><span>This gameweek</span><span>Value</span><span>Points</span></div>';
+  html+=bd.rows.length?bd.rows.map(r=>row(esc(r.label),r.value==null?'–':esc(String(r.value)),(r.pts>0?'+':'')+r.pts)).join('')
+    :'<p class="dl-sub" style="margin:6px 0">No points yet this gameweek.</p>';
+  if(bd.mult>1)html+=row(bd.mult===3?'Triple captain':'Captain','×'+bd.mult,bd.total,'lpd-tot');
+  else if(bd.rows.length)html+=row('Total','',bd.total,'lpd-tot');
+  html+='<div class="sqd-facts">'+
+    (d.next?'<div><span class="dl-sub">Next</span><b>'+esc(d.next.opp)+(d.next.home?' (H)':' (A)')+'</b><span class="dl-sub">GW'+d.next.gw+' · '+d.next.xp.toFixed(1)+' xP</span></div>':'')+
+    '<div><span class="dl-sub">Price</span><b>'+esc(d.price)+'</b></div>'+
+    '<div><span class="dl-sub">Owned by</span><b>'+esc(d.own)+'</b></div>'+
+    '<div><span class="dl-sub">Form</span><b>'+esc(d.form||'–')+'</b></div>'+
+  '</div>'+
+  (d.news?'<p class="sqd-news">'+esc(d.news)+'</p>':'')+
+  '<button type="button" class="btn btn-ghost btn-sm" onclick="closeLpDrawer();openPlayer('+(+d.id)+')">Full profile</button>';
+  document.getElementById('lpd-body').innerHTML=html;
+  const foot=document.getElementById('lpd-foot');
+  if(foot)foot.textContent='Points from the official live feed. The next-fixture projection is our model\u2019s.';
   dr.classList.add('open');
   LP_RETURN=from||null;
   const x=dr.querySelector('.lr-x');if(x)try{x.focus();}catch(_){}
@@ -24099,6 +24230,23 @@ function leagueStdRow(r){
    kind; ranking the field on a mixture of the two would place them
    below people they are beating. Better to show an order that is a
    week old and say so than one that is wrong today. Pure. */
+/* Between two live orders (top first), who moved past the reader. Only
+   managers present in both count, and only a change of side relative to
+   the reader is news: two rivals swapping below you is not. */
+function lgOvertakes(prev,cur,meId){
+  const out={passedMe:[],iPassed:[]};
+  if(!Array.isArray(prev)||!Array.isArray(cur)||!prev.length||!cur.length)return out;
+  const idx=list=>{const o={};list.forEach((r,i)=>{o[r.entry]=i;});return o;};
+  const P=idx(prev),C=idx(cur);
+  if(P[meId]==null||C[meId]==null)return out;
+  cur.forEach(r=>{
+    if(r.entry===meId||P[r.entry]==null)return;
+    const wasAbove=P[r.entry]<P[meId],isAbove=C[r.entry]<C[meId];
+    if(!wasAbove&&isAbove)out.passedMe.push(r.name);
+    else if(wasAbove&&!isAbove)out.iPassed.push(r.name);
+  });
+  return out;
+}
 function leagueLivePos(rows){
   const list=(rows||[]).slice();
   if(!list.length)return {};
@@ -24935,9 +25083,13 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
        one job so a manager costs one slot rather than two passes. */
     const [live,pairs]=await Promise.all([
       loadLive(gw).catch(()=>({elements:[]})),
+      /* Squads are fixed once the deadline passes, so they are held for the
+         gameweek; a season history moves only when a gameweek is scored, so
+         ten minutes is plenty. That is what lets the live refresh redraw
+         this card every 45 seconds for one new call instead of a hundred. */
       mapLimit(slice,6,r=>Promise.all([
-        loadPicks(r.entry,gw).catch(e=>{pickFail.push((e&&e.status)||0);return null;}),
-        loadHistory(r.entry).catch(()=>null)
+        memo('lgp-'+r.entry+'-'+gw,6*3600e3,()=>loadPicks(r.entry,gw)).catch(e=>{pickFail.push((e&&e.status)||0);return null;}),
+        memo('lgh-'+r.entry,10*60e3,()=>loadHistory(r.entry)).catch(()=>null)
       ]))
     ]);
     const picksArr=pairs.map(p=>(p&&p[0])||null);
@@ -24981,6 +25133,26 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
       ? leagueLivePos(built.slice()) : {};
     const liveOn=Object.keys(posById).length===built.length&&built.length>0;
     if(liveOn)built.forEach(d=>{d.livePos=posById[d.entry];});
+    /* Tells the live timer this screen has something moving, so it keeps
+       redrawing while matches are on and stops when they are not. */
+    markLive(anyLive);
+    /* Who passed whom since the last redraw, while the app is open. Only
+       on a live order: FPL's own positions sit still mid-gameweek. */
+    let nudge='';
+    if(liveOn){
+      const order=built.slice().sort((a,c)=>a.livePos-c.livePos||(a.rank||0)-(c.rank||0)).map(d=>({entry:d.entry,name:d.name}));
+      const key='_lgOrd'+leagueId;
+      const ev=lgOvertakes(MEM[key],order,meId);
+      MEM[key]=order;
+      if(ev.passedMe.length||ev.iPassed.length){
+        const names=a=>a.slice(0,2).map(esc).join(' and ')+(a.length>2?' and '+(a.length-2)+' more':'');
+        const msg=[ev.iPassed.length?'You passed '+names(ev.iPassed)+'.':'',
+          ev.passedMe.length?names(ev.passedMe)+(ev.passedMe.length===1?' has':' have')+' passed you.':''].filter(Boolean).join(' ');
+        nudge='<div class="lg-nudge '+(ev.passedMe.length?'dn':'up')+'" role="status">'+
+          (ev.passedMe.length?'▼ ':'▲ ')+msg+' <span class="dl-sub">Live, from the squads and the scores so far.</span></div>';
+        track('league_overtake',{passedMe:ev.passedMe.length,iPassed:ev.iPassed.length});
+      }
+    }
     /* Sorted after the positions exist, because "League position" reads
        them: sorting first would order the table on the very field this
        block is here to replace. */
@@ -25217,7 +25389,7 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
       ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
       'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
       (missing===1?'is':'are')+' excluded.':'')+benchNote+'</p>';
-    return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+
+    return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+nudge+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
       '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+posNote+note+'</div>'+swing+extra};
@@ -25513,8 +25685,10 @@ function lgToolsHtml(canFind,multiPage){
     (canFind?'<button type="button" class="btn btn-ghost btn-sm lg-find" onclick="lgFindMe()">'+svg(ICON.target,'width="14" height="14"')+' Find me</button>':'')+
   '</div>';
 }
-async function renderLeagueStandings(host,leagueId,mid,type){
-  host.innerHTML='<div class="card">'+skel(7)+'</div>';
+async function renderLeagueStandings(host,leagueId,mid,type,opts){
+  /* A quiet redraw (the live timer) keeps what is on screen until the new
+     table is ready, rather than blinking a skeleton every 45 seconds. */
+  if(!(opts&&opts.quiet))host.innerHTML='<div class="card">'+skel(7)+'</div>';
   const back='<button class="btn btn-ghost btn-sm mb-14" onclick="historyPoint();LEAGUE_SEL=null;LEAGUE_PAGE=1;lgWriteUrl();renderPage(\'leagues\')">‹ All leagues</button>';
   const h2h=type==='h2h',custom=type==='custom',page=LEAGUE_PAGE;
   let data;
@@ -25762,8 +25936,10 @@ function lgForm(histories,n,lastDone){
 function lgFormHtml(cells){
   if(!cells||!cells.length)return '';
   const said=cells.map(c=>c?'GW'+c.gw+' '+c.pts+(c.above?' above':' below')+' the league average':'').filter(Boolean).join(', ');
-  return '<span class="lg-pills" role="img" aria-label="Last '+cells.length+' gameweeks: '+esc(said)+'">'+
-    cells.map(c=>c?'<span class="lg-pill '+(c.above?'up':'dn')+'">'+c.pts+'</span>':'<span class="lg-pill na">–</span>').join('')+'</span>';
+  /* Own class names: .lg-pill and .lg-pills already belong to the marker
+     row on the detailed view (FT, TV, ITB), and sharing them restyled it. */
+  return '<span class="lg-fps" role="img" aria-label="Last '+cells.length+' gameweeks: '+esc(said)+'">'+
+    cells.map(c=>c?'<span class="lg-fp '+(c.above?'up':'dn')+'">'+c.pts+'</span>':'<span class="lg-fp na">–</span>').join('')+'</span>';
 }
 /* Fetch the histories for the managers on screen and paint the pills into
    the placeholders. After the table, never before it: the standings must
@@ -27574,6 +27750,35 @@ function captainBand(xp){
    assists, clean sheet, bonus, defensive contribution, saves). Returns
    the mean, P10/P50/P90 and the haul (>=10) / blank (<=2) probabilities.
    Seeded on the player id so the output is stable across renders. */
+/* HAUL CALIBRATION. The simulator's raw haul chance was overconfident in
+   both directions: graded against 3,074 single-fixture predictions from
+   GW1 to GW7 of 2026/27, players it gave under 2% hauled 1.6% of the time
+   (it said 0.3%), and players it gave 10 to 35% hauled about half as often
+   as it said. Platt scaling fixes the shape with two numbers:
+   p' = 1 / (1 + e^-(a * logit(p) + b)). Fitted on GW1 to GW5 alone it
+   scored GW6 to GW7, which it never saw, at log loss 0.1164 against the raw
+   0.1257 (Brier 0.02607 against 0.02623); refitted on all seven weeks it
+   barely moved (0.48/-1.20 to 0.50/-1.16), which is what a real effect looks
+   like rather than noise. The transform is monotone, so it never reorders
+   players, only states their chances honestly. Applied from GW9's logged
+   predictions; earlier ones keep their original figures, and the Model page
+   reports how the corrected numbers do as each gameweek is graded. */
+const HAUL_CAL={a:0.50,b:-1.16};
+/* The Model page line that keeps the recalibration honest: what the
+   corrected haul chances said since they started, against what happened. */
+function haulRecalNote(h){
+  if(!h)return '';
+  const lead='<b>Haul chances recalibrated</b> on 24 October 2026, from 3,074 graded predictions (GW1 to GW7), because the high ones ran about twice too hot. ';
+  if(!h.n)return '<div class="dl-sub" style="margin-top:10px">'+lead+'The corrected figures are graded here from GW'+h.fromGw+' as each gameweek finishes.</div>';
+  return '<div class="dl-sub" style="margin-top:10px">'+lead+'Since GW'+h.fromGw+': predicted '+(h.predicted*100).toFixed(1)+
+    '% on average, actual '+(h.actual*100).toFixed(1)+'%, across '+fmtNum(h.n)+' predictions in '+h.gws+' gameweek'+(h.gws===1?'':'s')+
+    ' (Brier '+h.brier.toFixed(3)+').</div>';
+}
+function calibrateHaul(p){
+  if(!(p>=0))return p;
+  const q=Math.min(Math.max(p,0.001),0.999);
+  return 1/(1+Math.exp(-(HAUL_CAL.a*Math.log(q/(1-q))+HAUL_CAL.b)));
+}
 function pointsDist(el,nf,trials){
   trials=trials||2000;
   if(!nf||nf.lam==null)return {mean:0,p10:0,p50:0,p90:0,haul:0,blank:0};
@@ -27626,7 +27831,7 @@ function pointsDist(el,nf,trials){
   const q=f=>out[Math.min(trials-1,Math.floor(f*trials))];
   let sum=0,haul=0,blank=0;
   for(const v of out){sum+=v;if(v>=10)haul++;if(v<=2)blank++;}
-  return {mean:sum/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90),haul:haul/trials,blank:blank/trials};
+  return {mean:sum/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90),haul:calibrateHaul(haul/trials),blank:blank/trials};
 }
 /* Correlated squad simulation (P4): project a whole XI for the gameweek
    with the correlation a per-player point estimate misses — teammates
@@ -29879,7 +30084,9 @@ async function saveMid(){
   const inp=document.getElementById('mid-input');
   const err=document.getElementById('mid-err');
   const val=fplIdFrom(inp.value);
-  if(!val){err.textContent='Enter your Manager ID, or paste the address of your Points page.';return;}
+  const via=LF_PICKED?'league':linkVia(inp.value);LF_PICKED=false;
+  if(!val){linkFailed((inp.value||'').trim()?'invalid':'empty',via,'modal');
+    err.textContent='Enter your Manager ID, or paste the address of your Points page.';return;}
   inp.value=val;
   const saveBtn=document.getElementById('mid-save');
   saveBtn.disabled=true;saveBtn.textContent='Checking…';err.textContent='';
@@ -29887,12 +30094,13 @@ async function saveMid(){
     const entry=await loadEntry(val);            // validates the ID exists
     setMid(val);
     refreshIdentity(entry);
-    track('team_linked');
+    track('team_linked',{via,where:'modal'});
     toast('Team linked');
     closeMidModal();
     renderPage(currentPanel);
     window.GENative&&GENative.hapticSuccess();
   }catch(e){
+    linkFailed(e&&e.status===404?'not_found':'network',via,'modal');
     err.textContent=(e&&e.status===404)?'No manager found with that ID.':'Could not reach the FPL API. Try again.';
     window.GENative&&GENative.hapticWarning();
   }finally{saveBtn.disabled=false;saveBtn.textContent='Link team';}

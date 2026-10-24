@@ -329,6 +329,8 @@ const pieces = [
   extractFn(html, 'confTier'),
   extractFn(html, 'captainEligible'),
   extractFn(html, 'captainBand'),
+  ...['HAUL_CAL'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'calibrateHaul'),
   extractFn(html, 'pointsDist'),
   extractFn(html, 'squadSim'),
   extractFn(html, 'normCdf'),
@@ -379,6 +381,7 @@ const pieces = [
   extractFn(html, 'lfMatch'),
   extractFn(html, 'pricingRows'),
   extractFn(html, 'mcTeamStats'),
+  extractFn(html, 'lgOvertakes'),
   extractFn(html, 'communityAggregate'),
   extractFn(html, 'topSelectedByPos'),
   extractFn(html, 'differentials'),
@@ -452,7 +455,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -4028,8 +4031,8 @@ section('lgForm: last-five form pills against the league average');
   ok(core.lgForm(live).gws.join(',') === '3,4,5,6,7', 'without a cap every gameweek present counts');
   const html5 = core.lgFormHtml(f.rows[1]);
   ok(/role="img"/.test(html5) && /above the league average/.test(html5), 'the pill row carries a spoken summary, so colour is not the only signal');
-  ok((html5.match(/lg-pill up/g) || []).length === 5, 'five pills, all marked above');
-  ok(core.lgFormHtml(f.rows[3]).includes('lg-pill na'), 'a gap renders as a neutral dash');
+  ok((html5.match(/lg-fp up/g) || []).length === 5, 'five pills, all marked above');
+  ok(core.lgFormHtml(f.rows[3]).includes('lg-fp na'), 'a gap renders as a neutral dash');
 }
 
 section('lpBreakdown: the Live tap card, line by line');
@@ -6485,6 +6488,34 @@ section('mcTeamStats: team totals for the match stat bars');
   const D = mcTeamStats(f, dgw, els);
   ok(D.partial && !D.rows.some((r) => r.label === 'xG') && D.rows.find((r) => r.label === 'FPL points').h === 2, 'a double gameweek drops xG but still splits points by match');
   ok(mcTeamStats(f, null, els).rows.every((r) => r.label !== 'xG' && r.label !== 'FPL points'), 'no live data: only the fixture stats');
+}
+
+section('lgOvertakes: who passed whom between two live orders');
+{
+  const { lgOvertakes } = core;
+  const o = (...ids) => ids.map((id) => ({ entry: id, name: 'M' + id }));
+  const ev = lgOvertakes(o(1, 2, 3, 4), o(1, 3, 2, 4), 2);
+  ok(ev.passedMe.join() === 'M3' && ev.iPassed.length === 0, 'the manager who went from below to above is named');
+  const up = lgOvertakes(o(1, 2, 3), o(2, 1, 3), 2);
+  ok(up.iPassed.join() === 'M1' && up.passedMe.length === 0, 'and when the reader climbs, who they passed');
+  const swapBelow = lgOvertakes(o(1, 2, 3, 4), o(1, 2, 4, 3), 2);
+  ok(!swapBelow.passedMe.length && !swapBelow.iPassed.length, 'two rivals swapping below the reader is not news');
+  ok(!lgOvertakes(null, o(1, 2), 1).passedMe.length, 'no previous order, nothing to report');
+  ok(!lgOvertakes(o(1, 2), o(2, 1), 9).passedMe.length, 'a reader not in the league gets nothing');
+  const jump = lgOvertakes(o(1, 2, 3, 4), o(4, 3, 1, 2), 1);
+  ok(jump.passedMe.join() === 'M4,M3', 'several can pass at once, in their new order');
+}
+
+section('calibrateHaul: the haul chance, corrected for the simulator\'s overconfidence');
+{
+  const { calibrateHaul } = core;
+  const r = (p) => Math.round(calibrateHaul(p) * 1000) / 10;
+  ok(r(0) > 0.5 && r(0) < 2, 'a raw zero is not certainty: about 1% (' + r(0) + '%)');
+  ok(r(0.003) > 1 && r(0.003) < 3, 'tiny raw chances rise toward what happened (' + r(0.003) + '%)');
+  ok(r(0.26) > 12 && r(0.26) < 19, 'high raw chances come down toward what happened (' + r(0.26) + '%)');
+  let mono = true; for (let p = 0; p < 0.99; p += 0.01) if (calibrateHaul(p + 0.01) <= calibrateHaul(p)) mono = false;
+  ok(mono, 'monotone, so no player is ever reordered');
+  ok(Number.isNaN(calibrateHaul(NaN)), 'a missing value stays missing');
 }
 
 section('panelAliases: the palette finds a panel by its old id, its old name and plain English');

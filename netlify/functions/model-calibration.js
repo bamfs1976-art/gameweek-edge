@@ -20,6 +20,9 @@ const json = (o, maxAge) => ({
    Ordering on the logger's upsert key (season, gw, element) keeps the pages
    stable, and a short page means the table is exhausted. */
 const PAGE = 1000, MAX_PAGES = 200;
+/* When the haul chances started being calibrated: the first gameweek whose
+   logged predictions carry the correction (fitted 24 Oct 2026 on GW1-7). */
+const RECAL = { season: '2026/27', fromGw: 9 };
 async function fetchGraded(sb) {
   const rows = [];
   for (let p = 0; p < MAX_PAGES; p++) {
@@ -112,6 +115,20 @@ exports.handler = async () => {
     brier += (p - y) * (p - y);
     const b = acc[Math.min(B - 1, Math.floor(p * B))]; b.sp += p; b.sy += y; b.n++;
   }
+  /* The haul recalibration, re-tested as each gameweek is graded. Logged
+     haul chances are calibrated from RECAL.fromGw on (see HAUL_CAL in
+     index.html), so this compares what those predictions said with what
+     happened, on their own. If the two drift apart again, it shows here. */
+  const since = data
+    .filter((r) => season === RECAL.season && r.gw >= RECAL.fromGw && r.haul_prob != null);
+  const haulSinceRecal = since.length ? {
+    fromGw: RECAL.fromGw,
+    n: since.length,
+    gws: new Set(since.map((r) => r.gw)).size,
+    predicted: Math.round(since.reduce((t, r) => t + r.haul_prob, 0) / since.length * 1000) / 1000,
+    actual: Math.round(since.filter((r) => r.actual >= 10).length / since.length * 1000) / 1000,
+    brier: Math.round(since.reduce((t, r) => t + Math.pow(r.haul_prob - (r.actual >= 10 ? 1 : 0), 2), 0) / since.length * 10000) / 10000,
+  } : { fromGw: RECAL.fromGw, n: 0 };
   const buckets = acc.filter((b) => b.n).map((b) => ({
     pMean: Math.round(b.sp / b.n * 1000) / 1000, oFreq: Math.round(b.sy / b.n * 1000) / 1000, n: b.n,
   }));
@@ -123,6 +140,7 @@ exports.handler = async () => {
     mae: Math.round(mae * 1000) / 1000,
     brier: rel.length ? Math.round(brier / rel.length * 10000) / 10000 : null,
     buckets,
+    haulSinceRecal,
     ...rankStats(data),
   }, 1800);
 };

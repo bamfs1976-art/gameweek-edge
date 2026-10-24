@@ -394,9 +394,13 @@ section('the topbar survives scrolling, and stays clickable');
      content scrolling visibly through it between the two bars. A mutation
      run proved that: swapping --tickbar-h for --topbar-h changed nothing
      here. Equality is the actual requirement. */
-  ok(r.topTop !== null && r.topTop === r.tickBottom,
-    'the topbar pins flush under the ticker (ticker ends '
-    + r.tickBottom + ', topbar starts ' + r.topTop + ')');
+  /* The scrolling ticker above the topbar was retired, so the topbar now
+     pins flush to the top of the viewport. When a ticker exists it pins
+     flush under that instead. Either way: no gap for content to show in. */
+  const pinAt = r.tickBottom === null ? 0 : r.tickBottom;
+  ok(r.topTop !== null && r.topTop === pinAt,
+    'the topbar pins flush ' + (r.tickBottom === null ? 'to the top' : 'under the ticker') +
+    ' (expected ' + pinAt + ', topbar starts ' + r.topTop + ')');
   /* The not-linked strip is the third sticky in the same column and has to
      clear BOTH bars. Nothing tested it, so its offset could silently go back
      to sitting under the ticker. */
@@ -503,17 +507,26 @@ section('charts: uPlot actually draws');
   ok(r.legend, 'the full chart has a live legend');
   ok(r.over, 'and an overlay for the crosshair');
 
+  /* The chart is appended at the foot of the page, which can be below the
+     viewport: a pointer moved to off-screen coordinates hovers nothing, and
+     this check failed only on the runs where the page happened to be long.
+     Scroll it into view first, then give the legend a moment to update. */
   const box = await page.evaluate(() => {
     const c = document.querySelector('.chart-host .u-over');
+    c.scrollIntoView({ block: 'center' });
     const b = c.getBoundingClientRect();
     return { x: b.x + b.width * 0.6, y: b.y + b.height / 2 };
   });
-  await page.mouse.move(box.x, box.y);
-  await page.waitForTimeout(200);
-  const val = await page.evaluate(() => {
-    const v = document.querySelector('.chart-host .u-legend .u-value');
-    return v ? v.textContent.trim() : '';
-  });
+  await page.mouse.move(box.x - 10, box.y);
+  await page.mouse.move(box.x, box.y, { steps: 4 });
+  let val = '';
+  for (let i = 0; i < 10 && (val === '' || val === '--'); i++) {
+    await page.waitForTimeout(100);
+    val = await page.evaluate(() => {
+      const v = document.querySelector('.chart-host .u-legend .u-value');
+      return v ? v.textContent.trim() : '';
+    });
+  }
   ok(val !== '' && val !== '--', 'moving the pointer moves the crosshair and reads a value (' + val + ')');
 }
 
@@ -1179,7 +1192,9 @@ section('a rival opens, on a pitch, marked against my own XI');
       bench: body.querySelectorAll('.rv-bench .pp').length,
       caps: body.querySelectorAll('.rv-cap').length,
       ringed: body.querySelectorAll('.qd-pitch .pp.rv-shared, .qd-pitch .pp.rv-diff').length,
-      dashes: pts.filter((t) => t === '—').length,
+      /* The unknown marker is an en dash since the copy rule dropped em
+         dashes from the UI; either one means "unknown", a zero would not. */
+      dashes: pts.filter((t) => t === '\u2013' || t === '\u2014').length,
       zeroes: pts.filter((t) => t === '0').length,
       /* The bench, and whether its scores are marked as not counting. */
       benchPts: [...body.querySelectorAll('.rv-bench .pp .pp-pt')].map((e) => ({
@@ -1848,7 +1863,9 @@ section('mini-league detailed view: every squad, with effective ownership');
   ok(/TV ?£\d/.test(pillText), 'team value is shown');
   ok(/ITB ?£\d/.test(pillText), 'money in the bank is shown');
   ok(/OR ?[\d,]+/.test(pillText), 'overall rank is shown');
-  ok(/PLAYED ?\d+\/\d+/.test(pillText), 'progress is shown');
+  /* SETTLED, renamed from PLAYED on purpose: a player on the pitch has
+     played, so the bar counts what can no longer move. See the app. */
+  ok(/SETTLED ?\d+\/\d+/.test(pillText), 'progress is shown, as settled (' + pillText + ')');
 
   /* The chip ledger: what they have already spent this season. */
   ok(/CHIPS/.test(pillText), 'the chip ledger is shown');
@@ -1897,8 +1914,10 @@ section('mini-league sorting: a different order, not a different league');
       found: true, base, reversed, opts, dirBefore,
       dirAfter: document.getElementById('lg-dir').textContent,
       /* Position labels must survive: reordering rows is not renumbering. */
+      /* The position only: the movement marker (▲1, ▼2) sits in the same
+         cell under it and is a different fact. */
       ranks: [...document.querySelectorAll('#league-standings .dl-row:not(.head) .dl-rank')]
-        .map((e) => e.textContent.trim()),
+        .map((e) => { const c = e.cloneNode(true); c.querySelectorAll('.lg-mv').forEach((m) => m.remove()); return c.textContent.trim(); }),
       barVisible: (() => { const b = document.querySelector('.lg-bar');
         return b ? b.getBoundingClientRect().height > 0 : false; })(),
       selW: document.getElementById('lg-sort').getBoundingClientRect().width,
@@ -2541,7 +2560,12 @@ section('My Week says each figure once, and the New badge renders');
     return {
       rows: labels,
       stats,
-      newChips: document.querySelectorAll('.new-chip').length,
+      /* The badge is time-limited (NEW_DAYS from its date), so a real date
+         in PANEL_NEW expires and this check used to start failing on its
+         own three weeks after each launch. Date one panel today and redraw
+         the nav: what is under test is that a current entry renders. */
+      newChips: (() => { try { PANEL_NEW.leagues = new Date().toISOString().slice(0, 10); buildNav(); } catch (_) {}
+        return document.querySelectorAll('.new-chip').length; })(),
       text: host ? host.innerText : '',
     };
   });
@@ -2659,6 +2683,11 @@ section('the sidebar at tablet widths: no hover, so nothing may depend on it');
     const ctx = await browser.newContext({ viewport: { width: c.w, height: c.h }, hasTouch: c.touch });
     const p = await ctx.newPage();
     await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    /* Park the pointer away from the sidebar. Some Chromium builds start
+       with it at (0,0), which is ON the rail, so :hover opened it and the
+       collapsed width measured 212px in CI while passing locally. The case
+       under test is the rail at rest. */
+    if (!c.touch) await p.mouse.move(c.w - 20, c.h - 20);
     await p.waitForTimeout(900);
     const r = await p.evaluate(() => {
       const sb = document.querySelector('.sidebar');
@@ -3112,7 +3141,9 @@ section('the gameweek rolls over when the football does, not when FPL says so');
      did: the strip read "GW 1" beside a sidebar reading Gameweek 2, and it
      read it next to its own "GW1 RESULT IN" message, so the chip repeated
      its neighbour instead of answering its own question. */
-  ok(/\b2\b/.test(strip.tkgw) && !/\b1\b/.test(strip.tkgw),
+  /* "GW2" or "GW 2": the strip prints the number hard against GW, where a
+     bare \b2\b can never match. */
+  ok(/GW\s*2\b/.test(strip.tkgw) && !/GW\s*1\b/.test(strip.tkgw),
      'and the strip names the same gameweek as the sidebar (' + strip.tkgw.trim() + ')');
   ok(/GW1/.test(strip.tkdl),
      'while the message beside it still names the gameweek being settled (' + strip.tkdl.slice(0, 30) + ')');
@@ -3207,23 +3238,26 @@ section('two reports: one about you, one about the gameweek');
      'the season review renders INSIDE it — the two panels are one destination now');
   ok(mr.titles.some((t) => /Your season/i.test(t)), 'under its own heading');
 
-  /* THE PAID GUARANTEE, BOTH WAYS. The season review was a Pro panel before
-     the merge, so a free reader must still hit a lock — and, more than that,
-     its hydrator must not run at all: a blurred section that has already
-     fetched and rendered a season of history has leaked the thing the lock
-     is there to sell. Asserting only "a lock is present" would pass on a
-     page that had rendered the content behind it. */
-  const free = await rp.evaluate(() => ({
-    locked: !!document.querySelector('.pro-lockstrip'),
-    /* Card TITLES, not body text. The panel's own description names the
-       season sections — "points by gameweek ... transfer ROI" — so matching
-       the whole page finds the blurb advertising the locked feature and
-       calls it a leak. The rendered section is what matters. */
-    leaked: Array.from(document.querySelectorAll('.card-title'))
-      .some((n) => /Points by gameweek|Transfer ROI/i.test(n.textContent)),
-  }));
-  ok(free.locked === true, 'a free reader meets the Pro lock on the season half');
-  ok(free.leaked === false, 'and the season content was never rendered behind it');
+  /* THE PAID GUARANTEE, as the product now draws it. Phase 3.3 opened the
+     season core (points by gameweek, captaincy, transfers) to free and moved
+     the Pro lock onto three depth sections: chip effectiveness, the decision
+     timeline and the season narrative (test-social pins the tiers). Paid
+     sections use the preview pattern, the real section blurred and inert
+     behind one unlock strip, so the guarantee is that each of the three
+     sits inside an inert .pro-blur, and the free core does not. */
+  const free = await rp.evaluate(() => {
+    const card = (re) => Array.from(document.querySelectorAll('.card-title')).find((n) => re.test(n.textContent));
+    const lockedCard = (re) => { const t = card(re); return !!(t && t.closest('.pro-blur[inert]')); };
+    return {
+      locked: !!document.querySelector('.pro-lockstrip'),
+      coreOpen: !!card(/Points by gameweek/i) && !lockedCard(/Points by gameweek/i),
+      depthLocked: [/Chip effectiveness/i, /Decision timeline/i, /Season narrative/i].map(lockedCard),
+    };
+  });
+  ok(free.locked === true, 'a free reader meets the Pro lock in the season review');
+  ok(free.coreOpen === true, 'the free season core renders in the open');
+  ok(free.depthLocked.every(Boolean),
+    'and each Pro depth section sits blurred and inert behind it (' + free.depthLocked.join(',') + ')');
 
   /* And with Pro, the same section actually produces the report. */
   const pro = await rp.evaluate(async () => {

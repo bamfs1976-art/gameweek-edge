@@ -79,6 +79,10 @@ function buildModel(html) {
     grabFn(html, 'minutesFeatures'), grabFn(html, 'minutesProbs'), grabFn(html, 'minutesLegacy'), grabFn(html, 'overrideLive'), grabFn(html, 'availScale'), grabFn(html, 'flagKey'),
     grabFn(html, 'recentMinutes'), grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
     grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),
+    /* pointsDist reports a calibrated haul chance, so the logger needs the
+       calibration beside it or it throws on the first projection. */
+    ...['HAUL_CAL'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+    grabFn(html, 'calibrateHaul'),
     grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'fixtureXP'), grabFn(html, 'pointsDist'),
   ];
   // eslint-disable-next-line no-new-func

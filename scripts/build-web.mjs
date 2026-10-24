@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { publishRecord } from './efl/publish-record.mjs';
 import { publishRecord as publishFplRecord } from './record/publish-record.mjs';
 import { buildSeo } from './seo/build.mjs';
+import { minifyShell } from './minify-shell.mjs';
 import { buildToolPages } from './tools/build.mjs';
 import { buildEflClubPages } from './efl/clubpages/build.mjs';
 import { buildBlog } from './blog/build.mjs';
@@ -191,6 +192,22 @@ const eflClubs = await buildEflClubPages(ROOT, OUT);
 console.log(eflClubs.pages ? `✓ Fantasy EFL club pages → www/fantasy-efl/clubs/ (${eflClubs.pages} pages from a snapshot built ${eflClubs.built})` : `· Fantasy EFL club pages skipped: ${eflClubs.note}`);
 const seo = await buildSeo(ROOT, OUT, tools.urls.concat(blog.urls).concat(eflClubs.urls));
 console.log(`✓ SEO → www/sitemap.xml (${seo.urls} urls), www/robots.txt, ${seo.shells.length} pre-rendered shell(s): ${seo.shells.join(', ')}`);
+/* Ship the app shell and its pre-rendered copies without the source's
+   comments and whitespace; see scripts/minify-shell.mjs. After the SEO build,
+   because the shells are made from the readable source, and before the
+   version stamp, which must hash what actually ships. */
+{
+  let before = 0, after = 0;
+  for (const f of ['index.html'].concat(seo.shells.map((x) => x + '.html'))) {
+    const p = join(OUT, f);
+    if (!existsSync(p)) continue;
+    const src = await readFile(p, 'utf8');
+    const min = await minifyShell(src);
+    before += Buffer.byteLength(src); after += Buffer.byteLength(min);
+    await writeFile(p, min);
+  }
+  console.log(`✓ Minified the app shell and ${seo.shells.length} pre-rendered copies: ${Math.round(before / 1024)}KB → ${Math.round(after / 1024)}KB`);
+}
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');
 console.log(`✓ Build stamp ${stamp} → www/version.json`);
