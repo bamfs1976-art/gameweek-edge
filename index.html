@@ -10,12 +10,17 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
 <script>
-/* Theme, before first paint. The terminal (dark) is the default; a
-   stored choice wins. Runs here so the page never flashes the wrong theme
-   while the app boots. */
+/* Theme, before first paint. A stored choice wins; with none, follow the
+   device's light or dark setting, and dark when the device says nothing.
+   Runs here so the page never flashes the wrong theme while the app boots. */
 try{
-  var geTheme = localStorage.getItem('ge-theme');
-  document.documentElement.setAttribute('data-theme', geTheme==='light'?'light':'dark');
+  var geTheme = null;
+  try{ geTheme = localStorage.getItem('ge-theme'); }catch(_){}
+  if(geTheme!=='light' && geTheme!=='dark')
+    geTheme = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', geTheme);
+  var geTc = document.querySelector('meta[name="theme-color"]');
+  if(geTc && geTheme==='light') geTc.setAttribute('content','#f4f6f8');
 }catch(_){}
 /* ── FRONT DOOR ───────────────────────────────────────────────────
    gameweekedge.co.uk serves this file, so a first-time visitor used to
@@ -714,6 +719,16 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-score{background:var(--surface-3);border:1px solid var(--border-2);
   padding:4px 12px;border-radius:var(--r-md);font-weight:800;white-space:nowrap}
 .mc-ch{transition:transform .2s;color:var(--text-3);font-size:.75rem}
+/* Match list state at a glance: a thin line for how far a live match has
+   run, the losing side greyed once it ends, and the model's expected goals
+   under the "v" before kick-off. */
+.mc-prog{height:3px;background:var(--border-2)}
+.mc-prog i{display:block;height:100%;background:var(--green)}
+.mc-team.mc-lost{color:var(--text-3);font-weight:600}
+.mc-team.mc-lost .crest,.mc-team.mc-lost img{opacity:.55}
+.mc-score.mc-pre{display:flex;flex-direction:column;align-items:center;line-height:1.15;padding:3px 10px}
+@media (max-width:560px){.mc-xgk{display:none}.mc-lw{display:none}.mc-score.mc-pre{padding:3px 6px}}
+.mc-xg{font-size:var(--fs-min);font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
 /* Club names: the full name where it fits, the three-letter FPL code on a
    phone. At 390px the five-column header leaves about 90px a side, and
@@ -2074,6 +2089,61 @@ body{font-size:14px;line-height:1.5}
 .dl.desc .dl-sub{white-space:normal;overflow:visible;text-overflow:clip}
 /* Fixture Planner team filter — toggle clubs in/out of the difficulty grid. */
 .fdr-teams{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+/* ── Table kit toolbar ─────────────────────────────────────
+   One row above every data table: menus on the left, actions on the right.
+   Each menu is a <details>, so it opens and closes with no script, works by
+   keyboard and reads to a screen reader as a disclosure. tkbWire() adds the
+   niceties: one menu open at a time, Escape and an outside tap close it. */
+.tkb{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
+.tkb-l{display:contents}
+.tkb-r{display:flex;align-items:center;gap:6px;margin-left:auto}
+.tkb-m{position:relative}
+.tkb-s{list-style:none;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;
+  padding:6px 11px;border:1px solid var(--border-2);border-radius:var(--r-pill);background:var(--surface-3);
+  font-size:.8rem;font-weight:600;color:var(--text);white-space:nowrap}
+.tkb-s::-webkit-details-marker{display:none}
+.tkb-s::after{content:"";width:6px;height:6px;border-right:2px solid var(--text-3);border-bottom:2px solid var(--text-3);
+  transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.tkb-m[open]>.tkb-s{border-color:var(--green)}
+.tkb-m[open]>.tkb-s::after{transform:translateY(1px) rotate(-135deg)}
+.tkb-s .tkb-k{color:var(--text-3);font-weight:600}
+.tkb-pop{position:absolute;z-index:40;top:calc(100% + 6px);left:0;min-width:180px;max-width:min(340px,calc(100vw - 32px));
+  max-height:320px;overflow:auto;padding:6px;background:var(--surface);border:1px solid var(--border-2);
+  border-radius:var(--r-md);box-shadow:var(--shadow)}
+.tkb-m.tkb-end .tkb-pop{left:auto;right:0}
+.tkb-o{display:block;width:100%;text-align:left;border:none;background:none;padding:8px 10px;border-radius:var(--r-sm);
+  font:inherit;font-size:.84rem;color:var(--text-2);cursor:pointer}
+.tkb-o:hover,.tkb-o:focus-visible{background:var(--surface-3);color:var(--text)}
+.tkb-o.on{color:var(--green);font-weight:700}
+.tkb-o.on::after{content:" ✓"}
+.tkb-o.lk{color:var(--amber)}
+.tkb-sec+.tkb-sec{margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.tkb-sh{font-size:var(--fs-min);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);padding:2px 6px 4px}
+.tkb-chips{display:flex;flex-wrap:wrap;gap:2px}
+.tkb-chips .tkb-o{display:inline-block;width:auto;padding:6px 9px}
+.tkb-m.tkb-wide .tkb-pop{min-width:min(320px,calc(100vw - 32px))}
+.tkb-pop .fdr-teams{margin:0;max-width:300px}
+.tkb-search{flex:1 1 160px;min-width:0;max-width:260px;padding:6px 14px;border-radius:var(--r-pill);font-size:.84rem;min-height:34px}
+/* The sorted column is tinted top to bottom, so the sort reads at a glance
+   without finding the arrow. */
+.ptable td.sorted{background:color-mix(in srgb,var(--green) 7%,transparent)}
+.ptable th.active{background:color-mix(in srgb,var(--green) 10%,var(--surface-2))}
+.tkb-legend{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:600;color:var(--text-3);white-space:nowrap}
+.tkb-legend i{display:inline-block;width:14px;height:10px;border-radius:2px}
+@media (max-width:560px){.tkb-bt{display:none}}
+.tkb-export{}
+@media (max-width:560px){.tkb-export{display:none}}
+/* The shared player cell: photo, name, then crest, club and position (and
+   price, where the table has no price column of its own) on a second line.
+   One cell for every players table, so a row reads the same everywhere. */
+.pc{display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%;vertical-align:middle}
+.pc .avatar{flex:none}
+.pc-t{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.pc-nm{font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-sub{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:500;color:var(--text-3);white-space:nowrap}
+.pc-sub .crest{flex:none}
+@media (max-width:560px){.ptable .pc-nm{max-width:104px}}
+.card-title.tkb-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tchip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--border-2);
   border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:11px;font-weight:600;
   cursor:pointer;line-height:1.6;transition:opacity .12s}
@@ -2617,7 +2687,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .hm-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:var(--r-md);position:relative}
 .hm-scroll:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
 .hm-table{border-collapse:separate;border-spacing:2px;font-family:var(--font-mono);font-size:.72rem;font-variant-numeric:tabular-nums;margin:0}
-.hm-table tr{height:30px}
+.hm-table tr{height:38px}
 .hm-table th{font-family:var(--font-body);font-size:.66rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2);font-weight:700;padding:4px 6px;white-space:nowrap;background:var(--surface-2);position:sticky;top:0;z-index:2}
 .hm-table th.hm-name{text-align:left;left:0;z-index:3;text-transform:none;letter-spacing:0;font-size:.76rem;color:var(--text);min-width:150px;max-width:190px;overflow:hidden;text-overflow:ellipsis}
 .hm-table tbody th.hm-name{top:auto;z-index:1;font-weight:600}
@@ -2637,7 +2707,11 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .hm-sp td{padding:0;height:auto;min-width:0;background:none}
 .hm-prog{height:4px;background:var(--surface-3);border-radius:3px;overflow:hidden;margin-top:8px}
 .hm-prog i{display:block;height:100%;background:var(--green);transition:width .2s}
-@media(max-width:600px){.hm-table th.hm-name{min-width:118px;max-width:130px}}
+@media(max-width:600px){.hm-table th.hm-name{min-width:118px;max-width:140px}}
+.hm-table th.hm-name .pc{max-width:100%}
+.hm-table th.hm-name .pc-sub{font-family:var(--font-body)}
+.hm-range-pop{display:flex;align-items:center;gap:6px;padding:4px}
+.hm-range-pop select{max-width:96px}
 /* Manager Season Report */
 .rep-team-form{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
 .rep-team-form .modal-in{width:150px;max-width:100%}
@@ -3150,7 +3224,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 /* 44px touch minimum on the tab strips and lens pills. */
 @media(pointer:coarse){
   .sb-sub{min-height:44px}
-  .area-tab,.lensbtn,.seg-b,.btn,.tchip,.tbm-row,.acct-btn,.theme-toggle,.hamburger,.ltf-browse,.mode-opt,.acct-link,.more-it,.nav-area-btn,.bn-item{min-height:44px}
+  .area-tab,.lensbtn,.seg-b,.btn,.tchip,.tbm-row,.tkb-s,.tkb-o,.acct-btn,.theme-toggle,.hamburger,.ltf-browse,.mode-opt,.acct-link,.more-it,.nav-area-btn,.bn-item{min-height:44px}
   /* 16px stops iOS zooming the page when a control takes focus; the width
      cap stops a select sizing to its longest option and Safari shrinking
      the whole layout viewport to fit it. */
@@ -12974,12 +13048,81 @@ function fdrBodyHtml(view){
   rows.sort((a,c)=>a.key-c.key);
   return rows.map(r=>r.html).join('');
 }
+/* Save the fixture grid as a PNG, drawn from the table on screen so the
+   image always matches the lens, window and clubs the reader chose. Pure
+   canvas with text only (no crest images), so nothing taints it under the
+   CSP. Dark brand background whichever theme the app is in, like the other
+   share cards; the cell colours come from the cells themselves. */
+async function shareFdrGrid(lensLabel){
+  const tbl=document.querySelector('#fdr-tbody');const table=tbl&&tbl.closest('table');
+  if(!table){toast('Open the fixture grid first');return;}
+  const heads=[...table.querySelectorAll('thead th, tr:first-child th')].map(th=>th.textContent.trim());
+  const rows=[...tbl.querySelectorAll('tr')].filter(tr=>tr.querySelector('td.cell,td.blank')&&tr.children.length>2).map(tr=>
+    [...tr.children].map(td=>{const cs=getComputedStyle(td);
+      const v=td.querySelector('.fdr-val'),o=td.querySelector('.fdr-opp');
+      return {main:(v?v.textContent:td.textContent).trim(),sub:o?o.textContent.trim():'',
+        tot:td.classList.contains('fdr-tot'),
+        bg:td.classList.contains('fdr-tot')?'rgba(255,255,255,.08)':td.classList.contains('cell')?cs.backgroundColor:'',
+        ink:td.classList.contains('fdr-tot')?'#ffffff':td.classList.contains('cell')?cs.color:'',
+        patch:/a855f7|168,\s*85,\s*247/i.test(td.getAttribute('style')||'')};}));
+  if(!rows.length){toast('No clubs to show');return;}
+  track('share_card',{card:'fixture_grid'});
+  const S=window._fdr||{};const gws=S.gws||[];
+  const lead=heads.length-(gws.length+1);
+  const colW=118,leadW=lead>1?300:150,rowH=70,pad=48,top=250;
+  const W=Math.max(1080,pad*2+leadW+colW*(heads.length-lead)),H=top+rowH*(rows.length+1)+150;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d');
+  x.fillStyle='#0a0c0f';x.fillRect(0,0,W,H);
+  x.textBaseline='alphabetic';
+  x.textAlign='left';x.font='800 46px system-ui,-apple-system,sans-serif';x.fillStyle='#4ade80';
+  x.fillText('GAMEWEEK EDGE',pad,100);
+  x.font='600 34px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.82)';
+  x.fillText('Fixture difficulty'+(gws.length?' · GW'+gws[0]+'–GW'+gws[gws.length-1]:'')+(lensLabel?' · '+lensLabel:''),pad,160);
+  /* Key, top right. */
+  const ramp=[1,2,3,4,5].map(n=>{const i=document.createElement('i');i.className='fdr-'+n;document.body.appendChild(i);
+    const c=getComputedStyle(i).backgroundColor;i.remove();return c;});
+  x.font='600 26px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.6)';x.textAlign='right';
+  let kx=W-pad;x.fillText('Hard',kx,212);kx-=x.measureText('Hard').width+12;
+  for(let i=4;i>=0;i--){x.fillStyle=ramp[i];x.fillRect(kx-30,192,30,22);kx-=36;}
+  x.fillStyle='rgba(255,255,255,.6)';x.fillText('Easy',kx-6,212);
+  const colX=ci=>ci<lead?pad+(lead>1?(ci===0?0:90):0):pad+leadW+colW*(ci-lead);
+  const cw=ci=>ci<lead?(lead>1&&ci===0?90:leadW-(lead>1?90:0)):colW;
+  const fit=(t,max)=>{let s=t;while(s.length>1&&x.measureText(s).width>max)s=s.slice(0,-1);return s===t?t:s.slice(0,-1)+'…';};
+  /* Header row. */
+  x.font='700 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';
+  heads.forEach((h,ci)=>{x.textAlign=ci<lead?'left':'center';
+    x.fillText(fit(h,cw(ci)-8),ci<lead?colX(ci)+6:colX(ci)+colW/2,top+44);});
+  rows.forEach((r,ri)=>{
+    const y=top+rowH*(ri+1);
+    r.forEach((c,ci)=>{
+      const cx=colX(ci),w=cw(ci);
+      if(ci<lead){x.textAlign='left';x.font='800 28px system-ui,sans-serif';x.fillStyle='#fff';
+        x.fillText(fit(c.main,w-10),cx+6,y+44);return;}
+      if(c.bg){x.fillStyle=c.bg;
+        if(x.roundRect){x.beginPath();x.roundRect(cx+3,y+3,w-6,rowH-6,8);x.fill();}else x.fillRect(cx+3,y+3,w-6,rowH-6);}
+      if(c.patch){x.fillStyle='#a855f7';x.fillRect(cx+3,y+rowH-8,w-6,5);}
+      x.textAlign='center';x.fillStyle=c.ink||'rgba(255,255,255,.5)';
+      x.font='800 26px system-ui,sans-serif';x.fillText(fit(c.main,w-12),cx+w/2,y+(c.sub?33:44));
+      if(c.sub){x.font='600 18px system-ui,sans-serif';x.fillText(fit(c.sub,w-12),cx+w/2,y+57);}
+    });
+  });
+  x.textAlign='center';x.font='700 30px system-ui,sans-serif';x.fillStyle='#4ade80';
+  x.fillText('gameweekedge.co.uk',W/2,H-56);
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  await saveBlob(blob,'gameweek-edge-fixtures'+(gws.length?'-gw'+gws[0]+'-'+gws[gws.length-1]:'')+'.png','image/png','Fixture grid downloaded');
+}
+/* The clubs menu's pill: "All clubs", "6 clubs" or "No clubs". */
+function fdrTeamsLabel(total,hiddenN){
+  const n=Math.max(0,total-hiddenN);
+  return n>=total?'All clubs':n===0?'No clubs':n+(n===1?' club':' clubs');
+}
 function renderFdr(view){
   const tb=document.getElementById('fdr-tbody');if(tb)tb.innerHTML=fdrBodyHtml(view);
   /* The summary is the same data, so it must never lag the grid — it is
      re-rendered on every lens change and every team toggle, not once. */
   const ent=document.getElementById('fdr-entry');if(ent)ent.innerHTML=fdrEntryHtml(view);
-  document.querySelectorAll('#fdr-view .seg-b').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view));
+  document.querySelectorAll('#fdr-view [data-view]').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view));
   const note=document.getElementById('fdr-note');
   if(note)note.innerHTML=view==='attack'
     ?'Greener = easier to <b>score</b>: from each team’s modelled expected goals. '
@@ -13467,58 +13610,56 @@ async function hydrateFixtures(host){
           '<p class="dl-sub" style="margin-top:8px">These complement the double/blank calls on the Chips page. They do not replace them.</p></div>'
       : '';
 
+    /* One toolbar row: window, start, lens, rows and clubs as menus, Save
+       image on the right. These were four rows of segmented controls and
+       twenty club chips above the grid, so the first fixture sat a screen
+       down on a phone. Same controls, same state, same URL. */
+    const winLabel=(WINS.find(p=>p[0]===curWin)||[0,curWin+' GW'])[1];
+    const viewLabel=v=>(VIEWS.find(x=>x[0]===v)||VIEWS[0])[1];
+    const fromOpts=Array.from({length:Math.max(1,38-startGw)},(_,i)=>startGw+i)
+      .map(g=>[g,g===startGw?'GW'+g+' (now)':'GW'+g]);
+    const toolbar=tkbBar(
+      tkbMenu('fdr-win-m',winLabel,'<div id="fdr-win">'+tkbOpts('win',WINS,curWin)+'</div>',{aria:'Window length: '+winLabel})+
+      tkbMenu('fdr-from-m','From GW'+from,'<div id="fdr-from">'+tkbOpts('from',fromOpts,from)+'</div>',{aria:'Window starts at GW'+from})+
+      tkbMenu('fdr-view-m',viewLabel(curView),'<div id="fdr-view">'+tkbOpts('view',VIEWS,curView)+'</div>',{aria:'Lens: '+viewLabel(curView)})+
+      /* Row source. Offered only when there is a squad to show, on the same
+         condition as the "My teams" option: a control that switches to an
+         empty table is worse than no control. */
+      (squadPicks&&squadPicks.length
+        ? tkbMenu('fdr-rows-m',curRows==='squad'?squadLabel:'Clubs',
+            '<div id="fdr-rows">'+tkbOpts('rows',[['clubs','Clubs'],['squad',squadLabel]],curRows)+'</div>',{aria:'Rows'})
+        : '')+
+      /* The club filter belongs to the club rows. In squad mode the rows are
+         the squad, so hiding clubs would silently drop players from a table
+         headed "My squad": a filter that edits your own team. */
+      (curRows==='squad'?'':
+        tkbMenu('fdr-teams-m',fdrTeamsLabel(teams.length,hidden.size),
+          '<div class="fdr-teams" id="fdr-teams">'+
+            '<button class="tchip tchip-act" data-tf="all">All</button>'+
+            (ownedClubs&&ownedClubs.size?'<button class="tchip tchip-act" data-tf="mine">My teams</button>':'')+
+            teams.map(t=>'<button class="tchip'+(hidden.has(t.id)?' off':'')+'" data-team="'+t.id+'" aria-pressed="'+(hidden.has(t.id)?'false':'true')+'">'+crest(b,t.id,14)+esc(t.short_name)+'</button>').join('')+
+          '</div>',{aria:'Clubs shown'})),
+      '<button class="btn btn-ghost btn-sm" id="fdr-share" type="button" aria-label="Save the grid as an image">'+svg(ICON.arrows,'width="14" height="14"')+'<span class="tkb-bt"> Save image</span></button>');
     host.innerHTML=
-      '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0: GW'+gws[0]+'–GW'+gws[gws.length-1]+'</div>'+
-        '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(p=>'<button class="seg-b'+(p[0]===curWin?' on':'')+'" data-win="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>'+
-        /* Where the window STARTS. Fixed horizons from today cannot answer
-           "how does GW12-17 look", which is the question behind every wildcard
-           plan and every fixture graphic someone shares. */
-        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
-          '<label class="dl-sub" for="fdr-from">From</label>'+
-          '<select class="modal-in" id="fdr-from" style="max-width:104px">'+
-            Array.from({length:Math.max(1,38-startGw)},(_,i)=>startGw+i)
-              .map(g=>'<option value="'+g+'"'+(g===from?' selected':'')+'>GW'+g+'</option>').join('')+
-          '</select>'+
-          (from!==startGw?'<button class="btn btn-ghost btn-sm" id="fdr-now">Back to now</button>':'')+
-        '</div>'+
-        '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+VIEWS.map(v=>'<button class="seg-b'+(v[0]===curView?' on':'')+'" data-view="'+v[0]+'">'+v[1]+'</button>').join('')+'</div>'+
-        /* Row source. Offered only when there is a squad to show, on the same
-           condition as the "My teams" chip — a control that switches to an
-           empty table is worse than no control. */
+      '<div class="card mb-20"><div class="card-title tkb-title"><span>Fixture Difficulty 2.0: GW'+gws[0]+'–GW'+gws[gws.length-1]+'</span>'+tkbLegend()+'</div>'+
         /* A team is linked but there is nothing to put in the rows: the
            deadline has not passed, so the API publishes no squad, and no
            draft has been saved on this device either. Say so. The control
-           stays hidden — switching to an empty table is worse than no
-           control — but hiding it with no explanation is how this looked
+           stays hidden, because switching to an empty table is worse than
+           no control, but hiding it with no explanation is how this looked
            like a broken feature rather than an empty one. */
         (!squadPicks&&_mid
           ? '<div class="dl-sub" style="margin-bottom:10px">Your own players can fill these rows. '+
             'FPL does not publish a squad until the gameweek deadline passes, so until then '+
             'save a team in the <b>Squad Planner</b> and it appears here as <b>My draft</b>.</div>'
           : '')+
-        (squadPicks&&squadPicks.length
-          ? '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
-            /* Labelled and on its own line. Both controls are segmented and
-               .seg is inline-flex, so unlabelled and adjacent they read as one
-               row of seven and "Clubs" looks like a sixth lens. It is a
-               different axis: the lens is what a cell means, this is what a
-               row is. */
-            '<label class="dl-sub" for="fdr-rows">Rows</label>'+
-            '<div class="seg" id="fdr-rows">'+
-            [['clubs','Clubs'],['squad',squadLabel]].map(r=>'<button class="seg-b'+(r[0]===curRows?' on':'')+
-              '" data-rows="'+r[0]+'">'+r[1]+'</button>').join('')+'</div></div>'
+        toolbar+
+        (curRows==='squad'&&squadFrom==='draft'
+          ? '<p class="dl-sub" style="margin:0 0 10px">These rows are the <b>draft saved on this device</b>. FPL publishes no squad until the gameweek deadline passes, and a draft names no captain or bench.</p>'
           : '')+
-        /* The club filter belongs to the club rows. In squad mode the rows
-           are the squad, so hiding clubs would silently drop players from a
-           table headed "My squad" — a filter that edits your own team. */
-        (curRows==='squad'?'':
-        '<div class="fdr-teams" id="fdr-teams">'+
-          '<button class="tchip tchip-act" data-tf="all">All</button>'+
-          (ownedClubs&&ownedClubs.size?'<button class="tchip tchip-act" data-tf="mine">My teams</button>':'')+
-          teams.map(t=>'<button class="tchip'+(hidden.has(t.id)?' off':'')+'" data-team="'+t.id+'">'+crest(b,t.id,14)+esc(t.short_name)+'</button>').join('')+
-        '</div>')+
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
-        '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall: from each fixture’s modelled win odds. </span>'+
+        '<details class="pr-about fdr-about"><summary>About this grid</summary>'+
+        '<div class="dl-sub" style="margin-top:6px"><span id="fdr-note">Greener is easier overall: from each fixture’s modelled win odds. </span>'+
         'Choose where the window <b>starts</b> and how long it runs (6 / 10 / 15 GWs, or the whole <b>Season</b>), and toggle the lens. Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. '+
         (squadPicks&&squadPicks.length
           ?'<b>Clubs</b> shows all twenty, re-ranked <b>easiest run first</b>; <b>'+squadLabel+'</b> shows your fifteen in position order, with price, so you can read your own run the way you read the league. '+
@@ -13529,24 +13670,26 @@ async function hydrateFixtures(host){
         'A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>): the window to buy that team’s players. '+
         'Each cell shows the <b>projection for that lens</b>, win chance, expected goals, clean-sheet odds or the official 1–5 rating, with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'. '+
-        'A <b>double gameweek</b> shows both fixtures in one cell and is marked <b>×2</b>. Its expected goals, clean sheets and FDR count <b>both</b> games in the Total; the colour grades the opponents themselves, so two hard fixtures stay hard however many of them there are.</div>'+
+        'A <b>double gameweek</b> shows both fixtures in one cell and is marked <b>×2</b>. Its expected goals, clean sheets and FDR count <b>both</b> games in the Total; the colour grades the opponents themselves, so two hard fixtures stay hard however many of them there are.</div></details>'+
       '</div>'+
       '<div id="fdr-entry">'+fdrEntryHtml(curView)+'</div>'+
       planCard+swCard+chainCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
-    if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;writeUrl();renderFdr(curView);}});
+    if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('[data-view]');if(btn){curView=btn.dataset.view;writeUrl();renderFdr(curView);
+      tkbSet('fdr-view-m','view',curView,viewLabel(curView));}});
     /* Rows rebuild rather than re-render: the header row and the club filter
        both change with the row source, and they live outside #fdr-tbody. */
     const rseg=host.querySelector('#fdr-rows');
-    if(rseg)rseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');
+    if(rseg)rseg.addEventListener('click',e=>{const btn=e.target.closest('[data-rows]');
       if(btn&&btn.dataset.rows!==curRows){curRows=btn.dataset.rows;
         track('fixtures_rows',{rows:curRows});build();}});
     const wseg=host.querySelector('#fdr-win');
-    if(wseg)wseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){const w=+btn.dataset.win;if(w!==curWin){curWin=w;build();}}});
+    if(wseg)wseg.addEventListener('click',e=>{const btn=e.target.closest('[data-win]');if(btn){const w=+btn.dataset.win;if(w!==curWin){curWin=w;build();}}});
     const fsel=host.querySelector('#fdr-from');
-    if(fsel)fsel.addEventListener('change',()=>{const g=parseInt(fsel.value,10);if(g&&g!==curFrom){curFrom=g;build();}});
-    const fnow=host.querySelector('#fdr-now');
-    if(fnow)fnow.addEventListener('click',()=>{if(curFrom!==startGw){curFrom=startGw;build();}});
+    if(fsel)fsel.addEventListener('click',e=>{const btn=e.target.closest('[data-from]');if(!btn)return;
+      const g=parseInt(btn.dataset.from,10);if(g&&g!==curFrom){curFrom=g;build();}});
+    const fshare=host.querySelector('#fdr-share');
+    if(fshare)fshare.addEventListener('click',()=>shareFdrGrid(viewLabel(curView)));
     /* Team filter — toggle clubs in/out of the grid without a full rebuild
        (only the tbody re-renders, so it stays snappy on the Season view). */
     const tf=host.querySelector('#fdr-teams');
@@ -13556,7 +13699,9 @@ async function hydrateFixtures(host){
       else if(e.target.closest('[data-tf="all"]'))hidden.clear();
       else if(e.target.closest('[data-tf="mine"]')&&ownedClubs){hidden.clear();teams.forEach(t=>{if(!ownedClubs.has(t.id))hidden.add(t.id);});}
       else return;
-      tf.querySelectorAll('[data-team]').forEach(c=>c.classList.toggle('off',hidden.has(+c.dataset.team)));
+      tf.querySelectorAll('[data-team]').forEach(c=>{const off=hidden.has(+c.dataset.team);
+        c.classList.toggle('off',off);c.setAttribute('aria-pressed',off?'false':'true');});
+      const tv=host.querySelector('#fdr-teams-m .tkb-v');if(tv)tv.textContent=fdrTeamsLabel(teams.length,hidden.size);
       renderFdr(curView);
     });
   }
@@ -14007,7 +14152,10 @@ function renderPlayerTable(){
   }else if(cards){
     view.innerHTML='<div class="pl-cards">'+shown.map(e=>plCard(b,xpMap,e)).join('')+'</div>';
   }else{
-    const cols=plLensCols(plCols(b,xpMap,S.ctx),plLens(PL_STATE.lens));
+    /* Club and position live in the player cell now, so their own columns
+       go: two fewer columns is the difference between a phone showing a
+       name and three figures or a name and one. They stay sortable by link. */
+    const cols=plLensCols(plCols(b,xpMap,S.ctx),plLens(PL_STATE.lens)).filter(c=>c.k!=='team'&&c.k!=='pos');
     const head='<thead><tr>'+cols.map(c=>{
       const lk=plColLocked(c);
       const active=!lk&&c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
@@ -14026,7 +14174,7 @@ function renderPlayerTable(){
     const body='<tbody>'+shown.map(e=>'<tr data-id="'+e.id+'">'+cols.map(c=>
       plColLocked(c)
         ? '<td class="'+(c.num?'num ':'')+'lk">'+plLockCell()+'</td>'
-        : '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
+        : '<td class="'+(c.num?'num':'')+(c.k===PL_STATE.k&&c.k!=='web_name'?' sorted':'')+'">'+(c.k==='web_name'?pcell(b,e):c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
     view.innerHTML='<div class="pl-scroll"><table class="ptable" data-tbl="model" data-export="1">'+head+body+'</table></div>';
   }
   const cnt=document.getElementById('pl-count');
@@ -14042,21 +14190,16 @@ function renderPlayerTable(){
         : '')+
       (PL_STATE.lens==='all'?' Tap a heading to sort, a row for the full profile.':'');
   }
-  /* The bar scrolls sideways, so the selected lens can sit off-screen with
-     nothing on show marked active — the table then looks filtered for no
-     visible reason. Bring it back into view on every render. */
-  const on=document.querySelector('#pl-lensbar .lensbtn.on');
-  if(on&&on.scrollIntoView)try{on.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
 }
 /* The lens bar. A locked lens is shown, not hidden — the same argument as a
    locked column: you cannot want what you cannot see. Selecting one still
    works, and lands on a table where the point of the lens is behind a lock. */
 function plLensBar(){
-  return '<div class="lensbar" id="pl-lensbar">'+PL_LENSES.map(l=>{
+  return tkbMenu('pl-lens-m',plLens(PL_STATE.lens).label,'<div id="pl-lensbar">'+PL_LENSES.map(l=>{
     const on=l.id===PL_STATE.lens,lk=plLensLocked(l);
-    return '<button class="lensbtn'+(on?' on':'')+(lk?' lk':'')+'" data-lens="'+l.id+'">'+
+    return '<button type="button" class="tkb-o'+(on?' on':'')+(lk?' lk':'')+'" data-lens="'+l.id+'">'+
       (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(l.label)+'</button>';
-  }).join('')+'</div>';
+  }).join('')+'</div>',{key:'View',aria:'Lens: '+plLens(PL_STATE.lens).label});
 }
 /* Moving to a lens takes its sort with it, but only when the reader can
    actually have it — a free reader on a Pro lens keeps a sort that works. */
@@ -14116,61 +14259,57 @@ async function hydrateAllPlayers(host){
   window._pl={b,xpMap,ctx};
   if(PL_LENS_PENDING)plApplyLensSort(plLens(PL_STATE.lens));
   plReadUrl();
-  const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
-    .map(t=>'<option value="'+t.id+'"'+(t.id===PL_STATE.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
-  host.innerHTML='<div class="card">'+cardHead('Players',
-    '<button class="btn btn-ghost btn-sm" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button>')+
-    plLensBar()+
+  /* One toolbar: search, the lens, club, position and layout as menus,
+     Export on the right. It replaces a scrolling lens bar, a search row, a
+     layout switch and the position pills, which stacked seven rows of
+     controls above the first player on a phone. */
+  const clubs=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
+  const clubName=id=>{const t=clubs.find(x=>x.id===id);return t?t.name:'All clubs';};
+  const posN=t=>b.elements.filter(e=>e.element_type===t).length;
+  const POSL=[[0,'All positions'],[1,'GKP · '+posN(1)],[2,'DEF · '+posN(2)],[3,'MID · '+posN(3)],[4,'FWD · '+posN(4)]];
+  const posName=p=>p?['','GKP','DEF','MID','FWD'][p]:'All positions';
+  const LAYOUTS=[['table','Table'],['cards','Cards'],['chart','Value']];
+  const layoutName=v=>(LAYOUTS.find(x=>x[0]===v)||LAYOUTS[0])[1];
+  host.innerHTML='<div class="card">'+cardHead('Players','')+
+    '<div id="pl-tkb">'+tkbBar(
+      '<input id="pl-q" class="modal-in tkb-search" type="search" placeholder="Search player…" autocomplete="off" aria-label="Search players">'+
+      plLensBar()+
+      tkbMenu('pl-team-m',clubName(PL_STATE.team),'<div id="pl-team">'+tkbOpts('team',[[0,'All clubs']].concat(clubs.map(t=>[t.id,t.name])),PL_STATE.team)+'</div>',{aria:'Club'})+
+      tkbMenu('pl-pos-m',posName(PL_STATE.pos),'<div id="pl-pos">'+tkbOpts('pos',POSL,PL_STATE.pos)+'</div>',{aria:'Position'})+
+      tkbMenu('pl-layout-m',layoutName(PL_STATE.view),'<div id="pl-viewseg">'+tkbOpts('v',LAYOUTS,PL_STATE.view)+'</div>',{aria:'Layout',end:true})+
+      '<button type="button" class="pl-clear" id="pl-clear" hidden>Clear ×</button>',
+      '<button class="btn btn-ghost btn-sm tkb-export" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button>')+'</div>'+
     '<p class="dl-sub" id="pl-lensnote" style="margin:0 0 10px"></p>'+
     preseasonNote(b,'the xP column is provisional')+
-    '<div class="pl-filters">'+
-      '<input id="pl-q" class="modal-in" type="search" placeholder="Search player…" autocomplete="off" aria-label="Search players" style="flex:2 1 150px">'+
-      '<select id="pl-team" class="modal-in" aria-label="Filter by club" style="flex:1 1 120px">'+teamOpts+'</select>'+
-      '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button><button class="seg-b'+(PL_STATE.view==='chart'?' on':'')+'" data-v="chart">Value</button></div>'+
-    '</div>'+
-    '<div class="pl-poschips" id="pl-poschips" role="group" aria-label="Filter by position">'+
-      [[1,'GKP'],[2,'DEF'],[3,'MID'],[4,'FWD']].map(([t,l])=>{
-        const n=b.elements.filter(e=>e.element_type===t).length;
-        return '<button type="button" class="pos-pill p'+t+(PL_STATE.pos===t?' on':'')+'" data-pos="'+t+'"'+
-          ' aria-pressed="'+(PL_STATE.pos===t?'true':'false')+'">'+l+' <b class="num">'+n+'</b></button>';
-      }).join('')+
-      '<button type="button" class="pl-clear" id="pl-clear" hidden>Clear all ×</button>'+
-    '</div>'+
     '<div id="pl-view"></div>'+
     '<div class="dl-sub" id="pl-count" style="margin-top:8px"></div></div>';
   const plSyncFilters=()=>{
-    host.querySelectorAll('#pl-poschips .pos-pill').forEach(x=>{
-      const on=+x.dataset.pos===PL_STATE.pos;
-      x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});
+    tkbSet('pl-team-m','team',PL_STATE.team,clubName(PL_STATE.team));
+    tkbSet('pl-pos-m','pos',PL_STATE.pos,posName(PL_STATE.pos));
     const cl=host.querySelector('#pl-clear');
     if(cl)cl.hidden=!(PL_STATE.pos||PL_STATE.team||PL_STATE.q);
   };
-  /* A link that names a search or a club shows it in the control too. */
+  /* A link that names a search shows it in the box too. */
   if(PL_STATE.q){const q0=host.querySelector('#pl-q');if(q0)q0.value=PL_STATE.q;}
-  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();plSyncFilters();plWriteUrl();renderPlayerTable();});
-  host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;plSyncFilters();plWriteUrl();renderPlayerTable();});
-  host.querySelectorAll('#pl-poschips .pos-pill').forEach(btn=>btn.addEventListener('click',()=>{
-    PL_STATE.pos=PL_STATE.pos===+btn.dataset.pos?0:+btn.dataset.pos;
-    plSyncFilters();plWriteUrl();renderPlayerTable();
-  }));
-  host.querySelector('#pl-clear').addEventListener('click',()=>{
-    PL_STATE.pos=0;PL_STATE.team=0;PL_STATE.q='';
-    const q=host.querySelector('#pl-q');if(q)q.value='';
-    const t=host.querySelector('#pl-team');if(t)t.value='0';
-    plSyncFilters();plWriteUrl();renderPlayerTable();
+  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();
+    const cl=host.querySelector('#pl-clear');if(cl)cl.hidden=!(PL_STATE.pos||PL_STATE.team||PL_STATE.q);
+    plWriteUrl();renderPlayerTable();});
+  host.querySelector('#pl-tkb').addEventListener('click',ev=>{
+    const t=ev.target.closest('[data-team]'),p=ev.target.closest('[data-pos]'),
+      v=ev.target.closest('[data-v]'),l=ev.target.closest('[data-lens]');
+    if(t){PL_STATE.team=+t.dataset.team;plSyncFilters();plWriteUrl();renderPlayerTable();return;}
+    if(p){PL_STATE.pos=+p.dataset.pos;plSyncFilters();plWriteUrl();renderPlayerTable();return;}
+    if(v){PL_STATE.view=v.dataset.v;tkbSet('pl-layout-m','v',PL_STATE.view,layoutName(PL_STATE.view));
+      plWriteUrl();renderPlayerTable();return;}
+    if(l){if(l.dataset.lens!==PL_STATE.lens)historyPoint();
+      plSetLens(l.dataset.lens);tkbSet('pl-lens-m','lens',PL_STATE.lens,plLens(PL_STATE.lens).label);
+      renderPlayerTable();return;}
+    if(ev.target.closest('#pl-clear')){
+      PL_STATE.pos=0;PL_STATE.team=0;PL_STATE.q='';
+      const q=host.querySelector('#pl-q');if(q)q.value='';
+      plSyncFilters();plWriteUrl();renderPlayerTable();}
   });
   plSyncFilters();
-  host.querySelectorAll('#pl-viewseg .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
-    PL_STATE.view=btn.dataset.v;
-    host.querySelectorAll('#pl-viewseg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
-    plWriteUrl();renderPlayerTable();
-  }));
-  host.querySelectorAll('#pl-lensbar .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
-    if(btn.dataset.lens!==PL_STATE.lens)historyPoint();
-    plSetLens(btn.dataset.lens);
-    host.querySelectorAll('#pl-lensbar .lensbtn').forEach(x=>x.classList.toggle('on',x===btn));
-    renderPlayerTable();
-  }));
   host.querySelector('#pl-view').addEventListener('click',ev=>{
     const th=ev.target.closest('th');
     /* A locked heading has no data-k, so it can never reach the sort; the
@@ -15072,9 +15211,13 @@ async function hydratePriceMoves(host){
   const usable=b.elements.map(e=>({e,mv:fplPriceMove(e)}))
     .filter(x=>x.mv&&!priceLocked(x.mv,now)&&x.mv.dir!=='flat');
 
-  const byPct=(dir)=>usable.filter(x=>x.mv.dir===dir)
+  /* The toolbar's filters, applied BEFORE the top-12 cut so a search finds
+     a player who sits lower down the list, not only one already on screen. */
+  const F=MEM._prF=MEM._prF||{q:'',pos:0,dir:'both'};
+  const keep=e=>(!F.pos||e.element_type===F.pos)&&
+    (!F.q||(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(F.q)>=0);
+  const byPct=(dir)=>usable.filter(x=>x.mv.dir===dir&&keep(x.e))
     .sort((a,c)=>Math.abs(c.mv.pct)-Math.abs(a.mv.pct)).slice(0,12);
-  const offRise=byPct('rise'),offFall=byPct('fall');
   /* Today, +1 and +2 in one cell. The projections are the new capability and
      a single number hides it — a player at 32.5% today and 72.5% in two days
      is a different proposition from one flat at 30%. */
@@ -15089,23 +15232,27 @@ async function hydratePriceMoves(host){
   const offStatus=e=>{const mv=fplPriceMove(e);
     const next=mv.proj&&mv.proj.length?mv.proj[0].pct:mv.pct;
     return priceChip(priceStatus(next,'official'));};
+  /* An empty list says why: nobody matches the filters, or nobody is near
+     a move in that direction at all, which is a finding in itself. */
+  const none=up=>'<div class="dl-sub">'+(F.q||F.pos?'No players match these filters.'
+    :'Nobody is close to a '+(up?'rise':'fall')+' right now.')+'</div>';
   const offTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-    dlTable(b,arr.map(x=>x.e),['To a move','Today → +2d'],e=>{
+    (!arr.length?none(up):dlTable(b,arr.map(x=>x.e),['To a move','Today → +2d'],e=>{
       const mv=fplPriceMove(e);
       return [priceBarHtml(mv.pct/100)+'<span class="pr-pct '+(up?'pos':'neg')+'">'+
         (mv.pct>0?'+':'')+mv.pct.toFixed(1)+'%</span>', projCell(mv)];
-    },offStatus)+'</div>';
+    },offStatus))+'</div>';
 
   /* The threshold estimate, kept as the fallback. */
   const scored=b.elements.map(e=>({e,pc:priceChangeProb(e,total)}));
-  const riseP=scored.filter(x=>x.pc.dir==='rise').sort((a,c)=>c.pc.prob-a.pc.prob||c.pc.net-a.pc.net).slice(0,12);
-  const fallP=scored.filter(x=>x.pc.dir==='fall').sort((a,c)=>c.pc.prob-a.pc.prob||a.pc.net-c.pc.net).slice(0,12);
+  const riseP=()=>scored.filter(x=>x.pc.dir==='rise'&&keep(x.e)).sort((a,c)=>c.pc.prob-a.pc.prob||c.pc.net-a.pc.net).slice(0,12);
+  const fallP=()=>scored.filter(x=>x.pc.dir==='fall'&&keep(x.e)).sort((a,c)=>c.pc.prob-a.pc.prob||a.pc.net-c.pc.net).slice(0,12);
   const probTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-    dlTable(b,arr.map(x=>x.e),['Threshold','Net '+(up?'in':'out')],e=>{
+    (!arr.length?none(up):dlTable(b,arr.map(x=>x.e),['Threshold','Net '+(up?'in':'out')],e=>{
       const pc=priceChangeProb(e,total);
       return [priceBarHtml(pc.progress)+'<span class="pr-pct '+(up?'pos':'neg')+'">'+pc.prob+'%</span>',
         fmtK(Math.abs(pc.net))];
-    },e=>{const pc=priceChangeProb(e,total);return priceChip(priceStatus(pc.prob,'estimate',pc.dir));})+'</div>';
+    },e=>{const pc=priceChangeProb(e,total);return priceChip(priceStatus(pc.prob,'estimate',pc.dir));}))+'</div>';
 
   /* Momentum view kept as a secondary signal. */
   const risers=b.elements.slice().sort((a,c)=>score(c)-score(a)).slice(0,8);
@@ -15154,6 +15301,14 @@ async function hydratePriceMoves(host){
   const estimateIntro='<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next update'+
       whenTxt+
       ', from net transfers against an ownership-scaled threshold. FPL is not publishing its own progress figure right now, so these are <b>our estimates</b>: its exact algorithm is not public.</div>';
+  const PR_DIRS=[['both','Rises and falls'],['rise','Rises only'],['fall','Falls only']];
+  const posName=p=>p?['','GKP','DEF','MID','FWD'][p]:'All positions';
+  const dirName=d=>(PR_DIRS.find(x=>x[0]===d)||PR_DIRS[0])[1];
+  const listsHtml=()=>haveOfficial
+    ? (F.dir!=='fall'?offTbl('Closest to a rise: FPL\u2019s own figure',byPct('rise'),true):'')+
+      (F.dir!=='rise'?offTbl('Closest to a fall: FPL\u2019s own figure',byPct('fall'),false):'')
+    : (F.dir!=='fall'?probTbl('Likely risers tonight: estimate',riseP(),true):'')+
+      (F.dir!=='rise'?probTbl('Likely fallers tonight: estimate',fallP(),false):'');
   /* The explanation folds away: it matters once, and three paragraphs of
      it stood between the reader and the first row every visit. Whose
      figure each table shows is still in that table's own title. */
@@ -15162,15 +15317,21 @@ async function hydratePriceMoves(host){
       (haveOfficial?officialIntro:estimateIntro)+
       lensLink('price','Tonight’s move and the net transfers behind it, for every player at once.')+
     '</details>'+
+    '<div id="pr-tkb">'+tkbBar(
+      '<input id="pr-q" class="modal-in tkb-search" type="search" placeholder="Search player…" autocomplete="off" aria-label="Search players" value="'+esc(F.q)+'">'+
+      tkbMenu('pr-pos-m',posName(F.pos),'<div>'+tkbOpts('pos',[[0,'All positions'],[1,'GKP'],[2,'DEF'],[3,'MID'],[4,'FWD']],F.pos)+'</div>',{aria:'Position'})+
+      tkbMenu('pr-dir-m',dirName(F.dir),'<div>'+tkbOpts('dir',PR_DIRS,F.dir)+'</div>',{aria:'Rises or falls',end:true}),'')+'</div>'+
+    /* Said on the page, not inside the fold: a player missing from the
+       list for a reason the reader cannot see looks like a bug. */
+    (haveOfficial&&lockedCount?'<p class="dl-sub" style="margin:0 0 10px">'+lockedCount+' player'+(lockedCount===1?' is':'s are')+
+      ' locked and cannot move price yet, so '+(lockedCount===1?'that player is':'they are')+' left out.</p>':'')+
+    '<div id="pr-lists">'+listsHtml()+'</div>'+
     (haveOfficial
-      ? offTbl('Closest to a rise: FPL\u2019s own figure',offRise,true)+
-        offTbl('Closest to a fall: FPL\u2019s own figure',offFall,false)+
-        '<div class="card mb-20"><div class="card-title">What this number is</div>'+
+      ? '<div class="card mb-20"><div class="card-title">What this number is</div>'+
         '<p class="dl-sub" style="margin:0">FPL publishes, for every player, how far transfer activity has carried them toward a price change, and projects it one and two days ahead. That is the <b>Today \u2192 +2d</b> column. Positive is toward a rise, negative toward a fall. '+
         'We show the figure as published and rank by it, and the bar draws it against 100%; we do <b>not</b> claim to know the level at which a price actually moves, because FPL does not state one. '+
         'The projection is <b>theirs, and it is a projection</b>, transfer activity can turn before it lands.</p></div>'
-      : probTbl('Likely risers tonight: estimate',riseP,true)+
-        probTbl('Likely fallers tonight: estimate',fallP,false))+
+      : '')+
     (haveOfficial?'':'<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
       '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership. Approximated here as ~30% of current owners (floor 20k). The bar shows how far net transfers have carried a player toward that threshold, and the % maps the same progress through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys \u2192 higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day'+
       (nextPC?', next at <b>'+esc(nextPC.label)+'</b> in your timezone':' overnight UK time')+'.</p></div>')+
@@ -15180,6 +15341,15 @@ async function hydratePriceMoves(host){
     valueBoardCard(b,fixtures,6)+
     valueCards+
     (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
+  const redraw=()=>{const l=host.querySelector('#pr-lists');if(l)l.innerHTML=listsHtml();};
+  let qt=null;
+  const qi=host.querySelector('#pr-q');
+  if(qi)qi.addEventListener('input',e=>{clearTimeout(qt);qt=setTimeout(()=>{F.q=e.target.value.trim().toLowerCase().slice(0,40);redraw();},120);});
+  const tk=host.querySelector('#pr-tkb');
+  if(tk)tk.addEventListener('click',e=>{const o=e.target.closest('.tkb-o');if(!o)return;
+    if(o.dataset.pos!=null){F.pos=+o.dataset.pos;tkbSet('pr-pos-m','pos',F.pos,posName(F.pos));}
+    else if(o.dataset.dir!=null){F.dir=o.dataset.dir;tkbSet('pr-dir-m','dir',F.dir,dirName(F.dir));}
+    redraw();});
   prStartClock();
 }
 
@@ -15395,6 +15565,77 @@ function priceStatus(p,kind,dir){
 function priceChip(st){
   return '<span class="pr-chip '+st.tone+(st.strong?' strong':'')+'">'+esc(st.label)+'</span>';
 }
+/* ── Table kit: the toolbar's pieces ──────────────────────
+   tkbMenu builds one menu: a pill showing the current choice that opens a
+   short list. tkbOpts builds that list from [value,label] pairs, marking
+   the current one; each option carries data-<key>="value" so the page that
+   owns the menu wires its own click. tkbBar lays menus left, actions right. */
+function pcell(b,e,opts){
+  opts=opts||{};
+  const bits=[teamShort(b,e.team),posShort(b,e.element_type)];
+  if(opts.price)bits.push(money(e.now_cost));
+  return '<span class="pc">'+avatar(b,e,opts.px||28)+'<span class="pc-t">'+
+    '<span class="pc-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="pc-sub">'+crest(b,e.team,12)+esc(bits.join(' · '))+'</span></span></span>';
+}
+function tkbMenu(id,value,body,opts){
+  opts=opts||{};
+  return '<details class="tkb-m'+(opts.end?' tkb-end':'')+'" id="'+id+'">'+
+    '<summary class="tkb-s"'+(opts.aria?' aria-label="'+esc(opts.aria)+'"':'')+'>'+
+      (opts.key?'<span class="tkb-k">'+esc(opts.key)+'</span>':'')+'<span class="tkb-v">'+esc(value)+'</span></summary>'+
+    '<div class="tkb-pop"'+(opts.popId?' id="'+opts.popId+'"':'')+'>'+body+'</div></details>';
+}
+function tkbOpts(key,pairs,cur){
+  return pairs.map(p=>'<button type="button" class="tkb-o'+(String(p[0])===String(cur)?' on':'')+
+    '" data-'+key+'="'+esc(String(p[0]))+'">'+esc(p[1])+'</button>').join('');
+}
+function tkbBar(left,right){
+  return '<div class="tkb"><div class="tkb-l">'+left+'</div>'+(right?'<div class="tkb-r">'+right+'</div>':'')+'</div>';
+}
+/* Set a menu's shown value and its ticked option after a change that did
+   not rebuild the toolbar. */
+function tkbSet(id,key,val,label,keepOpen){
+  const m=document.getElementById(id);if(!m)return;
+  m.querySelectorAll('[data-'+key+']').forEach(o=>o.classList.toggle('on',o.getAttribute('data-'+key)===String(val)));
+  const v=m.querySelector('.tkb-v');if(v&&label!=null)v.textContent=label;
+  if(!keepOpen)m.open=false;
+}
+/* A Filters menu holds several short choices at once, each under its own
+   small heading, laid out as chips so a phone sees them without scrolling. */
+function tkbSection(title,key,pairs,cur){
+  return '<div class="tkb-sec"><div class="tkb-sh">'+esc(title)+'</div><div class="tkb-chips">'+tkbOpts(key,pairs,cur)+'</div></div>';
+}
+/* Once per page load: one menu open at a time; a tap outside, or Escape,
+   closes it and hands focus back to its pill. */
+let TKB_WIRED=false;
+function tkbWire(){
+  if(TKB_WIRED)return;TKB_WIRED=true;
+  document.addEventListener('toggle',e=>{
+    const d=e.target;if(!d||!d.classList||!d.classList.contains('tkb-m')||!d.open)return;
+    document.querySelectorAll('details.tkb-m[open]').forEach(o=>{if(o!==d)o.open=false;});
+    /* Keep the list on screen: a menu near the right edge of a phone opens
+       leftwards by however much it would have overflowed. */
+    const pop=d.querySelector('.tkb-pop');if(!pop)return;
+    pop.style.marginLeft='';
+    const r=pop.getBoundingClientRect(),vw=document.documentElement.clientWidth;
+    if(r.right>vw-8)pop.style.marginLeft=(-(r.right-(vw-8)))+'px';
+    else if(r.left<8)pop.style.marginLeft=(8-r.left)+'px';
+  },true);
+  document.addEventListener('click',e=>{
+    document.querySelectorAll('details.tkb-m[open]').forEach(o=>{if(!o.contains(e.target))o.open=false;});
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Escape')return;
+    const o=document.querySelector('details.tkb-m[open]');
+    if(o){o.open=false;const sm=o.querySelector('summary');if(sm)sm.focus();}
+  });
+}
+/* The Easy-to-Hard key for any grid coloured on the fdr-1..5 ramp. */
+function tkbLegend(){
+  return '<span class="tkb-legend" role="img" aria-label="Colour key: green is easy, red is hard">Easy'+
+    [1,2,3,4,5].map(n=>'<i class="fdr-'+n+'"></i>').join('')+'Hard</span>';
+}
+
 function dlTable(b,list,heads,metrics,tagFn){
   const rows=list.map((e,i)=>{
     const m=metrics(e);
@@ -17625,7 +17866,7 @@ const HM_OWN_BANDS=[
 ];
 const HM_SORTS=[{id:'total',label:'Total'},{id:'mean',label:'Mean'},{id:'var',label:'Variance'}];
 const HM_STEPS=6;
-const HM_ROW_H=32;
+const HM_ROW_H=40;
 const HM_VIRTUAL_CELLS=2000;
 const HM_DEFAULT_SPAN=6;
 const HM_LIVE_TTL=2*60e3;
@@ -17739,25 +17980,30 @@ async function hydrateHeatmap(host){
   const gws=[];for(let g=r.from;g<=r.to;g++)gws.push(g);
   const S=HM_STATE;
   const gwOpts=sel=>Array.from({length:last},(_,i)=>'<option value="'+(i+1)+'"'+(i+1===sel?' selected':'')+'>GW'+(i+1)+'</option>').join('');
-  const teamOpts='<option value="0">All clubs</option>'+Object.values(b.teams).sort((x,y)=>x.name.localeCompare(y.name))
-    .map(t=>'<option value="'+t.id+'"'+(t.id===S.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
-  const opt=(list,cur)=>list.map(x=>'<option value="'+x.id+'"'+(x.id===cur?' selected':'')+'>'+esc(x.label)+'</option>').join('');
-  const controls=
-    '<div class="hm-controls">'+
-      '<select class="modal-in" id="hm-metric" aria-label="Metric">'+opt(HM_METRICS,S.metric)+'</select>'+
-      '<span class="hm-range"><select class="modal-in" id="hm-from" aria-label="First gameweek">'+gwOpts(S.from)+'</select><span class="dl-sub">to</span><select class="modal-in" id="hm-to" aria-label="Last gameweek">'+gwOpts(S.to)+'</select></span>'+
-      '<select class="modal-in" id="hm-team" aria-label="Filter by club">'+teamOpts+'</select>'+
-      '<select class="modal-in" id="hm-price" aria-label="Price band">'+opt(HM_PRICE_BANDS,S.price)+'</select>'+
-      '<select class="modal-in" id="hm-own" aria-label="Ownership band">'+opt(HM_OWN_BANDS,S.own)+'</select>'+
-      '<input id="hm-q" class="modal-in" type="search" placeholder="Search player" autocomplete="off" aria-label="Search players" value="'+esc(S.q)+'">'+
-    '</div>'+
-    '<div class="pl-poschips" role="group" aria-label="Filter by position">'+
-      [[1,'GKP'],[2,'DEF'],[3,'MID'],[4,'FWD']].map(([t,l])=>'<button type="button" class="pos-pill p'+t+(S.pos===t?' on':'')+'" data-pos="'+t+'" aria-pressed="'+(S.pos===t?'true':'false')+'">'+l+'</button>').join('')+
-      '<span class="dl-sub" style="margin-left:auto">Sort by</span>'+
-      '<div class="seg" id="hm-sort" role="group" aria-label="Sort rows by">'+HM_SORTS.map(x=>'<button type="button" class="seg-b'+(x.id===S.sort?' on':'')+'" data-sort="'+x.id+'" aria-pressed="'+(x.id===S.sort?'true':'false')+'">'+esc(x.label)+'</button>').join('')+'</div>'+
-      '<button type="button" class="btn btn-ghost btn-sm" id="hm-dir" aria-label="Sort direction">'+(S.dir===1?'Low to high':'High to low')+'</button>'+
-    '</div>';
-  const m=hmMetric(S.metric);
+  const clubs=Object.values(b.teams).sort((x,y)=>x.name.localeCompare(y.name));
+  const lab=(list,id)=>(list.find(x=>x.id===id)||list[0]).label;
+  const pairs=list=>list.map(x=>[x.id,x.label]);
+  const sortLabel=()=>lab(HM_SORTS,S.sort)+(S.dir===1?' ↑':' ↓');
+  const filtLabel=()=>{const n=(S.pos?1:0)+(S.team?1:0)+(S.price&&S.price!=='all'?1:0)+(S.own&&S.own!=='all'?1:0);
+    return n?'Filters · '+n:'Filters';};
+  /* The shared toolbar: the same menus as the Players table, plus the
+     metric and the gameweek range this grid is built on. Five full-width
+     selects and a row of pills used to sit above the grid. */
+  const controls='<div id="hm-tkb">'+tkbBar(
+      '<input id="hm-q" class="modal-in tkb-search" type="search" placeholder="Search player…" autocomplete="off" aria-label="Search players" value="'+esc(S.q)+'">'+
+      tkbMenu('hm-metric-m',lab(HM_METRICS,S.metric),'<div>'+tkbOpts('metric',pairs(HM_METRICS),S.metric)+'</div>',{key:'Stat',aria:'Metric'})+
+      tkbMenu('hm-range-m','GW'+S.from+'–GW'+S.to,'<div class="hm-range-pop"><select class="modal-in" id="hm-from" aria-label="First gameweek">'+gwOpts(S.from)+'</select><span class="dl-sub">to</span><select class="modal-in" id="hm-to" aria-label="Last gameweek">'+gwOpts(S.to)+'</select></div>',{aria:'Gameweeks'})+
+      '<details class="tkb-m tkb-wide" id="hm-filt-m"><summary class="tkb-s" aria-label="Filters"><span class="tkb-v">'+filtLabel()+'</span></summary>'+
+        '<div class="tkb-pop">'+
+          tkbSection('Position','pos',[[0,'All'],[1,'GKP'],[2,'DEF'],[3,'MID'],[4,'FWD']],S.pos)+
+          tkbSection('Price','price',pairs(HM_PRICE_BANDS).map(p=>[p[0],p[0]==='all'?'Any':p[1]]),S.price)+
+          tkbSection('Ownership','own',pairs(HM_OWN_BANDS).map(p=>[p[0],p[0]==='all'?'Any':p[1]]),S.own)+
+          tkbSection('Club','team',[[0,'All']].concat(clubs.map(t=>[t.id,t.short_name])),S.team)+
+        '</div></details>'+
+      tkbMenu('hm-sort-m',sortLabel(),'<div id="hm-sort">'+tkbOpts('sort',pairs(HM_SORTS),S.sort)+
+        '<hr style="border:0;border-top:1px solid var(--border);margin:4px 0">'+tkbOpts('dir',[[-1,'High to low'],[1,'Low to high']],S.dir)+'</div>',{key:'Sort',aria:'Sort rows. Down arrow is high to low',end:true}),
+      '')+'</div>';
+  let m=hmMetric(S.metric);
   const legend='<div class="hm-legend" aria-hidden="true"><span>0</span>'+Array.from({length:HM_STEPS+1},(_,i)=>'<i class="hm-c'+i+'"></i>').join('')+'<span id="hm-max"></span></div>'+
     '<p class="dl-sub" style="margin-top:6px">Colour runs from zero to the largest value in view and the number is always printed, so the scale reads without colour. A dimmed figure is a gameweek the player did not play.</p>';
   host.innerHTML=
@@ -17788,7 +18034,8 @@ async function hydrateHeatmap(host){
     const v=row.values[i],bin=hmBin(v,max);
     return '<td class="hm-c'+bin+(row.played[i]?'':' hm-dnp')+'" title="'+esc(row.name)+', GW'+gws[i]+': '+hmFmt(m,v)+' '+esc(m.label.toLowerCase())+(row.played[i]?'':', did not play')+'">'+hmFmt(m,v)+'</td>';
   };
-  const rowHtml=row=>'<tr><th scope="row" class="hm-name" title="'+esc(row.name)+'">'+esc(row.name)+' <span class="dl-sub">'+esc(teamShort(b,row.team))+' · '+esc(posShort(b,row.pos))+' · £'+row.price.toFixed(1)+'m</span></th>'+
+  const rowHtml=row=>'<tr><th scope="row" class="hm-name" title="'+esc(row.name)+'">'+
+    (b.els[row.id]?pcell(b,b.els[row.id],{px:24,price:true}):esc(row.name))+'</th>'+
     row.values.map((_,i)=>cell(row,i)).join('')+
     '<td class="hm-sum'+(S.sort==='total'?' on':'')+'">'+hmFmt(m,row.total)+'</td><td class="hm-sum'+(S.sort==='mean'?' on':'')+'">'+row.mean.toFixed(1)+'</td><td class="hm-sum'+(S.sort==='var'?' on':'')+'">'+row.var.toFixed(1)+'</td></tr>';
   const spacer=n=>n>0?'<tr class="hm-sp" aria-hidden="true"><td colspan="'+(gws.length+4)+'" style="height:'+(n*HM_ROW_H)+'px"></td></tr>':'';
@@ -17799,6 +18046,9 @@ async function hydrateHeatmap(host){
   };
   const paint=()=>{
     const m2=hmMetric(S.metric);
+    /* The cells format with m, so it follows a metric change too: xG wants
+       two decimals where points want none. */
+    m=m2;
     rows=hmSort(hmRows(b.elements,liveByGw,gws,m2,S),S.sort,S.dir);
     max=rows.reduce((mx,r)=>Math.max(mx,Math.max.apply(null,r.values)),0);
     virtual=rows.length*gws.length>HM_VIRTUAL_CELLS;
@@ -17827,20 +18077,24 @@ async function hydrateHeatmap(host){
   };
   const wire=()=>{
     const on=(id,ev,fn)=>{const el=host.querySelector(id);if(el)el.addEventListener(ev,fn);};
-    on('#hm-metric','change',e=>{S.metric=e.target.value;hmWriteUrl();track('heatmap_metric',{metric:S.metric});paint();});
     const range=()=>{const f=+host.querySelector('#hm-from').value,t=+host.querySelector('#hm-to').value;
       const r2=hmParseRange(Math.min(f,t),Math.max(f,t),last);S.from=r2.from;S.to=r2.to;hmWriteUrl();renderPage('heatmap');};
     on('#hm-from','change',range);on('#hm-to','change',range);
-    on('#hm-team','change',e=>{S.team=+e.target.value;hmWriteUrl();paint();});
-    on('#hm-price','change',e=>{S.price=e.target.value;hmWriteUrl();paint();});
-    on('#hm-own','change',e=>{S.own=e.target.value;hmWriteUrl();paint();});
     let t=null;on('#hm-q','input',e=>{clearTimeout(t);t=setTimeout(()=>{S.q=e.target.value.trim().slice(0,40);hmWriteUrl();paint();},150);});
     host.addEventListener('click',e=>{
-      const pp=e.target.closest('.pos-pill[data-pos]');
-      if(pp){S.pos=S.pos===+pp.dataset.pos?0:+pp.dataset.pos;host.querySelectorAll('.pos-pill[data-pos]').forEach(x=>{const o=+x.dataset.pos===S.pos;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o?'true':'false');});hmWriteUrl();paint();return;}
-      const sb=e.target.closest('#hm-sort .seg-b');
-      if(sb){S.sort=sb.dataset.sort;host.querySelectorAll('#hm-sort .seg-b').forEach(x=>{const o=x.dataset.sort===S.sort;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o?'true':'false');});hmWriteUrl();paint();return;}
-      if(e.target.closest('#hm-dir')){S.dir=S.dir===1?-1:1;e.target.closest('#hm-dir').textContent=S.dir===1?'Low to high':'High to low';hmWriteUrl();paint();return;}
+      const o=e.target.closest('#hm-tkb .tkb-o');
+      if(o){const d=o.dataset;
+        if(d.metric!=null){S.metric=d.metric;tkbSet('hm-metric-m','metric',S.metric,lab(HM_METRICS,S.metric));track('heatmap_metric',{metric:S.metric});}
+        /* Filters stay open between picks: several are usually set together. */
+        else if(d.team!=null){S.team=+d.team;tkbSet('hm-filt-m','team',S.team,null,true);}
+        else if(d.pos!=null){S.pos=+d.pos;tkbSet('hm-filt-m','pos',S.pos,null,true);}
+        else if(d.price!=null){S.price=d.price;tkbSet('hm-filt-m','price',S.price,null,true);}
+        else if(d.own!=null){S.own=d.own;tkbSet('hm-filt-m','own',S.own,null,true);}
+        if(d.team!=null||d.pos!=null||d.price!=null||d.own!=null){
+          const fv=host.querySelector('#hm-filt-m .tkb-v');if(fv)fv.textContent=filtLabel();}
+        else if(d.sort!=null){S.sort=d.sort;tkbSet('hm-sort-m','sort',S.sort,sortLabel());}
+        else if(d.dir!=null){S.dir=+d.dir;tkbSet('hm-sort-m','dir',S.dir,sortLabel());}
+        hmWriteUrl();paint();return;}
       if(e.target.closest('#hm-clear')){S.pos=0;S.team=0;S.price='all';S.own='all';S.q='';hmWriteUrl();renderPage('heatmap');}
     });
   };
@@ -18063,6 +18317,21 @@ function provBonusPts(b,st,fixtures,picks){
    `true`. */
 function fixtureOver(f){
   return !!f&&(f.finished===true||f.finished_provisional===true);
+}
+/* How far a live match has run, from FPL's own `minutes` on the fixture.
+   FPL stops the count at 90, so anything past it reads 90+. pct feeds the
+   thin progress line; spoken is the screen-reader form. */
+function mcMinute(f){
+  const n=Math.max(0,Math.round(Number(f&&f.minutes)||0));
+  if(!n)return {label:'',pct:0,spoken:'kicked off'};
+  const label=n>=90?"90+'":n+"'";
+  return {label,pct:Math.min(100,Math.round(n/90*100)),spoken:(n>=90?'90 plus':n)+' minutes'};
+}
+/* The side that lost a finished match, for greying it out: 'h', 'a', or
+   null for a draw, a match still running or one with no score. */
+function mcLoser(f){
+  if(!fixtureOver(f)||f.team_h_score==null||f.team_a_score==null)return null;
+  return f.team_h_score>f.team_a_score?'a':f.team_h_score<f.team_a_score?'h':null;
 }
 /* Still to be played — the one rule every planning surface should agree on.
    A fixture counts only if it is scheduled into a gameweek at all, which
@@ -26689,7 +26958,9 @@ async function hydrateResults(host){
   };
 
   const badge=f=>fixtureOver(f)?'<span class="badge badge-grey">FT</span>'
-    :f.started?'<span class="badge badge-red">LIVE</span>'
+    :f.started?(()=>{const mm=mcMinute(f);
+      return '<span class="badge badge-red" aria-label="Live, '+esc(mm.spoken)+'">'+
+        (mm.label?'<span class="mc-lw">LIVE </span>'+mm.label:'LIVE')+'</span>';})()
     :'<span class="dl-sub" style="font-size:.7rem">'+(f.kickoff_time?new Date(f.kickoff_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'TBC')+'</span>';
   /* How many of your squad are in this match, on the collapsed header, so
      the flag is visible while scrolling the list rather than only after
@@ -26706,13 +26977,24 @@ async function hydrateResults(host){
   };
   const fixCard=f=>{
     const open=S.has(f.id);
+    const lost=mcLoser(f);
+    const live=f.started&&!fixtureOver(f)&&!fixtureStuck(f);
+    const mm=live?mcMinute(f):null;
+    let score;
+    if(f.started)score='<span class="mc-score">'+(f.team_h_score!=null?f.team_h_score:0)+' – '+(f.team_a_score!=null?f.team_a_score:0)+'</span>';
+    else{
+      const m=plsimMatch(R,f.team_h,f.team_a);
+      score=m?'<span class="mc-score mc-pre" title="Our model\u2019s expected goals">v<span class="mc-xg"><span class="mc-xgk">xG </span>'+m.hx.toFixed(1)+'–'+m.ax.toFixed(1)+'</span></span>'
+        :'<span class="mc-score">v</span>';
+    }
     return '<div class="mc-fix">'+
       '<div class="mc-head" onclick="resToggle('+f.id+')">'+
       '<span class="mc-badge">'+badge(f)+mine(f)+'</span>'+
-        '<span class="mc-team h"><span>'+teamName(f.team_h)+'</span> '+crest(b,f.team_h,18)+'</span>'+
-        '<span class="mc-score">'+(f.started?(f.team_h_score!=null?f.team_h_score:0)+' – '+(f.team_a_score!=null?f.team_a_score:0):'v')+'</span>'+
-        '<span class="mc-team">'+crest(b,f.team_a,18)+' <span>'+teamName(f.team_a)+'</span></span>'+
+        '<span class="mc-team h'+(lost==='h'?' mc-lost':'')+'"><span>'+teamName(f.team_h)+'</span> '+crest(b,f.team_h,18)+'</span>'+
+        score+
+        '<span class="mc-team'+(lost==='a'?' mc-lost':'')+'">'+crest(b,f.team_a,18)+' <span>'+teamName(f.team_a)+'</span></span>'+
         '<span class="mc-ch" id="mc-ch-'+f.id+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span></div>'+
+      (mm?'<div class="mc-prog" role="img" aria-label="'+esc(mm.spoken)+' played"><i style="width:'+mm.pct+'%"></i></div>':'')+
       '<div class="mc-det" id="mc-d-'+f.id+'"'+(open?'':' style="display:none"')+'>'+detail(f)+'</div></div>';
   };
   let list='',lastDay='';
@@ -26730,6 +27012,7 @@ async function hydrateResults(host){
       '<b class="num">GW'+gw+'</b>'+
       '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button>')+
     '<div class="dl-sub" style="margin-bottom:4px">Tap a match for scorers, cards, saves, defensive contributions and the bonus race.'+
+      (fx.some(f=>!f.started)?' Before kick-off, the figures under the <b>v</b> are our model\u2019s expected goals.':'')+
       (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
     (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
     '</div>';
@@ -28674,21 +28957,36 @@ function phBlock(icon,title,text){
 }
 
 /* ── THEME ─────────────────────────────────────────────── */
-function applyTheme(theme){
+/* persist=false applies a theme without saving it. Boot and device changes
+   use it, so only a reader's own tap on the switch fixes the theme; until
+   then the app keeps following the device. */
+function applyTheme(theme,persist){
   document.documentElement.setAttribute('data-theme',theme);
   const isDark=(theme==='dark');
   document.getElementById('theme-icon').innerHTML=
     svg(isDark?ICON.sun:ICON.moon,'width="14" height="14"');
   document.getElementById('theme-label').textContent=isDark?'Light':'Dark';
   /* Persist and let the native shell colour the status bar to match. */
-  try{localStorage.setItem('ge-theme',theme);}catch(_){}
+  if(persist!==false){try{localStorage.setItem('ge-theme',theme);}catch(_){}}
   /* Keep the browser chrome in step with the canvas. */
   try{const tc=document.querySelector('meta[name="theme-color"]');
     if(tc)tc.setAttribute('content',isDark?'#0a0c0f':'#f4f6f8');}catch(_){}
   window.GENative&&GENative.setTheme(theme);
 }
 function storedTheme(){
-  try{return localStorage.getItem('ge-theme');}catch(_){return null;}
+  try{const t=localStorage.getItem('ge-theme');return t==='light'||t==='dark'?t:null;}catch(_){return null;}
+}
+function deviceTheme(){
+  try{return window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}catch(_){return 'dark';}
+}
+/* While the reader hasn't chosen, a device switching light or dark at
+   sunset takes the app with it. */
+function watchDeviceTheme(){
+  try{
+    const mq=matchMedia('(prefers-color-scheme: light)');
+    const on=()=>{if(!storedTheme())applyTheme(deviceTheme(),false);};
+    if(mq.addEventListener)mq.addEventListener('change',on);else if(mq.addListener)mq.addListener(on);
+  }catch(_){}
 }
 function toggleTheme(){
   const current=document.documentElement.getAttribute('data-theme');
@@ -29503,8 +29801,10 @@ function init(){
   buildNav();
   buildBottomNav();
   watchPhoneNav();
+  tkbWire();
   sparkWatch();
-  applyTheme(storedTheme()||'dark');
+  applyTheme(storedTheme()||deviceTheme(),!!storedTheme());
+  watchDeviceTheme();
   const home=homePanel();
   currentPanel=home;
   renderPage(home);
