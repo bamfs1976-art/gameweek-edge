@@ -432,6 +432,10 @@ body[data-density="beginner"] .beginner-only{display:block}
 .lf-me{font-size:.74rem;font-weight:700;color:var(--green);white-space:nowrap}
 .ltf-steps{margin:8px 0 0;padding-left:20px;font-size:12.5px;line-height:1.6;color:var(--text-2)}
 .ltf-hint p{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--text-2)}
+.ob-or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--text-3);font-size:.78rem}
+.ob-or::before,.ob-or::after{content:"";flex:1;height:1px;background:var(--border)}
+.ob-browse{display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:460px}
+.ob-browse .dl-sub{margin:0}
 .ltf-browse{align-self:flex-start;background:none;border:0;padding:4px 0;cursor:pointer;
   font-size:12.5px;font-weight:600;color:var(--text-3);text-decoration:underline;
   text-underline-offset:3px}
@@ -5867,6 +5871,12 @@ function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}apply
    millions of managers off FPL's servers. So the app meets people where
    they are: paste any FPL address and the ID is picked out of it, or search
    a mini-league they know by name. */
+/* Why a link attempt did not land, so the step where most first visitors
+   stop can be read: the box left empty, something that is not an ID or an
+   FPL address, an ID FPL does not know, or FPL not answering. `via` says
+   how the ID arrived: typed, pasted as an address, or picked from a league. */
+function linkVia(raw){return /\/entry\//.test(String(raw||''))?'link':'id';}
+function linkFailed(reason,via,where){try{track('link_failed',{reason,via,where});}catch(_){}}
 function fplIdFrom(text){
   const t=String(text==null?'':text).trim();
   const m=/\/entry\/(\d{1,9})(?=[\/?#]|$)/.exec(t);
@@ -5903,7 +5913,7 @@ function ltfGuideHtml(){
     '</ol><p>Nothing to sign up for. The ID only reads your public team.</p>';
 }
 function findTeamHtml(pfx){
-  return '<details class="ltf-hint ltf-find"><summary>Find it by name in a mini-league</summary>'+
+  return '<details class="ltf-hint ltf-find" ontoggle="if(this.open)track(\'team_find_open\',{where:\''+pfx+'\'})"><summary>Find it by name in a mini-league</summary>'+
     '<div class="lf">'+
       '<input class="modal-in" id="'+pfx+'-lf-league" autocomplete="off" placeholder="League link or number" aria-label="Mini-league link or number">'+
       '<div class="ltf-row"><input class="modal-in" id="'+pfx+'-lf-name" autocomplete="off" placeholder="Your name or team name" aria-label="Manager or team name" '+
@@ -5921,8 +5931,9 @@ async function lfSearch(pfx){
   const msg=document.getElementById(pfx+'-lf-msg'),res=document.getElementById(pfx+'-lf-res');
   if(!msg||!res)return;
   res.innerHTML='';
-  if(!L){msg.className='ltf-msg err';msg.textContent='Paste the league\u2019s link, or type its number.';return;}
-  if(lfNorm(q).length<2){msg.className='ltf-msg err';msg.textContent='Type at least two letters of a name.';return;}
+  const fail=reason=>{try{track('team_find_failed',{reason});}catch(_){}};
+  if(!L){fail('no_league');msg.className='ltf-msg err';msg.textContent='Paste the league\u2019s link, or type its number.';return;}
+  if(lfNorm(q).length<2){fail('short_name');msg.className='ltf-msg err';msg.textContent='Type at least two letters of a name.';return;}
   msg.className='ltf-msg';msg.textContent='Searching the league\u2026';
   const rows=[];let name='',more=false;
   try{
@@ -5935,6 +5946,7 @@ async function lfSearch(pfx){
       if(p===LF_MAX_PAGES)more=true;
     }
   }catch(e){
+    fail(e&&e.status===404?'league_not_found':'network');
     msg.className='ltf-msg err';
     msg.textContent=(e&&e.status===404)?'No league found with that number. Check the link and try again.'
       :'Could not reach the FPL API. Try again in a moment.';
@@ -5943,6 +5955,7 @@ async function lfSearch(pfx){
   track('team_find_league',{n:rows.length});
   const hits=lfMatch(rows,q).slice(0,8);
   if(!hits.length){
+    fail('no_match');
     msg.className='ltf-msg err';
     msg.textContent='Nobody called \u201c'+q+'\u201d in '+(name||'that league')+(more?' in the top '+rows.length:'')+'. Try part of the name, or your team\u2019s name.';
     return;
@@ -5954,7 +5967,9 @@ async function lfSearch(pfx){
     '<span class="dl-sub">'+esc(r.entry_name||'')+(r.rank?' \u00b7 position '+fmtNum(r.rank):'')+'</span></span>'+
     '<span class="lf-me">This is me</span></button>').join('');
 }
+let LF_PICKED=false;
 function lfPick(pfx,id){
+  LF_PICKED=true;
   if(pfx==='mid'){const i=document.getElementById('mid-input');if(i){i.value=String(id);saveMid();}return;}
   const i=document.getElementById('ltf-input');if(i){i.value=String(id);ltfSave();}
 }
@@ -5963,12 +5978,12 @@ function linkTeamFlowHtml(opts){
   return '<div class="ltf">'+
     '<div class="ltf-row">'+
       '<input class="ltf-in" id="ltf-input" inputmode="numeric" autocomplete="off" '+
-        'placeholder="Manager ID, or paste your FPL link" aria-label="FPL Manager ID or the address of your FPL Points page" '+
+        'placeholder="Manager ID or FPL link" aria-label="FPL Manager ID or the address of your FPL Points page" '+
         'onkeydown="if(event.key===\'Enter\')ltfSave()">'+
       '<button class="btn btn-cta" id="ltf-save" onclick="ltfSave()">Link team</button>'+
     '</div>'+
     '<div class="ltf-msg" id="ltf-msg" role="status" aria-live="polite"></div>'+
-    '<details class="ltf-hint"><summary>Where do I find my Manager ID?</summary>'+ltfGuideHtml()+'</details>'+
+    '<details class="ltf-hint" ontoggle="if(this.open)track(\'id_help_open\')"><summary>Where do I find my Manager ID?</summary>'+ltfGuideHtml()+'</details>'+
     findTeamHtml('ltf')+
     (opts.browse!==false
       ?'<button type="button" class="ltf-browse" onclick="openPanel(\'dashboard\')">Just browse the model squad \u2192</button>'
@@ -5983,7 +5998,9 @@ async function ltfSave(){
   /* A pasted address used to have every non-digit stripped, which glued
      the gameweek onto the ID: \u2026/entry/3500123/event/8 became 35001238. */
   const val=fplIdFrom(inp.value);
-  if(!val){msg.className='ltf-msg err';msg.textContent='Enter your Manager ID, or paste the address of your Points page on the FPL site.';return;}
+  const via=LF_PICKED?'league':linkVia(inp.value);LF_PICKED=false;
+  if(!val){linkFailed((inp.value||'').trim()?'invalid':'empty',via,'flow');
+    msg.className='ltf-msg err';msg.textContent='Enter your Manager ID, or paste the address of your Points page on the FPL site.';return;}
   if(btn){btn.disabled=true;btn.textContent='Checking\u2026';}
   msg.className='ltf-msg';msg.textContent='Looking up manager '+val+'\u2026';
   try{
@@ -5993,11 +6010,12 @@ async function ltfSave(){
     msg.textContent='Found: '+(nm||('manager '+val))+': linking\u2026';
     setMid(val);
     refreshIdentity(entry);
-    track('team_linked');
+    track('team_linked',{via,where:'flow'});
     toast('Linked to '+(nm||'your team'));
     window.GENative&&GENative.hapticSuccess();
     setTimeout(()=>{try{renderPage(currentPanel);}catch(_){}},450);
   }catch(e){
+    linkFailed(e&&e.status===404?'not_found':'network',via,'flow');
     msg.className='ltf-msg err';
     msg.textContent=(e&&e.status===404)
       ?'No manager found with that ID. Check the number and try again.'
@@ -7763,9 +7781,16 @@ async function hydrateOnboard(host){
   if(step===1){
     host.innerHTML='<div class="ltf-hero card ob">'+obSteps(1)+
       '<h2 class="ltf-hero-t">Rate my squad</h2>'+
-      '<p class="ltf-hero-s">Enter your Manager ID and the model rates your eleven against its own, then tells you the one thing worth doing this week. Under a minute, no account needed.</p>'+
+      '<p class="ltf-hero-s">Paste your FPL link or enter your Manager ID, and the model rates your eleven against its own, then tells you the one thing worth doing this week. Under a minute, no account needed.</p>'+
       linkTeamFlowHtml({browse:false})+
-      '<button type="button" class="ltf-browse" onclick="obSkip()">Look around first \u2192</button>'+
+      /* A real second choice, not a faint link. Six in seven first visitors
+         left at this step without linking or skipping; the old "Look around
+         first" underline was used by none of them. */
+      '<div class="ob-or"><span>or</span></div>'+
+      '<div class="ob-browse">'+
+        '<button type="button" class="btn btn-ghost" onclick="obSkip()">Browse without a team</button>'+
+        '<p class="dl-sub">See the model\u2019s team, this week\u2019s captain picks, price changes and fixtures. Link your team any time from the top bar.</p>'+
+      '</div>'+
       '</div>';
     return;
   }
@@ -9642,6 +9667,7 @@ async function shareSquadCard(){
   if(S.top&&S.top.nm)center('Star player: '+S.top.nm+' · '+S.top.pts+' pts',830,'600 34px system-ui,sans-serif','rgba(255,255,255,.8)');
   center('gameweekedge.co.uk',965,'700 30px system-ui,sans-serif','#4ade80');
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  track('share_card',{card:'gameweek',gw:S.gw});
   await saveBlob(blob,'gameweek-'+S.gw+'.png','image/png','Share card downloaded');
 }
 
@@ -9660,6 +9686,7 @@ async function shareTeamReveal(){
     bench:(S.bench||[]).map(p=>p.nm),
     foot:S.value!=null?'Squad value £'+(S.value/10).toFixed(1)+'m'+(S.bank!=null?'  ·  Bank £'+(S.bank/10).toFixed(1)+'m':''):''
   });
+  track('share_card',{card:'team_reveal',gw:S.gw});
   await saveBlob(blob,'team-reveal-gw'+S.gw+'.png','image/png','Team Reveal downloaded');
 }
 /* The live version of the same card: each token carries the player's live
@@ -12229,7 +12256,39 @@ async function hydrateAnalytics(host){
     pl+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Counts this small are noise individually. One person versus two means nothing. The shape is what to read.</div></div>';
 
-  out.innerHTML=kpis+daily+areas+panels;
+  out.innerHTML=kpis+analyticsFunnels(d.funnels)+daily+areas+panels;
+}
+/* The three funnels, as plain rows of people. Reasons are listed by count so
+   the commonest way a link fails reads first. */
+const AN_REASON={empty:'Left the box empty',invalid:'Typed something that is not an ID',not_found:'ID not found on FPL',
+  network:'FPL did not answer',no_league:'No league given',short_name:'Name too short',
+  league_not_found:'League not found',no_match:'No name matched',link:'Pasted an FPL link',id:'Typed the ID',
+  league:'Picked from a league',monthly:'Monthly',season:'Season pass'};
+function analyticsFunnels(F){
+  if(!F)return '';
+  const row=(label,n,sub)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(label)+'</span>'+
+    (sub?'<span class="dl-sub">'+sub+'</span>':'')+'</span><span class="dl-col mono">'+n+'</span></div>';
+  const list=o=>{const k=Object.keys(o||{}).sort((a,c)=>o[c]-o[a]);
+    return k.length?k.map(x=>esc(AN_REASON[x]||x)+' '+o[x]).join(' · '):'none recorded';};
+  const f=F.firstRun||{},u=F.upgrade||{};
+  const share=Object.keys(F.sharing||{}).sort((a,c)=>F.sharing[c]-F.sharing[a]);
+  return '<div class="card mb-20"><div class="card-title">First run: the Team ID step</div><div class="dl desc">'+
+      row('Reached the Team ID step',f.reachedIdStep||0,'people')+
+      row('Linked a team',f.linked||0,'how: '+list(f.linkedVia))+
+      row('Browsed without a team',f.browsed||0,'')+
+      row('Left without either',f.left||0,'')+
+      row('Link attempts that failed',Object.values(f.linkFailures||{}).reduce((a,b)=>a+b,0),list(f.linkFailures))+
+      row('Opened "Where do I find it?"',f.idHelpOpened||0,'people')+
+      row('Opened league search',f.leagueSearchOpened||0,'failed searches: '+list(f.leagueSearchFailures))+
+    '</div></div>'+
+    '<div class="card mb-20"><div class="card-title">Upgrade</div><div class="dl desc">'+
+      row('Saw the pricing page',u.sawPricing||0,'people')+
+      row('Saw the upgrade sheet',u.sawUpgradeSheet||0,'people')+
+      row('Started a checkout',u.startedCheckout||0,list(u.checkoutPlans))+
+    '</div><div class="dl-sub" style="margin-top:8px">Only people who accepted analytics are counted, so every figure here is a floor.</div></div>'+
+    '<div class="card mb-20"><div class="card-title">Images saved</div>'+
+      (share.length?'<div class="dl desc">'+share.map(k=>row(k.replace(/_/g,' '),F.sharing[k],'')).join('')+'</div>'
+        :'<div class="dl-sub">No share images saved in this window.</div>')+'</div>';
 }
 
 /* The linked manager's picks and entry for one gameweek. Null rather than a
@@ -14267,6 +14326,7 @@ function exportPlayersCSV(){
   const S=window._pl;if(!S)return;
   const list=plFilteredSorted();
   if(!list.length){toast('No players to export');return;}
+  track('players_export',{rows:list.length});
   const csv=playersCsv(S.b,S.xpMap,list,{...(S.ctx||{}),pro:isPro()});
   try{
     const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
@@ -29879,7 +29939,9 @@ async function saveMid(){
   const inp=document.getElementById('mid-input');
   const err=document.getElementById('mid-err');
   const val=fplIdFrom(inp.value);
-  if(!val){err.textContent='Enter your Manager ID, or paste the address of your Points page.';return;}
+  const via=LF_PICKED?'league':linkVia(inp.value);LF_PICKED=false;
+  if(!val){linkFailed((inp.value||'').trim()?'invalid':'empty',via,'modal');
+    err.textContent='Enter your Manager ID, or paste the address of your Points page.';return;}
   inp.value=val;
   const saveBtn=document.getElementById('mid-save');
   saveBtn.disabled=true;saveBtn.textContent='Checking…';err.textContent='';
@@ -29887,12 +29949,13 @@ async function saveMid(){
     const entry=await loadEntry(val);            // validates the ID exists
     setMid(val);
     refreshIdentity(entry);
-    track('team_linked');
+    track('team_linked',{via,where:'modal'});
     toast('Team linked');
     closeMidModal();
     renderPage(currentPanel);
     window.GENative&&GENative.hapticSuccess();
   }catch(e){
+    linkFailed(e&&e.status===404?'not_found':'network',via,'modal');
     err.textContent=(e&&e.status===404)?'No manager found with that ID.':'Could not reach the FPL API. Try again.';
     window.GENative&&GENative.hapticWarning();
   }finally{saveBtn.disabled=false;saveBtn.textContent='Link team';}
