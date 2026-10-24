@@ -594,6 +594,14 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .dl-col{min-width:50px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
   font-weight:700;color:var(--text-2)}
 .dl-col.mono{font-family:var(--font-mono);font-weight:600}
+@media (max-width:560px){
+  .dl-tbl .dl-row:not(.head){flex-wrap:wrap;row-gap:2px}
+  .dl-tbl .dl-row .dl-grow{min-width:90px}
+  .dl-tbl .dl-row.head .dl-x{display:none}
+  .dl-tbl .dl-row:not(.head) .dl-x{flex-basis:100%;text-align:left;padding-left:72px;font-size:.74rem;color:var(--text-3)}
+  .dl-tbl .dl-row:not(.head) .dl-x::before{content:attr(data-h) "  ";font-family:var(--font-body,inherit);font-weight:700;
+    text-transform:uppercase;letter-spacing:.05em;font-size:var(--fs-min)}
+}
 .dl-col.pos{color:var(--green-bright)}
 .dl-col.neg{color:var(--red)}
 
@@ -1137,6 +1145,31 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .pr-bar .pr-fill.fall{background:var(--red)}
 .pr-pct{font-weight:700}
 .pr-count{font-family:var(--font-mono);font-size:1.6rem;font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--text)}
+/* The countdown as one line above the tables, and the folded explanation. */
+.pr-clock{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:10px 14px;
+  border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface)}
+.pr-clock-l{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.pr-clock .pr-count{font-size:1.15rem}
+.pr-clock-w{font-size:.75rem;color:var(--text-3)}
+.pr-about summary{cursor:pointer;font-size:.8rem;font-weight:600;color:var(--text-2);padding:8px 0;min-height:44px;
+  display:flex;align-items:center}
+.pr-about summary::-webkit-details-marker{display:none}
+.pr-about summary::before{content:'';width:7px;height:7px;margin-right:9px;flex-shrink:0;
+  border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg);transition:transform .15s}
+.pr-about[open] summary::before{transform:rotate(45deg)}
+@media(prefers-reduced-motion:reduce){.pr-about summary::before{transition:none}}
+.pr-about summary:focus-visible{outline:2px solid var(--green-bright);outline-offset:2px;border-radius:4px}
+/* Plain-word price chips: the words carry the meaning, the colour backs it. */
+.dl-tag{display:block;margin-top:4px;line-height:1}
+.pr-chip{display:inline-block;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:999px;
+  border:1px solid var(--border-2);white-space:nowrap;line-height:1.4}
+.pr-chip.rise{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 50%,transparent);
+  background:color-mix(in srgb,var(--green) 12%,transparent)}
+.pr-chip.rise.strong{background:var(--green);border-color:var(--green);color:#06140c}
+.pr-chip.fall{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,transparent);
+  background:color-mix(in srgb,var(--red) 10%,transparent)}
+.pr-chip.fall.strong{background:var(--red);border-color:var(--red);color:#fff}
+.pr-chip.flat{color:var(--text-3)}
 .pr-search{margin:0 0 12px}
 .pr-search .modal-in{width:100%;max-width:420px}
 @media (max-width:480px){.pr-bar{width:56px}}
@@ -1470,7 +1503,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .area-tab.lk.on{color:var(--lock);border-bottom-color:var(--lock)}
 .area-tab svg{vertical-align:-1px}
 .page-head h1{
-  font-family:var(--font-display);font-size:1.875rem;
+  font-family:var(--font-display);font-size:1.6rem;
   font-weight:800;letter-spacing:-.025em;line-height:1.1;
 }
 .page-head p{font-size:.85rem;color:var(--text-3);margin-top:4px}
@@ -1480,18 +1513,27 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
    a desktop, and never pushes the title off its line. */
 .page-head-tools{display:flex;gap:8px;align-items:center;flex-shrink:0;padding-top:6px}
 .page-head-tools .btn svg{width:14px;height:14px}
+/* The description is one line on a desktop, cut with an ellipsis, and the
+   "i" opens the rest. On a phone it is folded away entirely until asked
+   for. Either way the data, not the explanation, owns the first screen. */
 .ph-title{display:flex;align-items:center;gap:10px}
-.ph-info{display:none}
+.page-head-row{flex-wrap:nowrap}
+.ph-text{flex:1;min-width:0}
+.page-head .ph-desc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80ch}
+.page-head.desc-open .ph-desc{white-space:normal;overflow:visible}
+.ph-info{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  min-width:36px;min-height:36px;margin:-6px 0;border:0;background:none;cursor:pointer;color:var(--text-3)}
+.ph-info:focus-visible{outline:2px solid var(--green-bright);outline-offset:2px;border-radius:50%}
+.ph-i{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+  border:1.5px solid currentColor;border-radius:50%;font:italic 700 .75rem/1 var(--font-display)}
+.ph-info[aria-expanded="true"]{color:var(--green-bright)}
 @media(max-width:560px){
   .page-head-row{flex-wrap:nowrap;align-items:center}
   .ph-text{flex:1;min-width:0}
   .page-head .ph-desc{display:none}
   .page-head.desc-open .ph-desc{display:block}
-  .ph-info{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
-    min-width:44px;min-height:44px;margin:-8px 0;border:0;background:none;cursor:pointer;color:var(--text-3)}
-  .ph-i{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
-    border:1.5px solid currentColor;border-radius:50%;font:italic 700 .8rem/1 var(--font-display)}
-  .ph-info[aria-expanded="true"]{color:var(--green-bright)}
+  .ph-info{min-width:44px;min-height:44px;margin:-8px 0}
+  .ph-i{width:22px;height:22px;font-size:.8rem}
   .page-head-tools{padding-top:0}
   .page-head-tools .pht-l{display:none}
   .page-head-tools .btn{min-width:44px;min-height:44px;justify-content:center}
@@ -1664,6 +1706,10 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   .pitch-row{gap:5px}
   .pp-fig{width:44px;height:48px}
   .pp-sub{font-size:var(--fs-min)}
+  /* Ownership and price side by side need about 76px; a phone tile has 64,
+     so both were cut off ("22.3£5.9"). Stacked, each reads in full. */
+  .pp-sub{flex-direction:column}
+  .pp-sub span{padding:0 2px}
 }
 .pitch-row:last-child{margin-bottom:0}
 /* Fallback jersey shape (used only when a player photo is unavailable) */
@@ -1987,7 +2033,9 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .crest img{width:100%;height:100%;object-fit:contain}
 .avatar{display:inline-flex;align-items:flex-end;justify-content:center;border-radius:50%;
   overflow:hidden;vertical-align:middle;margin-right:10px;flex-shrink:0;box-shadow:var(--shadow)}
-.avatar img{width:100%;height:100%;object-fit:cover}
+.avatar{position:relative}
+.avatar img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.avatar .av-i{align-self:center;font-weight:800;letter-spacing:.02em;line-height:1}
 .dl-row .dl-grow{display:flex;align-items:center;gap:0;min-width:0}
 /* ═══════════════════════════════════════════════════════════
    EDITORIAL SKIN — one product, one voice. The marketing site's
@@ -4381,10 +4429,22 @@ function crest(b,teamId,px){
     (url?`<img src="${url}" alt="" loading="lazy" onerror="this.remove()">`:'')+`</span>`;
 }
 /* Player headshot avatar with the club-colour tile as fallback. */
+/* A player's initials, for the avatar to fall back on: "N.Jackson" -> NJ,
+   "Muharemović" -> M. The photo sits on top and covers them once it loads. */
+function avInitials(name){
+  const parts=String(name||'').replace(/[^\p{L}\s.'-]/gu,'').split(/[\s.]+/).filter(Boolean);
+  if(!parts.length)return '';
+  return (parts.length>1?parts[0][0]+parts[parts.length-1][0]:parts[0][0]).toUpperCase();
+}
 function avatar(b,el,px){
   px=px||34;
-  const url=photoUrl(el),k=(KIT[teamShort(b,el.team)]||['#8a8a8a'])[0];
-  return `<span class="avatar" style="width:${px}px;height:${px}px;background:${k}">`+
+  const kit=KIT[teamShort(b,el.team)]||['#8a8a8a','#fff'];
+  const url=photoUrl(el);
+  /* Initials in the club's trim colour, under the photo. A photo that fails
+     used to leave a plain disc, which for a white-shirted club was a blank
+     white circle with nothing to say whose row it was. */
+  return `<span class="avatar" style="width:${px}px;height:${px}px;background:${kit[0]};color:${kit[1]||'#fff'};font-size:${Math.round(px*0.36)}px">`+
+    `<span class="av-i" aria-hidden="true">${esc(avInitials(el.web_name))}</span>`+
     (url?`<img src="${url}" alt="" loading="lazy" onerror="this.remove()">`:'')+`</span>`;
 }
 /* Club kit colours (primary, trim) keyed by FPL short name — 2026/27. */
@@ -6704,6 +6764,12 @@ function pageToolsHtml(panelId){
 /* Panels whose own layout wants the full width — the right rail is hidden on
    these (≥1024px) so their two-column workspace is not squeezed. */
 const WIDE_PANELS=new Set(['draft']);
+/* The companion rail (Ask the model, Captain leverage, Recent model calls)
+   belongs beside the weekly overview and the captaincy call, where its
+   three cards answer the page's own question. On every other page it took
+   280px from tables that need the width more, so those pages run full
+   width and the rail stays where it earns its place. */
+const RAIL_PANELS=new Set(['myweek','dashboard','captain']);
 /* The Pro lock treatment, shared by a locked PANEL and a locked VIEW inside
    a hub. Merging the Live boards made the second case necessary: three of
    the five views are paid and two are free, so the gate had to move inside
@@ -6834,7 +6900,7 @@ function renderPage(panelId){
   const panel=PANELS[panelId];
   const content=PANEL_CONTENT[panelId];
   track('panel_view',{panel:panelId});
-  document.body.classList.toggle('wide-workspace',WIDE_PANELS.has(panelId));
+  document.body.classList.toggle('wide-workspace',WIDE_PANELS.has(panelId)||!RAIL_PANELS.has(panelId));
 
   document.getElementById('tb-area').textContent=panel.areaLabel;
   document.getElementById('tb-title').textContent=panel.label;
@@ -7907,13 +7973,20 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
     return ranked[ranked.length-2].overall_rank-ranked[ranked.length-1].overall_rank;
   })();
   const mgrName=entry?[entry.player_first_name,entry.player_last_name].filter(Boolean).join(' '):'';
+  /* FPL's gameweek average is a settled figure, not a running one: while
+     the round is in play the field holds whatever FPL last wrote, which on
+     a live Saturday read 1 beside a manager's 26. Print it once the
+     gameweek has finished, and a dash with the reason until then. */
+  const avgFig=cur.finished&&cur.average_entry_score!=null
+    ? '<span class="sb-fig"><b>'+fmtNum(cur.average_entry_score)+'</b><small>average</small></span>'
+    : '<span class="sb-fig" title="FPL publishes the average once the gameweek is scored"><b>–</b><small>average at full time</small></span>';
   const teamCard=mid&&entry
     ? card('sb-team',null,
         '<p class="sb-t-name">'+esc(entry.name||'Your team')+'</p>'+
         (mgrName?'<p class="sb-t-mgr">'+esc(mgrName)+'</p>':'')+
         '<p class="sb-t-gw">Gameweek '+cur.id+'</p>'+
         '<div class="sb-figs">'+
-          '<span class="sb-fig"><b>'+fmtNum(cur.average_entry_score)+'</b><small>average</small></span>'+
+          avgFig+
           '<span class="sb-fig lead"><b>'+(gwPts==null?'–':fmtNum(gwPts))+'</b><small>points</small></span>'+
           '<span class="sb-fig"><b>'+fmtNum(cur.highest_score)+'</b><small>highest</small></span>'+
         '</div>'+
@@ -7923,7 +7996,7 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
         '<p class="sb-t-mgr">Connect your FPL team and every screen here becomes about your squad. Captaincy, transfers, live points and your mini-leagues.</p>'+
         '<p class="sb-t-gw">Gameweek '+cur.id+'</p>'+
         '<div class="sb-figs">'+
-          '<span class="sb-fig"><b>'+fmtNum(cur.average_entry_score)+'</b><small>average</small></span>'+
+          avgFig+
           '<span class="sb-fig lead"><b>'+fmtNum(cur.highest_score)+'</b><small>highest</small></span>'+
         '</div>'+
         '<a class="btn btn-primary btn-sm" href="#" onclick="openPanel(\'myweek\');return false">Link my team →</a>');
@@ -9013,7 +9086,7 @@ async function hydrateGwActions(host){
       ' <span class="badge '+(ev.finished?'badge-grey':'badge-green')+'">'+(ev.finished?'Finished':ev.is_current?'Live':'Upcoming')+'</span></div>'+
       '<div class="dl-sub" style="margin-bottom:12px">Deadline '+fmtDeadline(ev.deadline_time)+'</div>'+
       '<div class="statgrid">'+
-        stat('Average Score',fmtNum(ev.average_entry_score))+
+        stat('Average Score',ev.finished?fmtNum(ev.average_entry_score):'–')+
         stat('Highest Score',fmtNum(ev.highest_score))+
       '</div></div>';
 
@@ -15005,12 +15078,17 @@ async function hydratePriceMoves(host){
     return '<span style="font-size:.72rem;color:var(--text-3)">'+
       p.slice(0,3).map(x=>x.pct.toFixed(1)).join(' → ')+'</span>';
   };
+  /* The chip reads the figure FPL projects for the next update when it
+     publishes one, and today's progress when it does not. */
+  const offStatus=e=>{const mv=fplPriceMove(e);
+    const next=mv.proj&&mv.proj.length?mv.proj[0].pct:mv.pct;
+    return priceChip(priceStatus(next,'official'));};
   const offTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
     dlTable(b,arr.map(x=>x.e),['To a move','Today → +2d'],e=>{
       const mv=fplPriceMove(e);
       return [priceBarHtml(mv.pct/100)+'<span class="pr-pct '+(up?'pos':'neg')+'">'+
         (mv.pct>0?'+':'')+mv.pct.toFixed(1)+'%</span>', projCell(mv)];
-    })+'</div>';
+    },offStatus)+'</div>';
 
   /* The threshold estimate, kept as the fallback. */
   const scored=b.elements.map(e=>({e,pc:priceChangeProb(e,total)}));
@@ -15021,7 +15099,7 @@ async function hydratePriceMoves(host){
       const pc=priceChangeProb(e,total);
       return [priceBarHtml(pc.progress)+'<span class="pr-pct '+(up?'pos':'neg')+'">'+pc.prob+'%</span>',
         fmtK(Math.abs(pc.net))];
-    })+'</div>';
+    },e=>{const pc=priceChangeProb(e,total);return priceChip(priceStatus(pc.prob,'estimate',pc.dir));})+'</div>';
 
   /* Momentum view kept as a secondary signal. */
   const risers=b.elements.slice().sort((a,c)=>score(c)-score(a)).slice(0,8);
@@ -15038,9 +15116,12 @@ async function hydratePriceMoves(host){
   const whenTxt=nextPC?' Next update <b>'+esc(nextPC.label)+'</b>, from the game\u2019s own schedule.':'';
   /* The clock: how long until the next change, from the schedule the game
      publishes, ticking on the page. */
-  const clockCard=nextPC?'<div class="card mb-20"><div class="card-title">Next price change</div>'+
-    '<div class="pr-count" id="pr-count" data-at="'+nextPC.at+'">'+esc(fmtCountdown(nextPC.at-now)||'')+'</div>'+
-    '<p class="dl-sub" style="margin:6px 0 0">'+esc(nextPC.label)+' in your own time zone, from the schedule the game publishes. Prices move once a night and the figures here catch up shortly after.</p></div>':'';
+  /* One line, not a card: the countdown is a fact to glance at, and a
+     whole card for it pushed the first player row below the fold. */
+  const clockCard=nextPC?'<div class="pr-clock mb-14" title="From the schedule the game publishes. Prices move once a night and the figures here catch up shortly after.">'+
+    '<span class="pr-clock-l">Next price change</span>'+
+    '<b class="pr-count" id="pr-count" data-at="'+nextPC.at+'">'+esc(fmtCountdown(nextPC.at-now)||'')+'</b>'+
+    '<span class="pr-clock-w">'+esc(nextPC.label)+', your time</span></div>':'';
   /* Hourly momentum from our own record of the game's counts: the rate,
      and its shape over the day, rather than one total for the window. */
   const mb=priceMomentumBoard(feed,b.elements,8);
@@ -15067,8 +15148,14 @@ async function hydratePriceMoves(host){
   const estimateIntro='<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next update'+
       whenTxt+
       ', from net transfers against an ownership-scaled threshold. FPL is not publishing its own progress figure right now, so these are <b>our estimates</b>: its exact algorithm is not public.</div>';
-  host.innerHTML=lensLink('price','Tonight’s move and the net transfers behind it, for every player at once.')+
-    (haveOfficial?officialIntro:estimateIntro)+clockCard+
+  /* The explanation folds away: it matters once, and three paragraphs of
+     it stood between the reader and the first row every visit. Whose
+     figure each table shows is still in that table's own title. */
+  host.innerHTML=clockCard+
+    '<details class="pr-about mb-14"><summary>About these figures</summary>'+
+      (haveOfficial?officialIntro:estimateIntro)+
+      lensLink('price','Tonight’s move and the net transfers behind it, for every player at once.')+
+    '</details>'+
     (haveOfficial
       ? offTbl('Closest to a rise: FPL\u2019s own figure',offRise,true)+
         offTbl('Closest to a fall: FPL\u2019s own figure',offFall,false)+
@@ -15276,16 +15363,47 @@ async function hydrateTransferMarket(host){
 }
 
 /* Shared: a ranked player table with two metric columns. */
-function dlTable(b,list,heads,metrics){
+/* A price move in plain words, for the chip on each row. Reading a chip
+   is faster than weighing a percentage, and the words carry the meaning
+   so the colour is never the only signal.
+     kind 'official': p is FPL's own progress figure projected to the next
+       update (±100 means the price moves). |p|>=100 very likely, >=90
+       likely, below that unlikely.
+     kind 'estimate': p is our 0-100 likelihood, dir 'rise' or 'fall'.
+       >=80 very likely, >=50 likely, below that unlikely.
+   Returns {label, tone} where tone is rise, fall or flat, and strong
+   marks the "very likely" end. */
+function priceStatus(p,kind,dir){
+  const v=Number(p)||0;
+  if(kind==='estimate'){
+    const d=dir==='fall'?'fall':'rise';
+    if(v>=80)return {label:'Very likely to '+d,tone:d,strong:true};
+    if(v>=50)return {label:'Likely to '+d,tone:d,strong:false};
+    return {label:'Unlikely to change',tone:'flat',strong:false};
+  }
+  const d=v<0?'fall':'rise',a=Math.abs(v);
+  if(a>=100)return {label:'Very likely to '+d,tone:d,strong:true};
+  if(a>=90)return {label:'Likely to '+d,tone:d,strong:false};
+  return {label:'Unlikely to change',tone:'flat',strong:false};
+}
+function priceChip(st){
+  return '<span class="pr-chip '+st.tone+(st.strong?' strong':'')+'">'+esc(st.label)+'</span>';
+}
+function dlTable(b,list,heads,metrics,tagFn){
   const rows=list.map((e,i)=>{
     const m=metrics(e);
     return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
       '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-      '<span class="dl-sub">'+crest(b,e.team,14)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
-      heads.map((_,ci)=>'<span class="dl-col mono">'+m[ci]+'</span>').join('')+'</div>';
+      '<span class="dl-sub">'+crest(b,e.team,14)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span>'+
+      (tagFn?'<span class="dl-tag">'+tagFn(e)+'</span>':'')+'</span>'+
+      heads.map((h,ci)=>'<span class="dl-col mono'+(ci?' dl-x':'')+'" data-h="'+esc(h)+'">'+m[ci]+'</span>').join('')+'</div>';
   }).join('');
-  return '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span>'+
-    '<span class="dl-grow">Player</span>'+heads.map(h=>'<span class="dl-col">'+h+'</span>').join('')+'</div>'+rows+'</div>';
+  /* dl-tbl: on a phone the first figure stays beside the name and any
+     further figures drop to a labelled line underneath. Two figure columns
+     on one 390px row squeezed the player's name to nothing, which is how
+     the price tables came to show a photo and numbers but no name. */
+  return '<div class="dl dl-tbl"><div class="dl-row head"><span class="dl-rank">#</span>'+
+    '<span class="dl-grow">Player</span>'+heads.map((h,ci)=>'<span class="dl-col'+(ci?' dl-x':'')+'">'+h+'</span>').join('')+'</div>'+rows+'</div>';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -17192,6 +17310,11 @@ async function hydrateWatchlist(host){
 
 /* ── Player Compare: up to 4 side by side ──────────────── */
 let COMPARE=[];
+/* Player Compare never opens empty. With nobody chosen and nothing in the
+   link, it starts on this week's top captain options, which the model has
+   ready anyway, and says so. The first add or remove hands it over: after
+   that an empty compare stays empty, because emptying it was a choice. */
+let CMP_TOUCHED=false,CMP_PRESET=false;
 /* ── PLAYER COMPARE ────────────────────────────────────────
    Two to four players side by side. The metrics are a registry: counting
    stats (points, minutes, price …) and per-90 rates. The reader picks
@@ -17353,7 +17476,15 @@ async function hydrateCompare(host){
   }
   if(!CMP_METRIC_IDS)CMP_METRIC_IDS=cmpLoadMetrics();
   COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
-  compareWriteUrl();
+  CMP_PRESET=false;
+  if(!COMPARE.length&&!CMP_TOUCHED){
+    try{
+      const cm=captainModel(b,buildNextFix(b,fixtures),b.elements.filter(e=>e.status==='a'),4);
+      const ids=((cm&&cm.picks)||[]).map(p=>p.el&&p.el.id).filter(id=>id&&b.els[id]).slice(0,4);
+      if(ids.length>=2){COMPARE=ids;CMP_PRESET=true;}
+    }catch(_){}
+  }
+  if(!CMP_PRESET)compareWriteUrl();
   const sel=COMPARE.map(id=>b.els[id]);
   const players=sel.map(e=>({id:e.id,name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),price:money(e.now_cost),
     sub:teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)}));
@@ -17419,6 +17550,7 @@ async function hydrateCompare(host){
 
   host.innerHTML=
     sectionCard({cls:'mb-20',title:'Add players ('+sel.length+'/4)',body:
+      (CMP_PRESET?'<p class="dl-sub" style="margin:0 0 8px">Starting with this week\u2019s top captain options. Remove any of them, or search to add your own.</p>':'')+
       '<input class="modal-in" id="cmp-search" type="search" aria-label="Search players to compare" placeholder="Search a player by name" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
       '<div class="sugg" id="cmp-sugg"></div>'})+
     sectionCard({cls:'mb-20',title:'Metrics',body:
@@ -17429,11 +17561,11 @@ async function hydrateCompare(host){
   const inp=host.querySelector('#cmp-search'),sugg=host.querySelector('#cmp-sugg');
   if(inp&&!inp.disabled){
     inp.addEventListener('input',()=>renderSuggestions(b,inp.value,sugg,new Set(COMPARE),id=>{
-      if(COMPARE.length<4&&!COMPARE.includes(id))COMPARE.push(id);compareWriteUrl();renderPage('compare');}));
+      CMP_TOUCHED=true;if(COMPARE.length<4&&!COMPARE.includes(id))COMPARE.push(id);compareWriteUrl();renderPage('compare');}));
   }
   host.addEventListener('click',e=>{
     const rm=e.target.closest('[data-rm]');
-    if(rm){COMPARE=COMPARE.filter(x=>x!==parseInt(rm.dataset.rm,10));compareWriteUrl();renderPage('compare');return;}
+    if(rm){CMP_TOUCHED=true;COMPARE=COMPARE.filter(x=>x!==parseInt(rm.dataset.rm,10));compareWriteUrl();renderPage('compare');return;}
     const chip=e.target.closest('[data-metric]');
     if(chip){
       const id=chip.dataset.metric;
