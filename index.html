@@ -598,7 +598,11 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
   .dl-tbl .dl-row:not(.head){flex-wrap:wrap;row-gap:2px}
   /* Basis 0, not the content width: a long name with a chip under it was
      wide enough to push the first figure onto a line of its own. */
-  .dl-tbl .dl-row .dl-grow{flex:1 1 0;min-width:90px}
+  .dl-tbl .dl-row .dl-grow{flex:1 1 0;min-width:72px}
+  /* The figure never breaks inside itself, and the price bar is narrower
+     here: a "+103.0%" row was one pixel too wide and dropped a line. */
+  .dl-tbl .dl-row:not(.head) .dl-col:not(.dl-x){white-space:nowrap}
+  .dl-tbl .pr-bar{width:44px}
   .dl-tbl .dl-row.head .dl-x{display:none}
   .dl-tbl .dl-row:not(.head) .dl-x{flex-basis:100%;text-align:left;padding-left:72px;font-size:.74rem;color:var(--text-3)}
   .dl-tbl .dl-row:not(.head) .dl-x::before{content:attr(data-h) "  ";font-family:var(--font-body,inherit);font-weight:700;
