@@ -1179,6 +1179,10 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .lg-mv.dn{color:var(--red)}
 #league-standings .dl-grow{flex-direction:column;align-items:stretch}
 .lg-form{display:block;min-height:0}
+.lg-nudge{margin:0 0 10px;padding:8px 12px;border-radius:var(--r-md);font-weight:700;font-size:.86rem;border:1px solid}
+.lg-nudge.up{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 45%,transparent);background:color-mix(in srgb,var(--green) 10%,transparent)}
+.lg-nudge.dn{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent);background:color-mix(in srgb,var(--red) 8%,transparent)}
+.lg-nudge .dl-sub{display:block;font-weight:500;margin-top:2px}
 .lg-fps{display:flex;gap:4px;margin-top:5px}
 .lg-fp{min-width:28px;padding:1px 5px;border-radius:999px;text-align:center;
   font:700 .7rem/1.5 var(--font-mono);border:1px solid}
@@ -4108,6 +4112,17 @@ async function cached(key,ttl,loader){
    caller carry on with what it has. Deliberately memory-only: touching
    localStorage here would put a JSON.parse of a megabyte of fixtures on
    that hot path, which is the cost this exists to avoid. */
+/* Memory-only cache for many small per-manager payloads. cached() also
+   writes to localStorage, which fifty squads would fill for nothing; these
+   only need to outlive the 45-second live refresh. A failure is never
+   stored, so the next call retries. */
+async function memo(key,ttl,loader){
+  const k=ck('m:'+key),e=MEM[k],now=Date.now();
+  if(e&&now-e.t<ttl&&e.t>=CACHE_FLOOR)return e.v;
+  const v=await loader();
+  MEM[k]={t:Math.max(now,CACHE_FLOOR),v};
+  return v;
+}
 function cachedPeek(key,ttl){
   const e=MEM[ck(key)];
   return (e&&Date.now()-e.t<ttl)?e.v:null;
@@ -7319,7 +7334,7 @@ function renderPage(panelId){
    and the tab is visible, so the numbers stay fresh without a manual
    reload. Each live hydrator calls markLive(true/false); the tick only
    refetches when something is live, and liveStamp() shows the pill. */
-const LIVE_PANELS=new Set(['liverank','results']);
+const LIVE_PANELS=new Set(['liverank','results','leagues']);
 /* A hub refreshes its ACTIVE VIEW in place. Re-running the hub's own
    hydrator would rebuild the chip row and repaint a skeleton every 45
    seconds — a live screen that blinks is worse than one that lags. */
@@ -7327,7 +7342,14 @@ const LIVE_REFRESH={
   liverank:()=>lvRenderBody({quiet:true}),
   /* Only the Results view moves during a match. Re-running the forecasts or
      the projected XI every 45 seconds would be work for nothing. */
-  results:()=>{if(mcView(MC_VIEW).live)mcRenderBody({quiet:true});}
+  results:()=>{if(mcView(MC_VIEW).live)mcRenderBody({quiet:true});},
+  /* Only the detailed view sums the live feed; the compact table is FPL's
+     own figures, which FPL freezes until it scores the week. */
+  leagues:()=>{
+    if(!LEAGUE_SEL||LEAGUE_TYPE==='h2h'||LEAGUE_VIEW!=='detailed')return;
+    const h=document.getElementById('ge-data');
+    if(h)renderLeagueStandings(h,LEAGUE_SEL,getMid(),LEAGUE_TYPE,{quiet:true}).catch(()=>{});
+  }
 };
 let LIVE_TIMER=null;
 function armLiveRefresh(panelId){
@@ -24159,6 +24181,23 @@ function leagueStdRow(r){
    kind; ranking the field on a mixture of the two would place them
    below people they are beating. Better to show an order that is a
    week old and say so than one that is wrong today. Pure. */
+/* Between two live orders (top first), who moved past the reader. Only
+   managers present in both count, and only a change of side relative to
+   the reader is news: two rivals swapping below you is not. */
+function lgOvertakes(prev,cur,meId){
+  const out={passedMe:[],iPassed:[]};
+  if(!Array.isArray(prev)||!Array.isArray(cur)||!prev.length||!cur.length)return out;
+  const idx=list=>{const o={};list.forEach((r,i)=>{o[r.entry]=i;});return o;};
+  const P=idx(prev),C=idx(cur);
+  if(P[meId]==null||C[meId]==null)return out;
+  cur.forEach(r=>{
+    if(r.entry===meId||P[r.entry]==null)return;
+    const wasAbove=P[r.entry]<P[meId],isAbove=C[r.entry]<C[meId];
+    if(!wasAbove&&isAbove)out.passedMe.push(r.name);
+    else if(wasAbove&&!isAbove)out.iPassed.push(r.name);
+  });
+  return out;
+}
 function leagueLivePos(rows){
   const list=(rows||[]).slice();
   if(!list.length)return {};
@@ -24995,9 +25034,13 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
        one job so a manager costs one slot rather than two passes. */
     const [live,pairs]=await Promise.all([
       loadLive(gw).catch(()=>({elements:[]})),
+      /* Squads are fixed once the deadline passes, so they are held for the
+         gameweek; a season history moves only when a gameweek is scored, so
+         ten minutes is plenty. That is what lets the live refresh redraw
+         this card every 45 seconds for one new call instead of a hundred. */
       mapLimit(slice,6,r=>Promise.all([
-        loadPicks(r.entry,gw).catch(e=>{pickFail.push((e&&e.status)||0);return null;}),
-        loadHistory(r.entry).catch(()=>null)
+        memo('lgp-'+r.entry+'-'+gw,6*3600e3,()=>loadPicks(r.entry,gw)).catch(e=>{pickFail.push((e&&e.status)||0);return null;}),
+        memo('lgh-'+r.entry,10*60e3,()=>loadHistory(r.entry)).catch(()=>null)
       ]))
     ]);
     const picksArr=pairs.map(p=>(p&&p[0])||null);
@@ -25041,6 +25084,26 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
       ? leagueLivePos(built.slice()) : {};
     const liveOn=Object.keys(posById).length===built.length&&built.length>0;
     if(liveOn)built.forEach(d=>{d.livePos=posById[d.entry];});
+    /* Tells the live timer this screen has something moving, so it keeps
+       redrawing while matches are on and stops when they are not. */
+    markLive(anyLive);
+    /* Who passed whom since the last redraw, while the app is open. Only
+       on a live order: FPL's own positions sit still mid-gameweek. */
+    let nudge='';
+    if(liveOn){
+      const order=built.slice().sort((a,c)=>a.livePos-c.livePos||(a.rank||0)-(c.rank||0)).map(d=>({entry:d.entry,name:d.name}));
+      const key='_lgOrd'+leagueId;
+      const ev=lgOvertakes(MEM[key],order,meId);
+      MEM[key]=order;
+      if(ev.passedMe.length||ev.iPassed.length){
+        const names=a=>a.slice(0,2).map(esc).join(' and ')+(a.length>2?' and '+(a.length-2)+' more':'');
+        const msg=[ev.iPassed.length?'You passed '+names(ev.iPassed)+'.':'',
+          ev.passedMe.length?names(ev.passedMe)+(ev.passedMe.length===1?' has':' have')+' passed you.':''].filter(Boolean).join(' ');
+        nudge='<div class="lg-nudge '+(ev.passedMe.length?'dn':'up')+'" role="status">'+
+          (ev.passedMe.length?'▼ ':'▲ ')+msg+' <span class="dl-sub">Live, from the squads and the scores so far.</span></div>';
+        track('league_overtake',{passedMe:ev.passedMe.length,iPassed:ev.iPassed.length});
+      }
+    }
     /* Sorted after the positions exist, because "League position" reads
        them: sorting first would order the table on the very field this
        block is here to replace. */
@@ -25277,7 +25340,7 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
       ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
       'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
       (missing===1?'is':'are')+' excluded.':'')+benchNote+'</p>';
-    return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+
+    return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+nudge+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
       '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+posNote+note+'</div>'+swing+extra};
@@ -25573,8 +25636,10 @@ function lgToolsHtml(canFind,multiPage){
     (canFind?'<button type="button" class="btn btn-ghost btn-sm lg-find" onclick="lgFindMe()">'+svg(ICON.target,'width="14" height="14"')+' Find me</button>':'')+
   '</div>';
 }
-async function renderLeagueStandings(host,leagueId,mid,type){
-  host.innerHTML='<div class="card">'+skel(7)+'</div>';
+async function renderLeagueStandings(host,leagueId,mid,type,opts){
+  /* A quiet redraw (the live timer) keeps what is on screen until the new
+     table is ready, rather than blinking a skeleton every 45 seconds. */
+  if(!(opts&&opts.quiet))host.innerHTML='<div class="card">'+skel(7)+'</div>';
   const back='<button class="btn btn-ghost btn-sm mb-14" onclick="historyPoint();LEAGUE_SEL=null;LEAGUE_PAGE=1;lgWriteUrl();renderPage(\'leagues\')">‹ All leagues</button>';
   const h2h=type==='h2h',custom=type==='custom',page=LEAGUE_PAGE;
   let data;
