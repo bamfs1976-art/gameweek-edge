@@ -1936,6 +1936,10 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .lv-s small{font-size:.66rem;color:var(--text-3);margin-top:1px}
 /* Pitch tiles on the Live view are buttons: tap for the breakdown. */
 .pp-btn{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sqd-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px;margin:12px 0}
+.sqd-facts>div{display:flex;flex-direction:column;gap:2px;padding:8px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--surface-2)}
+.sqd-facts b{font-variant-numeric:tabular-nums}
+.sqd-news{margin:0 0 10px;padding:8px 10px;border-left:3px solid var(--amber);font-size:.82rem;color:var(--text-2)}
 .pp-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset:3px;border-radius:12px}
 .lvp .pp-nm{padding:2px 2px;letter-spacing:0}
 @media(max-width:560px){.lvp-save{min-height:44px}}
@@ -2018,12 +2022,14 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   .bn-item.active .bn-ic{background:var(--green-soft)}
   /* One line, always: five items share a phone width, so labels stay on a
      single line and ellipsize rather than wrap under the icons. */
-  .bn-label{font-size:var(--fs-min);font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 11px, one step above the 10px floor. This is the main navigation and
+     is read at a glance in daylight; every label is one word of seven
+     letters or fewer (dev/test-simplenav.mjs holds that), so the extra
+     pixel never costs a truncation, even at 360px. */
+  .bn-label{font-size:var(--fs-xs);font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
-/* On the narrowest phones (~360px) the longest label ("Match Centre") would
-   ellipsize; tighten the label a touch so all five read in full. */
 @media(max-width:380px){
-  .bn-label{font-size:var(--fs-min);letter-spacing:0}
+  .bn-label{letter-spacing:0}
 }
 @media(max-width:560px){
   .g-2,.g-3,.g-4{grid-template-columns:minmax(0,1fr)}
@@ -3539,7 +3545,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       </button>
     </div>
     <div id="lpd-body"></div>
-    <div class="xpd-foot">From the official live feed. Bonus is provisional until FPL confirms it after the match.</div>
+    <div class="xpd-foot" id="lpd-foot">From the official live feed. Bonus is provisional until FPL confirms it after the match.</div>
   </div>
 </div>
 
@@ -8108,7 +8114,7 @@ async function hydrateAccountability(host){
           (cal.brier!=null?'<div class="stat"><div class="stat-l">Haul Brier</div><div class="stat-v">'+cal.brier.toFixed(3)+'</div></div>':'')+
           (cal.rankCorr!=null?'<div class="stat"><div class="stat-l">Rank correlation</div><div class="stat-v">'+cal.rankCorr.toFixed(2)+'</div></div>':'')+
           (cal.top10Hit!=null?'<div class="stat"><div class="stat-l">Top-10 hit rate</div><div class="stat-v">'+Math.round(cal.top10Hit*100)+'%</div></div>':'')+
-        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). Rank correlation (1 is perfect, 0 is random) says how well it ordered the players each gameweek; the top-10 hit rate is how many of its ten highest projections finished among the week\u2019s ten best scores. The model, graded on live results.</div></div>';
+        '</div>'+haulRecalNote(cal.haulSinceRecal)+'<div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). Rank correlation (1 is perfect, 0 is random) says how well it ordered the players each gameweek; the top-10 hit rate is how many of its ten highest projections finished among the week\u2019s ten best scores. The model, graded on live results.</div></div>';
     }
   }catch(_){}
   /* Prediction-logger health — shown until graded accuracy exists, so you
@@ -9482,9 +9488,10 @@ async function hydrateSquad(host){
   const [picks,live,fixtures]=await Promise.all([loadPicks(mid,gw),loadLive(gw),loadFixtures()]);
   await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes for the projection */
   const nf=buildNextFix(b,fixtures);
-  const livePts={},liveMins={};
-  (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;liveMins[e.id]=e.stats?e.stats.minutes:0;});
+  const livePts={},liveMins={},liveExpl={};
+  (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;liveMins[e.id]=e.stats?e.stats.minutes:0;liveExpl[e.id]=e.explain||[];});
   const eh=picks.entry_history||{};
+  SQ_DATA={};
   const cell=(pk)=>{
     const el=b.els[pk.element]||{};
     const base=livePts[pk.element]||0;
@@ -9495,13 +9502,23 @@ async function hydrateSquad(host){
     const mark=pts>=8?'<span class="pp-mark" title="Hauling">🔥</span>'
       :(mins>=60&&base<=2?'<span class="pp-mark" title="Played and blanked">👎</span>':'');
     const tsb=el.selected_by_percent!=null?el.selected_by_percent+'%':'–';
-    return '<div class="pp'+(pk.is_captain?' is-cap':'')+'">'+
-      (badge?'<span class="pp-badge">'+badge+'</span>':'')+mark+
+    /* The same tap card as the Live pitch, with the planning facts a squad
+       screen is opened for: what this week has paid, what comes next, and
+       what the player costs and carries. */
+    const nx=nf[el.team];
+    SQ_DATA[pk.element]={id:pk.element,name:el.web_name||'',team:teamShort(b,el.team),pos:posShort(b,el.element_type),
+      price:money(el.now_cost||0),own:tsb,form:el.form,news:el.news||'',
+      next:nx?{opp:nx.opp,home:nx.home,gw:nx.event,xp:xP(b,el,nx)}:null,
+      role:pk.is_captain?'Captain':pk.is_vice_captain?'Vice-captain':pk.position>11?'Bench':'Starting XI',
+      bd:lpBreakdown(liveExpl[pk.element],0,pk.multiplier||1)};
+    return '<button type="button" class="pp pp-btn'+(pk.is_captain?' is-cap':'')+'" data-sq="'+pk.element+'" '+
+      'aria-label="'+esc(el.web_name||'')+(badge==='C'?', captain':badge==='V'?', vice-captain':'')+', '+pts+' points. Show the details">'+
+      (badge?'<span class="pp-badge" aria-hidden="true">'+badge+'</span>':'')+mark+
       ppFigure(b,el)+
       '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
       '<span class="pp-pt">'+pts+'</span>'+
       '<span class="pp-sub"><span class="l" title="Selected by '+tsb+' of managers">'+tsb+'</span>'+
-      '<span class="r" title="Price">'+money(el.now_cost||0)+'</span></span></div>';
+      '<span class="r" title="Price">'+money(el.now_cost||0)+'</span></span></button>';
   };
   const starters=picks.picks.filter(p=>p.position<=11);
   const bench=picks.picks.filter(p=>p.position>11);
@@ -9567,6 +9584,7 @@ async function hydrateSquad(host){
       '</div>'+
     '</div>'+
     squadStartCard(b,picks.picks,nf);
+  host.querySelectorAll('[data-sq]').forEach(btn=>btn.addEventListener('click',()=>openSqDrawer(btn.dataset.sq,btn)));
 }
 /* Start chance for the whole squad, riskiest first: the fifteen numbers the
    projections above already use, shown so a doubt is spotted before the
@@ -18880,6 +18898,37 @@ function openLpDrawer(id,from){
       (hit?' · +2 banked':'')+'</b></div><span class="dc-bar" role="img" aria-label="'+d.dc+' of '+d.thr+' towards the +2"><i style="width:'+pct+'%"></i></span></div>';
   }
   document.getElementById('lpd-body').innerHTML=html;
+  const foot=document.getElementById('lpd-foot');
+  if(foot)foot.textContent='From the official live feed. Bonus is provisional until FPL confirms it after the match.';
+  dr.classList.add('open');
+  LP_RETURN=from||null;
+  const x=dr.querySelector('.lr-x');if(x)try{x.focus();}catch(_){}
+}
+/* My Squad's tap card, in the same drawer as the Live one. */
+let SQ_DATA={};
+function openSqDrawer(id,from){
+  const d=SQ_DATA[id];const dr=document.getElementById('lp-drawer');if(!d||!dr)return;
+  const bd=d.bd;
+  document.getElementById('lpd-title').textContent=d.name;
+  document.getElementById('lpd-sub').textContent=d.team+' · '+d.pos+' · '+d.role;
+  document.getElementById('lpd-pts').textContent=bd.total+' pts';
+  const row=(l,v,pt,cls)=>'<div class="lpd-row'+(cls?' '+cls:'')+'"><span>'+l+'</span><span class="num">'+v+'</span><span class="num lpd-p">'+pt+'</span></div>';
+  let html='<div class="lpd-row lpd-hd"><span>This gameweek</span><span>Value</span><span>Points</span></div>';
+  html+=bd.rows.length?bd.rows.map(r=>row(esc(r.label),r.value==null?'–':esc(String(r.value)),(r.pts>0?'+':'')+r.pts)).join('')
+    :'<p class="dl-sub" style="margin:6px 0">No points yet this gameweek.</p>';
+  if(bd.mult>1)html+=row(bd.mult===3?'Triple captain':'Captain','×'+bd.mult,bd.total,'lpd-tot');
+  else if(bd.rows.length)html+=row('Total','',bd.total,'lpd-tot');
+  html+='<div class="sqd-facts">'+
+    (d.next?'<div><span class="dl-sub">Next</span><b>'+esc(d.next.opp)+(d.next.home?' (H)':' (A)')+'</b><span class="dl-sub">GW'+d.next.gw+' · '+d.next.xp.toFixed(1)+' xP</span></div>':'')+
+    '<div><span class="dl-sub">Price</span><b>'+esc(d.price)+'</b></div>'+
+    '<div><span class="dl-sub">Owned by</span><b>'+esc(d.own)+'</b></div>'+
+    '<div><span class="dl-sub">Form</span><b>'+esc(d.form||'–')+'</b></div>'+
+  '</div>'+
+  (d.news?'<p class="sqd-news">'+esc(d.news)+'</p>':'')+
+  '<button type="button" class="btn btn-ghost btn-sm" onclick="closeLpDrawer();openPlayer('+(+d.id)+')">Full profile</button>';
+  document.getElementById('lpd-body').innerHTML=html;
+  const foot=document.getElementById('lpd-foot');
+  if(foot)foot.textContent='Points from the official live feed. The next-fixture projection is our model\u2019s.';
   dr.classList.add('open');
   LP_RETURN=from||null;
   const x=dr.querySelector('.lr-x');if(x)try{x.focus();}catch(_){}
@@ -27701,6 +27750,35 @@ function captainBand(xp){
    assists, clean sheet, bonus, defensive contribution, saves). Returns
    the mean, P10/P50/P90 and the haul (>=10) / blank (<=2) probabilities.
    Seeded on the player id so the output is stable across renders. */
+/* HAUL CALIBRATION. The simulator's raw haul chance was overconfident in
+   both directions: graded against 3,074 single-fixture predictions from
+   GW1 to GW7 of 2026/27, players it gave under 2% hauled 1.6% of the time
+   (it said 0.3%), and players it gave 10 to 35% hauled about half as often
+   as it said. Platt scaling fixes the shape with two numbers:
+   p' = 1 / (1 + e^-(a * logit(p) + b)). Fitted on GW1 to GW5 alone it
+   scored GW6 to GW7, which it never saw, at log loss 0.1164 against the raw
+   0.1257 (Brier 0.02607 against 0.02623); refitted on all seven weeks it
+   barely moved (0.48/-1.20 to 0.50/-1.16), which is what a real effect looks
+   like rather than noise. The transform is monotone, so it never reorders
+   players, only states their chances honestly. Applied from GW9's logged
+   predictions; earlier ones keep their original figures, and the Model page
+   reports how the corrected numbers do as each gameweek is graded. */
+const HAUL_CAL={a:0.50,b:-1.16};
+/* The Model page line that keeps the recalibration honest: what the
+   corrected haul chances said since they started, against what happened. */
+function haulRecalNote(h){
+  if(!h)return '';
+  const lead='<b>Haul chances recalibrated</b> on 24 October 2026, from 3,074 graded predictions (GW1 to GW7), because the high ones ran about twice too hot. ';
+  if(!h.n)return '<div class="dl-sub" style="margin-top:10px">'+lead+'The corrected figures are graded here from GW'+h.fromGw+' as each gameweek finishes.</div>';
+  return '<div class="dl-sub" style="margin-top:10px">'+lead+'Since GW'+h.fromGw+': predicted '+(h.predicted*100).toFixed(1)+
+    '% on average, actual '+(h.actual*100).toFixed(1)+'%, across '+fmtNum(h.n)+' predictions in '+h.gws+' gameweek'+(h.gws===1?'':'s')+
+    ' (Brier '+h.brier.toFixed(3)+').</div>';
+}
+function calibrateHaul(p){
+  if(!(p>=0))return p;
+  const q=Math.min(Math.max(p,0.001),0.999);
+  return 1/(1+Math.exp(-(HAUL_CAL.a*Math.log(q/(1-q))+HAUL_CAL.b)));
+}
 function pointsDist(el,nf,trials){
   trials=trials||2000;
   if(!nf||nf.lam==null)return {mean:0,p10:0,p50:0,p90:0,haul:0,blank:0};
@@ -27753,7 +27831,7 @@ function pointsDist(el,nf,trials){
   const q=f=>out[Math.min(trials-1,Math.floor(f*trials))];
   let sum=0,haul=0,blank=0;
   for(const v of out){sum+=v;if(v>=10)haul++;if(v<=2)blank++;}
-  return {mean:sum/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90),haul:haul/trials,blank:blank/trials};
+  return {mean:sum/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90),haul:calibrateHaul(haul/trials),blank:blank/trials};
 }
 /* Correlated squad simulation (P4): project a whole XI for the gameweek
    with the correlation a per-player point estimate misses — teammates

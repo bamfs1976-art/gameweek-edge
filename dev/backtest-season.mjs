@@ -57,6 +57,7 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
 const scoringSrc = extractDecl(html, 'SCORING_FALLBACK') + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
   [scoringSrc, congestSrc, minutesSupport(html), grab('minutesModel'), grab('concedePts'), grab('savePts'), grab('dcHitProb'), grab('effGoalRate'), grab('negRate90'),
+    extractDecl(html, 'HAUL_CAL'), grab('calibrateHaul'),
     grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
   '\nreturn { minutesModel, nativeXP, xP, pointsDist };'
 )();

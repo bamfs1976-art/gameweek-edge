@@ -168,8 +168,9 @@ export const ENGINE_FNS = [
      confTier comes along because setPieceConfidence calls it. */
   'confTier', 'setPieceConfidence',
 
-  /* Distribution helpers used by the simulators. */
-  'normCdf', 'pointsDist', 'squadSim',
+  /* Distribution helpers used by the simulators. calibrateHaul corrects
+     pointsDist's haul chance, so it travels with it. */
+  'normCdf', 'calibrateHaul', 'pointsDist', 'squadSim',
 
   /* Squad construction: best XI and the constrained optimiser. Both read
      their shape from a rules object rather than assuming 15/11/3. */
@@ -190,6 +191,8 @@ export const ENGINE_CONSTS = [
      population figure, which is the right answer for a league we have no
      corner research for. */
   'CORNER_XP',
+  /* The haul-chance calibration pointsDist applies (see HAUL_CAL). */
+  'HAUL_CAL',
   /* Match model coefficients and the score-grid size. */
   'PLSIM', 'PLSIM_PROMOTED', 'PLSIM_ALIAS', 'LG_GRID', 'MKT_ALIAS',
   /* Elo-derived priors for clubs with no offline fit. */
