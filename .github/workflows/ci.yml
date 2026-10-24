@@ -140,3 +140,34 @@ jobs:
       # declaration added to satisfy the installer still has to be real.
       - name: Declared-dependency guard
         run: node scripts/check-deps.mjs
+
+  # The browser suite: 503 checks that drive the real app in Chromium against
+  # canned FPL data (dev/test-ui.mjs). It ran only by hand until October 2026,
+  # and seven checks went stale unseen: a retired ticker, an en dash, a
+  # renamed pill, a badge with an expiry date, a class name two features
+  # shared. Its own job, so the fast suite above still answers in seconds.
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Runtime dependencies, then only Playwright from the dev set, at the
+      # version the lockfile pins. The rest of devDependencies (sharp,
+      # ffmpeg-static) are heavy and this job does not touch them.
+      - name: Install runtime dependencies and Playwright
+        run: |
+          npm ci --omit=dev
+          PW=$(node -p "require('./package-lock.json').packages['node_modules/playwright'].version")
+          npm install --no-save "playwright@$PW"
+          npx playwright install --with-deps chromium
+
+      # The suite serves www/, so build it exactly as Netlify does.
+      - name: Build the web bundle
+        run: npm run build:web
+
+      - name: Browser suite
+        run: node dev/test-ui.mjs

@@ -1179,14 +1179,14 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .lg-mv.dn{color:var(--red)}
 #league-standings .dl-grow{flex-direction:column;align-items:stretch}
 .lg-form{display:block;min-height:0}
-.lg-pills{display:flex;gap:4px;margin-top:5px}
-.lg-pill{min-width:28px;padding:1px 5px;border-radius:999px;text-align:center;
+.lg-fps{display:flex;gap:4px;margin-top:5px}
+.lg-fp{min-width:28px;padding:1px 5px;border-radius:999px;text-align:center;
   font:700 .7rem/1.5 var(--font-mono);border:1px solid}
-.lg-pill.up{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 55%,transparent);
+.lg-fp.up{color:var(--green-bright);border-color:color-mix(in srgb,var(--green) 55%,transparent);
   background:color-mix(in srgb,var(--green) 14%,transparent)}
-.lg-pill.dn{color:var(--red);border-color:color-mix(in srgb,var(--red) 55%,transparent);
+.lg-fp.dn{color:var(--red);border-color:color-mix(in srgb,var(--red) 55%,transparent);
   background:color-mix(in srgb,var(--red) 12%,transparent)}
-.lg-pill.na{color:var(--text-3);border-color:var(--border-2)}
+.lg-fp.na{color:var(--text-3);border-color:var(--border-2)}
 .lg-tools{display:flex;gap:8px;align-items:center;margin:4px 0 10px}
 .lg-search{flex:1;min-width:0;min-height:44px}
 .lg-find{flex-shrink:0;min-height:44px}
@@ -25822,8 +25822,10 @@ function lgForm(histories,n,lastDone){
 function lgFormHtml(cells){
   if(!cells||!cells.length)return '';
   const said=cells.map(c=>c?'GW'+c.gw+' '+c.pts+(c.above?' above':' below')+' the league average':'').filter(Boolean).join(', ');
-  return '<span class="lg-pills" role="img" aria-label="Last '+cells.length+' gameweeks: '+esc(said)+'">'+
-    cells.map(c=>c?'<span class="lg-pill '+(c.above?'up':'dn')+'">'+c.pts+'</span>':'<span class="lg-pill na">–</span>').join('')+'</span>';
+  /* Own class names: .lg-pill and .lg-pills already belong to the marker
+     row on the detailed view (FT, TV, ITB), and sharing them restyled it. */
+  return '<span class="lg-fps" role="img" aria-label="Last '+cells.length+' gameweeks: '+esc(said)+'">'+
+    cells.map(c=>c?'<span class="lg-fp '+(c.above?'up':'dn')+'">'+c.pts+'</span>':'<span class="lg-fp na">–</span>').join('')+'</span>';
 }
 /* Fetch the histories for the managers on screen and paint the pills into
    the placeholders. After the table, never before it: the standings must

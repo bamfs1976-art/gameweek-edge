@@ -4028,8 +4028,8 @@ section('lgForm: last-five form pills against the league average');
   ok(core.lgForm(live).gws.join(',') === '3,4,5,6,7', 'without a cap every gameweek present counts');
   const html5 = core.lgFormHtml(f.rows[1]);
   ok(/role="img"/.test(html5) && /above the league average/.test(html5), 'the pill row carries a spoken summary, so colour is not the only signal');
-  ok((html5.match(/lg-pill up/g) || []).length === 5, 'five pills, all marked above');
-  ok(core.lgFormHtml(f.rows[3]).includes('lg-pill na'), 'a gap renders as a neutral dash');
+  ok((html5.match(/lg-fp up/g) || []).length === 5, 'five pills, all marked above');
+  ok(core.lgFormHtml(f.rows[3]).includes('lg-fp na'), 'a gap renders as a neutral dash');
 }
 
 section('lpBreakdown: the Live tap card, line by line');
