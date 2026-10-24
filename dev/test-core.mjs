@@ -363,6 +363,11 @@ const pieces = [
   /* Section 4 (6-13): readiness, lineup, community. */
   extractFn(html, 'benchBoostReadiness'),
   extractFn(html, 'lineupCheck'),
+  extractLine(html, /^const LG_FORM_N=\d+;/m),
+  extractFn(html, 'lgForm'),
+  extractFn(html, 'lgFormHtml'),
+  extractConst(html, 'LP_STAT_LABEL'),
+  extractFn(html, 'lpBreakdown'),
   extractFn(html, 'communityAggregate'),
   extractFn(html, 'topSelectedByPos'),
   extractFn(html, 'differentials'),
@@ -436,7 +441,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -3960,7 +3965,27 @@ const lcPicks = { picks: [ lcPick(10, 1, true), lcPick(11, 2), lcPick(12, 3), lc
 const issues = core.lineupCheck({ els: lcEls }, lcPicks, lcNf);
 ok(issues.some(i => i.msg.includes('Hurt') && i.level === 'warn'), 'flags a ruled-out starter');
 ok(issues.some(i => i.msg.includes('Blank') && i.msg.toLowerCase().includes('no fixture')), 'flags a starter with no fixture');
-ok(issues.some(i => i.msg.includes('Nailed') && i.level === 'info'), 'flags a nailed player left on the bench');
+ok(!issues.some(i => /nailed to start/i.test(i.msg)), 'no longer flags a fit substitute just for being fit');
+/* A bench player is flagged only when the model expects him to beat a
+   starter he could legally replace, by at least a full point. */
+const swEl = (name, type, xp) => ({ web_name: name, team: 1, element_type: type, status: 'a',
+  chance_of_playing_next_round: null, ep_next: String(xp), form: '0', points_per_game: '0' });
+const swNf = { 1: { opp: 'BUR' } };
+const swBase = { 1: swEl('Keeper', 1, 4), 2: swEl('D1', 2, 4), 3: swEl('D2', 2, 4), 4: swEl('D3', 2, 4),
+  5: swEl('M1', 3, 5), 6: swEl('M2', 3, 5), 7: swEl('M3', 3, 5), 8: swEl('M4', 3, 2),
+  9: swEl('F1', 4, 6), 10: swEl('F2', 4, 6), 11: swEl('F3', 4, 6),
+  12: swEl('SubKeeper', 1, 9), 13: swEl('SubMid', 3, 6), 14: swEl('SubDef', 2, 2.5), 15: swEl('SubFwd', 4, 2) };
+const swPicks = { picks: Object.keys(swBase).map((id, i) => ({ element: Number(id), position: i + 1, is_captain: id === '9' })) };
+const sw = core.lineupCheck({ els: swBase }, swPicks, swNf);
+ok(sw.some(i => i.level === 'info' && /SubMid .*outscore M4/.test(i.msg)), 'flags a bench midfielder who beats the weakest midfielder by a point or more');
+ok(!sw.some(i => /SubDef/.test(i.msg)), 'a bench player within a point of every starter is not flagged');
+ok(!sw.some(i => /SubFwd/.test(i.msg)), 'a bench player below the XI is not flagged');
+ok(sw.some(i => /SubKeeper .*outscore Keeper/.test(i.msg)), 'a stronger bench keeper is matched against the starting keeper only');
+/* Formation guard: a back three cannot lose a defender to a forward. */
+const fmEls = Object.assign({}, swBase, { 15: swEl('SubFwd', 4, 9), 2: swEl('D1', 2, 1) });
+const fm = core.lineupCheck({ els: fmEls }, swPicks, swNf);
+ok(!fm.some(i => /SubFwd .*outscore D1/.test(i.msg)), 'never suggests a swap that leaves fewer than three defenders');
+ok(fm.some(i => /SubFwd .*outscore/.test(i.msg)), 'but still finds a legal starter for the stronger forward to replace');
 /* A legal, fully fit XI (11 starters on a team that has a fixture). */
 const fitEls = {};
 const cleanRows = [];
@@ -3968,6 +3993,51 @@ for (let i = 0; i < 11; i++) { fitEls[100 + i] = { web_name: 'P' + i, team: 1, s
   cleanRows.push(lcPick(100 + i, i + 1, i === 0)); }
 const cleanIssues = core.lineupCheck({ els: fitEls }, { picks: cleanRows }, lcNf);
 ok(cleanIssues.length === 1 && cleanIssues[0].level === 'ok', 'a legal, fully fit XI reports all-good');
+
+section('lgForm: last-five form pills against the league average');
+{
+  const h = (ev, pts, cost) => ({ event: ev, points: pts, event_transfers_cost: cost || 0 });
+  const hist = {
+    1: [1, 2, 3, 4, 5, 6].map(g => h(g, 60)),
+    2: [1, 2, 3, 4, 5, 6].map(g => h(g, 40, g === 6 ? 8 : 0)),
+    3: [3, 4, 5, 6].map(g => h(g, 50)),
+  };
+  const f = core.lgForm(hist);
+  ok(f.gws.join(',') === '2,3,4,5,6', 'takes the latest five gameweeks any manager has played');
+  ok(f.rows[2][4].pts === 32, 'scores net of hits, the same figure the standings print as GW');
+  ok(Math.abs(f.avg[6] - (60 + 32 + 50) / 3) < 1e-9, 'averages each gameweek across the managers loaded');
+  ok(f.rows[1].every(c => c.above) && f.rows[2].every(c => !c.above), 'marks above and below the league average');
+  ok(f.rows[3][0] === null, 'a gameweek a manager has no score for is a gap, not a zero');
+  ok(core.lgForm({}).gws.length === 0, 'no histories, no pills');
+  const html5 = core.lgFormHtml(f.rows[1]);
+  ok(/role="img"/.test(html5) && /above the league average/.test(html5), 'the pill row carries a spoken summary, so colour is not the only signal');
+  ok((html5.match(/lg-pill up/g) || []).length === 5, 'five pills, all marked above');
+  ok(core.lgFormHtml(f.rows[3]).includes('lg-pill na'), 'a gap renders as a neutral dash');
+}
+
+section('lpBreakdown: the Live tap card, line by line');
+{
+  const ex = [
+    { fixture: 1, stats: [{ identifier: 'minutes', points: 2, value: 69 }, { identifier: 'goals_scored', points: 4, value: 1 },
+      { identifier: 'defensive_contribution', points: 0, value: 4 }, { identifier: 'bonus', points: 2, value: 2 }] },
+  ];
+  const cap = core.lpBreakdown(ex, 0, 2);
+  ok(cap.sub === 8 && cap.total === 16, 'sums the explain lines and applies the armband (Haaland 8 x2 = 16)');
+  ok(cap.rows.map(r => r.label).join('|') === 'Minutes played|Goals|Defensive contributions|Bonus', 'labels each FPL stat in plain words');
+  const prov = core.lpBreakdown([{ fixture: 1, stats: [{ identifier: 'minutes', points: 2, value: 90 }] }], 3, 1);
+  ok(prov.rows.some(r => r.prov && r.pts === 3) && prov.total === 5, 'a provisional bonus is its own row and counts in the total');
+  const both = core.lpBreakdown(ex, 3, 1);
+  ok(!both.rows.some(r => r.prov), 'once FPL confirms a bonus, the provisional row never doubles it');
+  const dgw = core.lpBreakdown([
+    { fixture: 1, stats: [{ identifier: 'minutes', points: 2, value: 90 }] },
+    { fixture: 2, stats: [{ identifier: 'minutes', points: 1, value: 30 }, { identifier: 'yellow_cards', points: -1, value: 1 }] },
+  ], 0, 1);
+  ok(dgw.rows.find(r => r.id === 'minutes').pts === 3 && dgw.rows.find(r => r.id === 'minutes').value === 120, 'a double gameweek reads as one line per stat');
+  ok(dgw.total === 2, 'a negative line takes points off');
+  ok(core.lpBreakdown([], 0, 1).rows.length === 0 && core.lpBreakdown(null, 0, 1).total === 0, 'no feed yet, no rows and nought points');
+  const odd = core.lpBreakdown([{ fixture: 1, stats: [{ identifier: 'new_rule', points: 1, value: 1 }] }], 0, 1);
+  ok(odd.rows[0].label === 'New rule', 'a stat FPL adds later still shows, under a tidied name');
+}
 
 section('communityAggregate: the crowd selectors');
 const caB = { cur: { most_captained: 1, most_transferred_in: 2, most_transferred_out: 3, top_element_info: { id: 4 } },

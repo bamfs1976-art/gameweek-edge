@@ -135,9 +135,10 @@ const NAV_LABELS = ['Home', 'Squad', 'Players', 'Live', 'Leagues', 'More'];
 {
   const { ctx, page, errors } = await open('beginner', '/', null, 'simple');
   const s = await shell(page);
-  const SIMPLE = ['This Gameweek', 'My Squad', 'Transfer Planner', 'Captaincy Lab', 'Price Predictor', 'More'];
+  const SIMPLE = ['This Gameweek', 'My Squad', 'Transfer Planner', 'Mini-Leagues', 'Price Predictor', 'More'];
   check('simple: the rail is the five panels plus More', s.sidebar.join('|'), SIMPLE.join('|'));
-  check('simple: bottom tabs carry the same six, in their short forms', s.bottom.join('|'), 'Gameweek|Squad|Transfers|Captaincy|Prices|More');
+  check('simple: bottom tabs carry the same six, in their short forms', s.bottom.join('|'), 'Home|Squad|Plan|Leagues|Prices|More');
+  check('simple: every tab label is one word of seven letters or fewer', s.bottom.every(l => /^[A-Za-z]{1,7}$/.test(l)), true);
   check('simple: no page errors', errors.length, 0);
   /* Every panel stays reachable: a deep link to a panel outside the five. */
   await page.evaluate(() => openPanel('fixtures'));
