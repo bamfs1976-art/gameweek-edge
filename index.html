@@ -757,8 +757,8 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-score.mc-pre{display:flex;flex-direction:column;align-items:center;line-height:1.15;padding:3px 10px}
 @media (max-width:560px){.mc-xgk{display:none}.mc-lw{display:none}.mc-score.mc-pre{padding:3px 6px}}
 .mc-side{display:none}
-.mc-fix.sel{border-color:var(--green)}
 @media (min-width:1100px){
+  .mc-fix.sel{border-color:var(--green)}
   .mc-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
   .mc-side{display:block;position:sticky;top:72px;max-height:calc(100vh - 92px);overflow:auto;
     border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface);padding:16px}
@@ -780,6 +780,8 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mcs-a{background:var(--blue)}
 .mcs-0{background:var(--border-2)}
 .mcs-det{margin-top:6px}
+.mc-det>.mc-sec:first-child{margin-top:10px}
+.mc-det .mcs-bars{margin-bottom:10px}
 .mc-xg{font-size:var(--fs-min);font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;letter-spacing:.02em}
 .mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
 /* Club names: the full name where it fits, the three-letter FPL code on a
@@ -27263,25 +27265,31 @@ async function hydrateResults(host){
         '<span class="mc-team'+(lost==='a'?' mc-lost':'')+'">'+crest(b,f.team_a,18)+' <span>'+teamName(f.team_a)+'</span></span>'+
         '<span class="mc-ch" id="mc-ch-'+f.id+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span></div>'+
       (mm?'<div class="mc-prog" role="img" aria-label="'+esc(mm.spoken)+' played"><i style="width:'+mm.pct+'%"></i></div>':'')+
-      '<div class="mc-det" id="mc-d-'+f.id+'"'+(open?'':' style="display:none"')+'>'+detail(f)+'</div></div>';
+      '<div class="mc-det" id="mc-d-'+f.id+'"'+(open?'':' style="display:none"')+'>'+statBars(f)+detail(f)+'</div></div>';
   };
   /* ── Desktop: the chosen match beside the list ─────────────
      At desktop width the list and one match sit side by side, so reading a
      match does not push the rest of the gameweek off the screen. The side
      panel opens on the match most worth reading: one in play, else the
-     latest result, else the next kick-off. On a phone nothing changes. */
-  const side=f=>{
-    const lost=mcLoser(f),live=f.started&&!fixtureOver(f)&&!fixtureStuck(f),mm=live?mcMinute(f):null;
-    const nm=id=>esc((b.teams[id]||{}).name||teamShort(b,id));
+     latest result, else the next kick-off. On a phone a match still opens in
+     place, with the same stat bars at the top. */
+  /* Team stat bars for a started match. Shared by the desktop side panel
+     and the phone's open-in-place detail, so both read the same numbers. */
+  const statBars=f=>{
     const T=f.started?mcTeamStats(f,liveData,b.els):null;
-    const bars=T&&T.rows.length?'<div class="mc-sec">Team stats</div><div class="mcs-bars">'+T.rows.map(r=>{
+    if(!T||!T.rows.length)return '';
+    return '<div class="mc-sec">Team stats</div><div class="mcs-bars">'+T.rows.map(r=>{
       const tot=r.h+r.a,hp=tot>0?Math.round(r.h/tot*100):50;
       const fmt=v=>r.dp?v.toFixed(r.dp):String(v);
       return '<div class="mcs-row"><span class="mcs-v'+(r.h>r.a?' mcs-hi':'')+'">'+fmt(r.h)+'</span>'+
         '<span class="mcs-k">'+esc(r.label)+'</span><span class="mcs-v mcs-va'+(r.a>r.h?' mcs-hi':'')+'">'+fmt(r.a)+'</span>'+
         '<span class="mcs-bar" role="img" aria-label="'+esc(r.label)+': '+esc(teamShort(b,f.team_h))+' '+fmt(r.h)+', '+esc(teamShort(b,f.team_a))+' '+fmt(r.a)+'">'+
           (tot>0?'<i class="mcs-h" style="width:'+hp+'%"></i><i class="mcs-a" style="width:'+(100-hp)+'%"></i>':'<i class="mcs-0" style="width:100%"></i>')+'</span></div>';
-    }).join('')+'</div>'+(T.partial?'<div class="dl-sub" style="margin-top:6px">xG and xA are left out: a club playing twice this gameweek cannot be split by match.</div>':''):'';
+    }).join('')+'</div>'+(T.partial?'<div class="dl-sub" style="margin-top:6px">xG and xA are left out: a club playing twice this gameweek cannot be split by match.</div>':'');
+  };
+  const side=f=>{
+    const lost=mcLoser(f),live=f.started&&!fixtureOver(f)&&!fixtureStuck(f),mm=live?mcMinute(f):null;
+    const nm=id=>esc((b.teams[id]||{}).name||teamShort(b,id));
     return '<div class="mcs-head">'+
       '<div class="mcs-team'+(lost==='h'?' mc-lost':'')+'">'+crest(b,f.team_h,34)+'<b>'+nm(f.team_h)+'</b></div>'+
       '<div class="mcs-mid">'+(f.started?'<div class="mcs-score">'+(f.team_h_score!=null?f.team_h_score:0)+' – '+(f.team_a_score!=null?f.team_a_score:0)+'</div>':'<div class="mcs-score">v</div>')+
@@ -27289,7 +27297,7 @@ async function hydrateResults(host){
           (f.kickoff_time?new Date(f.kickoff_time).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Kick-off TBC'))+'</div></div>'+
       '<div class="mcs-team'+(lost==='a'?' mc-lost':'')+'">'+crest(b,f.team_a,34)+'<b>'+nm(f.team_a)+'</b></div></div>'+
       (mm?'<div class="mc-prog" role="img" aria-label="'+esc(mm.spoken)+' played"><i style="width:'+mm.pct+'%"></i></div>':'')+
-      bars+'<div class="mcs-det">'+detail(f)+'</div>';
+      statBars(f)+'<div class="mcs-det">'+detail(f)+'</div>';
   };
   const pick=fx.find(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f))
     ||fx.filter(f=>fixtureOver(f)).slice(-1)[0]||fx.find(f=>!f.started)||fx[0];
