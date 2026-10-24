@@ -45,7 +45,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
       # No npm install: both scripts import only node builtins and the
       # app's own ES modules, which is also why they cannot drift from what

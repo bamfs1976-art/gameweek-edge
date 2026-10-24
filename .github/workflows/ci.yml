@@ -15,7 +15,7 @@ jobs:
           # club-threads). Testing on 20 while the scheduled jobs run 22 is
           # the same class of gap as testing against a node_modules the CI
           # runner never has.
-          node-version: 22
+          node-version: 24
           cache: npm
 
       # The suite USED to need no install, and that was worth having. It

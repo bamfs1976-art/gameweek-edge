@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Probe non-FPL Premier League endpoints
         run: node dev/pl-endpoint-probe.mjs
 
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Prove the probe's gates still fire
         # First, deliberately. A probe whose gates have not been exercised
         # cannot be trusted to tell "no" from "could not ask", and that
@@ -87,7 +87,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Prove the survey's judgement calls still hold
         run: node dev/test-open-api-probe.mjs
       - name: Survey free, keyless, documented APIs

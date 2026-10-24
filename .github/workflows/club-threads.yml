@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
       # The nested sharp that @capacitor/assets pins downloads its native
       # library from GitHub Releases at install time, and one 504 from that
