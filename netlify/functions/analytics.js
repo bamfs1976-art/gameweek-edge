@@ -36,6 +36,9 @@ const AREA = {
      about how many arrivals are new to the game, not just new to the app. */
   home: ['dashboard', 'myweek', 'gw-actions', 'gwdebrief', 'blog', 'scout', 'accountability',
     'design', 'glossary', 'fplbasics', 'more',
+    /* /pricing, also outside the nav. Its views against checkout_started
+       are the upgrade funnel, so it is counted like any other page. */
+    'pricing',
     /* The first-run flow. Its own panel_view events, plus onboard_step and
        onboard_done, are what the link rate in docs/FIRST_RUN_UX.md §6 reads. */
     'onboard'],
