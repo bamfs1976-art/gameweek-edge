@@ -100,7 +100,7 @@ const pieces = [
      that ever throws it away. Its cache read is stubbed — what is under
      test is the decision, not the cache — and the recheck timer comes from
      the source so the rate limit is the shipped one. */
-  'let PEEK_FX = null;\nfunction cachedPeek(){ return PEEK_FX; }\nconst FIXTURES_TTL = 1;\nfunction __setPeek(v){ PEEK_FX = v; }\nfunction __resetRecheck(){ BOOT_RECHECKED = 0; }',
+  'let PEEK_FX = null;\nfunction cachedPeek(){ return PEEK_FX; }\nconst FIXTURES_TTL = 1;\nfunction __setPeek(v){ PEEK_FX = v; }\nfunction __resetRecheck(){ BOOT_RECHECKED = 0; }\n/* Earlier sections press Refresh, which leaves the floor above any stamp from the last minute. */\nfunction __resetFloor(){ CACHE_FLOOR = 0; }',
   /* THE REFRESH PATH. Nothing here tested it, which is how the Refresh
      button came to preserve the single payload a manager taps Refresh to
      see. The browser's storage and the app's game scoping are stubbed —
@@ -109,7 +109,8 @@ const pieces = [
     + 'const __LS={};\nconst localStorage={getItem:(k)=>(k in __LS?__LS[k]:null),'
     + 'setItem:(k,v)=>{__LS[k]=String(v);},removeItem:(k)=>{delete __LS[k];}};\n'
     + 'function __lsKeys(){return Object.keys(__LS);}\n'
-    + 'function __lsClear(){Object.keys(__LS).forEach((k)=>delete __LS[k]);}',
+    + 'function __lsClear(){Object.keys(__LS).forEach((k)=>delete __LS[k]);}\n'
+    + 'function __lsSet(k,v){__LS[k]=String(v);}',
   /* The consent gate. Pure over the storage stub above, so the whole
      question "was anything written before a choice" is answerable here
      rather than only in a browser. */
@@ -121,7 +122,11 @@ const pieces = [
   extractFn(html, 'attribSrc'),
   extractLine(html, /const MEM=\{\};/),
   extractFn(html, 'ck'),
+  extractLine(html, /const CACHE_SKEW_MS=[^;]+;/),
+  extractFn(html, 'cacheOk'),
   extractFn(html, 'cached'),
+  extractFn(html, 'memo'),
+  extractFn(html, 'bootStale'),
   extractLine(html, /let CACHE_FLOOR=0;/),
   extractFn(html, 'clearLiveCache'),
   extractLine(html, /const BOOT_TTL=[^;]+;/),
@@ -455,7 +460,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, __resetFloor, BOOT_RECHECK_MS, cached, memo, cacheOk, CACHE_SKEW_MS, bootStale, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear, __lsSet};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1273,6 +1278,88 @@ section('Refresh actually refreshes — including the player list');
   const d = load('fourth');
   ok(await core.cached('boot', TTL, d) === 'fourth',
      'and the next attempt still reaches the network');
+}
+
+section('Stale gameweek guards: a future stamp, a passed deadline, an index that never expired');
+{
+  /* Reported as a browser tab still on gameweek 7 a day into gameweek 8,
+     through closing and reopening. The server had gameweek 8 throughout.
+     Three ways a saved copy could outlive its welcome, one guard each. */
+  const TTL = 60 * 60e3, now = Date.now();
+  const load = (v) => { let n = 0; const f = async () => { n++; return v; }; f.calls = () => n; return f; };
+  const wipe = () => { Object.keys(core.MEM).forEach((k) => delete core.MEM[k]); core.__lsClear(); core.__resetFloor(); };
+
+  /* ONE: a stamp from the future. now - t is negative, which is under any
+     TTL, so the copy was trusted for ever; and it sat above the Refresh
+     floor, so the button could not shift it either. */
+  wipe();
+  core.__lsSet('ge-c-fpl:boot', JSON.stringify({ t: now + 3 * 3600e3, v: 'from-the-future' }));
+  const a = load('fresh');
+  ok(await core.cached('boot', TTL, a) === 'fresh' && a.calls() === 1,
+     'a stored copy stamped hours ahead of the clock is refetched, not trusted for ever');
+  wipe();
+  core.__lsSet('ge-c-fpl:boot', JSON.stringify({ t: now + 3 * 3600e3, v: 'from-the-future' }));
+  core.clearLiveCache();
+  ok(await core.cached('boot', TTL, load('after-refresh')) === 'after-refresh',
+     'and Refresh gets past it too, which the floor alone could not');
+  wipe();
+  core.__lsSet('ge-c-fpl:boot', JSON.stringify({ t: now + 60e3, v: 'a-minute-ahead' }));
+  ok(await core.cached('boot', TTL, load('unused')) === 'a-minute-ahead',
+     'while a clock a minute out is tolerated, so an NTP step does not throw good data away');
+  wipe();
+  ok(core.CACHE_SKEW_MS >= 60e3 && core.CACHE_SKEW_MS <= 15 * 60e3,
+     'the tolerance is minutes (' + (core.CACHE_SKEW_MS / 60e3) + ')');
+  ok(core.cacheOk({ t: now + 3600e3 }, TTL, now) === false && core.cacheOk({ t: now - 60e3 }, TTL, now) === true,
+     'cacheOk answers the same for memory, storage and peeks');
+  core.MEM[core.ck('m:sq')] = { t: now + 3600e3, v: 'old-squad' };
+  ok(await core.memo('sq', TTL, load('new-squad')) === 'new-squad',
+     'and memo() refuses a future stamp as well');
+
+  /* TWO: the deadline. A copy saved before the is_next deadline names the
+     wrong gameweek the moment that deadline passes, an hour TTL or not. */
+  const evs = (dl) => [{ id: 7, is_current: true }, { id: 8, is_next: true, deadline_time: new Date(dl).toISOString() }];
+  const passed = evs(now - 30 * 60e3), coming = evs(now + 30 * 60e3);
+  ok(core.bootStale(coming, now - 60e3, now) === false, 'before the deadline, nothing is stale');
+  ok(core.bootStale(passed, now - 40 * 60e3, now) === true,
+     'a copy saved before a deadline that has now passed is stale');
+  ok(core.bootStale(passed, now - 60e3, now) === false,
+     'one fetched after the deadline is trusted for the recheck interval, while FPL moves the flags on');
+  ok(core.bootStale(passed, now - core.BOOT_RECHECK_MS, now) === true,
+     'and asked again once that interval is up, so the lag costs minutes, not the hour');
+  ok(core.bootStale([{ id: 38, is_current: true, finished: true }], 0, now) === false,
+     'with no is_next gameweek (the season over) there is no deadline to miss');
+  ok(core.bootStale([{ id: 8, is_next: true, deadline_time: 'nonsense' }], 0, now) === false
+     && core.bootStale(null, 0, now) === false, 'and a missing or broken deadline is not evidence');
+
+  /* Wired in: cached() refuses the copy the deadline overtook, and the copy
+     it fetches instead is kept, rather than refetched on every read. */
+  wipe();
+  const valid = (b, t, n) => !core.bootStale(b && b.events, t, n);
+  core.__lsSet('ge-c-fpl:boot', JSON.stringify({ t: now - 40 * 60e3, v: { events: passed, gw: 7 } }));
+  const b = load({ events: passed, gw: 8 });
+  ok((await core.cached('boot', TTL, b, valid)).gw === 8 && b.calls() === 1,
+     'cached() refetches a bootstrap the deadline overtook, inside its TTL');
+  ok((await core.cached('boot', TTL, b, valid)).gw === 8 && b.calls() === 1,
+     'and keeps the refetched copy, rather than looping while FPL settles');
+
+  /* THREE: the index itself. boot() keeps it for the life of the tab and
+     BOOT_TTL only ever governed the stored copy, so an open tab never aged. */
+  wipe();
+  core.__setPeek(null);
+  core.__resetRecheck();
+  ok(core.gwMoved({ cur: coming[0], events: coming, _t: now - TTL - 1 }) === 'age',
+     'an index built from a copy older than BOOT_TTL is rebuilt');
+  ok(core.gwMoved({ cur: coming[0], events: coming, _t: now + 3600e3 }) === 'age',
+     'as is one stamped in the future');
+  ok(core.gwMoved({ cur: passed[0], events: passed, _t: now - 40 * 60e3 }) === 'deadline',
+     'and one the deadline overtook is rebuilt with no fixtures in memory at all');
+  ok(core.gwMoved({ cur: coming[0], events: coming, _t: now - 60e3 }) === false,
+     'while a young index before its deadline stays');
+  ok(core.gwMoved({ cur: passed[0], events: passed, _t: now - 40 * 60e3, _retry: now - 60e3 }) === false,
+     'and a rebuild that just failed offline is not retried on every render');
+  ok(core.gwMoved({ cur: passed[0], events: passed }) === false,
+     'an index with no stamp falls through to the fixture checks, unchanged');
+  wipe();
 }
 
 section('Social Studio: the cards are the first thing on the page');
