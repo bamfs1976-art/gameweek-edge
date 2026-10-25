@@ -1,12 +1,12 @@
 {
- "built": "2026-10-25T16:23:25.403Z",
+ "built": "2026-10-25T20:52:36.739Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-25T16:23:25.403Z",
+  "generatedAt": "2026-10-25T20:52:36.739Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -4737,14 +4737,6 @@
      "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "P. Bamford",
-     "position": "FWD",
-     "rating": 72.7,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), playing at home."
-    },
-    {
      "name": "S. McCallum",
      "position": "DEF",
      "rating": 71.5,
@@ -4759,9 +4751,23 @@
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 11 of 12 (92%), playing at home."
+    },
+    {
+     "name": "H. Choudhury",
+     "position": "MID",
+     "rating": 68.3,
+     "status": "available",
+     "minutesShare": 83,
+     "summary": "Started 10 of 12 (83%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Bamford",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "J. Shackleton",
      "position": "DEF",
