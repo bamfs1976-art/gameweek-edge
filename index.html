@@ -4089,12 +4089,32 @@ const MEM={};
    served a slice cached by the first — the kind of bug that shows up as
    quietly wrong numbers rather than an error. */
 function ck(key){return GAME.id+':'+key;}
-async function cached(key,ttl,loader){
+/* HOW FAR AHEAD OF THE CLOCK A STAMP MAY BE.
+
+   Every freshness check here is `now - stamp < ttl`, and a stamp from the
+   future passes it for ever: the age comes out negative. A device whose
+   clock ran ahead (a manual change, a dead battery, a wrong time zone fixed
+   later) wrote stamps like that, and the copy behind them was then trusted
+   indefinitely. It also beat the Refresh button, whose floor is "now", so a
+   future stamp sat above it. Reported as a tab that stayed a gameweek behind
+   through close, reopen and Refresh alike.
+
+   Five minutes, not zero: a stamp is taken on this device's own clock, and a
+   small step backwards (an NTP correction) must not throw good data away. */
+const CACHE_SKEW_MS=5*60e3;
+function cacheOk(e,ttl,now){
+  return !!e&&e.t>=CACHE_FLOOR&&now-e.t<ttl&&e.t-now<=CACHE_SKEW_MS;
+}
+/* `valid(v,t,now)` is an optional second opinion on a hit: the TTL says how
+   old a copy is, and some payloads know better whether that age matters.
+   bootstrap does: see bootStale. A copy it rejects is refetched as a miss. */
+async function cached(key,ttl,loader,valid){
   const now=Date.now();
   key=ck(key);
-  if(MEM[key]&&now-MEM[key].t<ttl&&MEM[key].t>=CACHE_FLOOR){noteData(MEM[key].t);return MEM[key].v;}
+  const ok=e=>cacheOk(e,ttl,now)&&(!valid||valid(e.v,e.t,now));
+  if(ok(MEM[key])){noteData(MEM[key].t);return MEM[key].v;}
   try{const raw=localStorage.getItem('ge-c-'+key);if(raw){const o=JSON.parse(raw);
-    if(now-o.t<ttl&&o.t>=CACHE_FLOOR){MEM[key]={t:o.t,v:o.v};noteData(o.t);return o.v;}}}catch(_){}
+    if(ok(o)){MEM[key]={t:o.t,v:o.v};noteData(o.t);return o.v;}}}catch(_){}
   const v=await loader();
   /* Never cache a failure. The best-effort loaders (Core Insights, the cup
      calendar, club Elo) resolve to null when the endpoint is unreachable, and
@@ -4124,14 +4144,14 @@ async function cached(key,ttl,loader){
    stored, so the next call retries. */
 async function memo(key,ttl,loader){
   const k=ck('m:'+key),e=MEM[k],now=Date.now();
-  if(e&&now-e.t<ttl&&e.t>=CACHE_FLOOR)return e.v;
+  if(cacheOk(e,ttl,now))return e.v;
   const v=await loader();
   MEM[k]={t:Math.max(now,CACHE_FLOOR),v};
   return v;
 }
 function cachedPeek(key,ttl){
   const e=MEM[ck(key)];
-  return (e&&Date.now()-e.t<ttl)?e.v:null;
+  return cacheOk(e,ttl,Date.now())?e.v:null;
 }
 /* The Refresh button's clear, and it drops BOOTSTRAP TOO.
 
@@ -4197,7 +4217,29 @@ function clearLiveCache(){
    floor is "within an hour of FPL knowing", and 100KB is a fair price for it.
    Refresh clears it outright; see clearLiveCache. */
 const BOOT_TTL=60*60e3;
-const loadBootstrap=()=>cached('boot',BOOT_TTL,()=>api('bootstrap-static'));
+/* IS THIS COPY OF BOOTSTRAP FROM BEFORE THE DEADLINE THAT HAS PASSED?
+
+   The hour above is the right answer on an ordinary Tuesday and the wrong
+   one at a deadline. A copy saved at 18:00 on Friday still names the coming
+   gameweek is_next, and from 18:30, when its deadline passes, every panel
+   that reads the flags is a gameweek behind for whatever is left of the
+   hour. Nothing else noticed in time: bootBehind waits for the next week's
+   first kick-off, which can be ninety minutes after the deadline.
+
+   So the deadline is asked directly. If the is_next gameweek's deadline has
+   gone, the copy is stale when it was saved before that deadline, or when it
+   is older than the recheck interval. The second half matters because FPL
+   takes a few minutes to move is_current on, and the edge holds a copy for
+   five more: a fetch just after the deadline brings back the same flags, and
+   without it that copy would be trusted for the full hour. With it, the app
+   asks again every ten minutes until FPL has moved, and never faster. */
+function bootStale(events,t,now){
+  const nx=Array.isArray(events)?events.find(e=>e&&e.is_next):null;
+  const d=nx&&nx.deadline_time?Date.parse(nx.deadline_time):NaN;
+  if(!(d<=now))return false;
+  return t<d||now-t>=BOOT_RECHECK_MS;
+}
+const loadBootstrap=()=>cached('boot',BOOT_TTL,()=>api('bootstrap-static'),(b,t,now)=>!bootStale(b&&b.events,t,now));
 const FIXTURES_TTL=10*60e3;
 const loadFixtures =()=>cached('fixtures',FIXTURES_TTL,()=>api('fixtures'));
 /* One gameweek's fixtures, fresh. Only fetched while a match on screen is
@@ -4367,6 +4409,23 @@ function curSeasonStarted(){return MEM._idx?MEM._idx.seasonStarted:undefined;}
    no and the app carries on with what it has. */
 function gwMoved(idx){
   if(!idx||!idx.events)return false;
+  /* The two questions that need no fixtures, asked first because the peek
+     below answers no whenever fixtures are not in memory yet.
+
+     AGE. The index is built once and kept, so on its own it never expired:
+     BOOT_TTL only governs the stored copy it was built from. An index older
+     than that TTL is rebuilt, which refetches bootstrap because the copy it
+     came from is at least as old. A stamp from the future counts as expired
+     too (see CACHE_SKEW_MS). `_t` is absent on an index this did not build,
+     and then neither question is asked.
+
+     DEADLINE. The index was built from a copy the deadline has overtaken
+     (see bootStale). Self-limiting: the rebuild stamps a fresh `_t`. */
+  if(idx._t>0&&!(Date.now()-(idx._retry||0)<BOOT_RECHECK_MS)){
+    const now=Date.now();
+    if(!cacheOk({t:idx._t},BOOT_TTL,now))return 'age';
+    if(bootStale(idx.events,idx._t,now))return 'deadline';
+  }
   /* PEEK, never fetch. boot() is awaited by every panel on every render, so
      a network call here would be paid hundreds of times per session — and
      when fixtures are unreachable, cached() pins no failure, so every one
@@ -4463,11 +4522,27 @@ const BOOT_RECHECK_MS=10*60e3;
 let BOOT_RECHECKED=0;
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
-  if(MEM._idx){
-    if(!gwMoved(MEM._idx))return MEM._idx;
+  const old=MEM._idx;
+  if(old){
+    const why=gwMoved(old);
+    if(!why)return old;
     delete MEM._idx;
+    /* 'anchor' and 'behind' are only reached with fresh fixtures in hand, so
+       the network is there and the stored copy is known wrong: drop it. 'age'
+       and 'deadline' are asked with no evidence that we are online, so the
+       stored copy is left alone (cached() already refuses it) and a failed
+       refetch keeps the index we had. Showing an hour-old gameweek is better
+       than showing an error, and the retry waits for the recheck interval so
+       an offline phone is not asked to fetch on every render. */
+    if(why==='age'||why==='deadline'){
+      try{return await buildIdx();}
+      catch(_){old._retry=Date.now();MEM._idx=old;return old;}
+    }
     try{const k=ck('boot');delete MEM[k];localStorage.removeItem('ge-c-'+k);}catch(_){/* memory only */}
   }
+  return buildIdx();
+}
+async function buildIdx(){
   /* Fixtures are fetched ALONGSIDE bootstrap, not after it. The planning
      anchor needs both (see gwAnchor), and boot() is awaited by every panel
      before it can render — so chaining the two would put the whole app
@@ -4494,7 +4569,11 @@ async function boot(){
      projections are provisional — panels use this to set expectations. */
   const seasonStarted=b.elements.some(e=>(e.minutes||0)>0);
   const season=seasonKeyFrom(b.events);
-  const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,seasonStarted,preseason:!seasonStarted,season,events:b.events,elements:b.elements};
+  /* `_t` is the stamp of the bootstrap copy this index was built from, so its
+     age is the data's age rather than the moment it was indexed. */
+  const bootEntry=MEM[ck('boot')];
+  const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,seasonStarted,preseason:!seasonStarted,season,events:b.events,elements:b.elements,
+    _t:bootEntry&&bootEntry.v===b?bootEntry.t:Date.now()};
   /* Squad shape, budget and the club cap come from the game itself rather
      than constants, so a rule change lands on its own. Falls back field by
      field when a payload is partial. */

@@ -269,6 +269,9 @@ console.log('• cached: a failed fetch is never pinned for the full TTL');
        a workaround for a bug, kept next to the bug for a year instead of
        fixing it. The shared extractor keeps the keyword, so prepending a
        second one is now the error. */
+    /* cached() asks cacheOk whether a hit is still good, including whether
+       its stamp sits in the future; both come along from the source. */
+    grabConst('CACHE_SKEW_MS') + '\n' + grabFn('cacheOk') + '\n' +
     grabFn('cached') + '\nreturn cached;'
   )({}, {
     getItem: (k) => (k in store ? store[k] : null),
