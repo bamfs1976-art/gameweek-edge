@@ -1,12 +1,12 @@
 {
- "built": "2026-10-27T09:01:45.983Z",
+ "built": "2026-10-27T15:22:20.314Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-27T09:01:45.983Z",
+  "generatedAt": "2026-10-27T15:22:20.314Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1965,6 +1965,14 @@
    ],
    "players": [
     {
+     "name": "G. Lloyd",
+     "position": "FWD",
+     "rating": 73.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
      "name": "W. Boyle",
      "position": "DEF",
      "rating": 73.2,
@@ -2003,23 +2011,9 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "L. Hoole",
-     "position": "DEF",
-     "rating": 67.1,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "G. Lloyd",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Neck Injury, expected back 31 Oct"
-    },
     {
      "name": "J. Price",
      "position": "MID",
@@ -5642,12 +5636,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "A. Cannon",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
     {
      "name": "K. Thompson-Sommers",
      "position": "MID",
