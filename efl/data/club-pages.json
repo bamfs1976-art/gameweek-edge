@@ -1,12 +1,12 @@
 {
- "built": "2026-10-26T20:29:38.431Z",
+ "built": "2026-10-27T00:26:49.000Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-26T20:29:38.431Z",
+  "generatedAt": "2026-10-27T00:26:49.000Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -117,10 +117,34 @@
     {
      "name": "M. Langstaff",
      "position": "FWD",
-     "rating": 72.3,
+     "rating": 74.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
+     "name": "J. Grant",
+     "position": "MID",
+     "rating": 72.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Molyneux",
+     "position": "MID",
+     "rating": 72.2,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 1 goal and 7 assists."
+    },
+    {
+     "name": "B. Wiredu",
+     "position": "MID",
+     "rating": 71.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
     },
     {
      "name": "W. Norris",
@@ -131,33 +155,9 @@
      "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "L. Molyneux",
-     "position": "MID",
-     "rating": 70.9,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), 1 goal and 5 assists."
-    },
-    {
-     "name": "B. Wiredu",
-     "position": "MID",
-     "rating": 70.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Grant",
-     "position": "MID",
-     "rating": 70.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "W. Aimson",
      "position": "DEF",
-     "rating": 66.2,
+     "rating": 66.3,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
@@ -4442,155 +4442,6 @@
    "cardRisk": []
   },
   {
-   "id": "42",
-   "name": "Walsall",
-   "short": "WAL",
-   "slug": "walsall",
-   "division": "league-two",
-   "divisionName": "League Two",
-   "position": 6,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "D"
-   ],
-   "rating": 45.3,
-   "summary": "5 points from the last 3 — steady. 1 blank round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.5
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.33
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 12,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Colchester United",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Barnet",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "J. Ward",
-     "position": "GK",
-     "rating": 71,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 6 clean sheets plus 1 attacking return."
-    },
-    {
-     "name": "R. Smith",
-     "position": "MID",
-     "rating": 62.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 2 goals and 2 assists."
-    },
-    {
-     "name": "I. Moore",
-     "position": "MID",
-     "rating": 61.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "S. Sprangler",
-     "position": "MID",
-     "rating": 60.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Connolly",
-     "position": "DEF",
-     "rating": 60.3,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "A. Pressley",
-     "position": "FWD",
-     "rating": 60,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), 7 goals and 2 assists."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "A. Evans",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 31 Dec"
-    },
-    {
-     "name": "R. Dixon",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knock"
-    },
-    {
-     "name": "H. Williams",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Achilles Tendon Rupture injury"
-    },
-    {
-     "name": "A. Pattison",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 10 Jan"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "30",
    "name": "Bolton Wanderers",
    "short": "BOL",
@@ -6076,6 +5927,155 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "42",
+   "name": "Walsall",
+   "short": "WAL",
+   "slug": "walsall",
+   "division": "league-two",
+   "divisionName": "League Two",
+   "position": 6,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "W",
+    "D"
+   ],
+   "rating": 41.8,
+   "summary": "Only 4 points from the last 3. 1 blank round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.38
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.33
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 12,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Colchester United",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Barnet",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "J. Ward",
+     "position": "GK",
+     "rating": 71,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), 6 clean sheets plus 1 attacking return."
+    },
+    {
+     "name": "R. Smith",
+     "position": "MID",
+     "rating": 62.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), 2 goals and 2 assists."
+    },
+    {
+     "name": "A. Pressley",
+     "position": "FWD",
+     "rating": 61.2,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), 8 goals and 2 assists."
+    },
+    {
+     "name": "I. Moore",
+     "position": "MID",
+     "rating": 61.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "S. Sprangler",
+     "position": "MID",
+     "rating": 60.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Connolly",
+     "position": "DEF",
+     "rating": 60.4,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "A. Evans",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 31 Dec"
+    },
+    {
+     "name": "R. Dixon",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock"
+    },
+    {
+     "name": "H. Williams",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Achilles Tendon Rupture injury"
+    },
+    {
+     "name": "A. Pattison",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 10 Jan"
     }
    ],
    "cardRisk": []
