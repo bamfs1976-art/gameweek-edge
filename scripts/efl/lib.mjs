@@ -31,10 +31,47 @@ export const API_BASE = process.env.EFL_API_BASE || 'https://gameweekedge.co.uk/
 
 const DOCUMENTS = ['squads', 'players', 'rounds'];
 
-export async function fetchDocuments(base = API_BASE, fetchImpl = fetch) {
+/* A connection that never opened says nothing about the feed.
+
+   On 28 October every request from the runner failed for about a minute,
+   including a plain connection to this site, while the feed itself was
+   fine before and after. The job gave up on the first attempt, so a blip
+   that cost nothing became a failed run and an email. Each document now
+   gets three more tries, waiting 5, 20 and 60 seconds, which outlasts a
+   blip of that length.
+
+   Only for failures that are about the route: a request that threw before
+   any answer, or a gateway status. A 4xx, or a 200 in the wrong shape, is
+   the feed telling us something, and asking again would only delay the
+   report. */
+export const FETCH_RETRY_MS = [5e3, 20e3, 60e3];
+const RETRY_STATUS = new Set([502, 503, 504]);
+
+async function fetchPatiently(url, fetchImpl, waits, sleep, log) {
+  for (let i = 0; ; i += 1) {
+    let res;
+    try {
+      res = await fetchImpl(url, { headers: { Accept: 'application/json' } });
+    } catch (err) {
+      if (i >= waits.length) throw err;
+      log(`  ${url} did not connect (${err.message}); trying again in ${waits[i] / 1e3}s`);
+      await sleep(waits[i]);
+      continue;
+    }
+    if (RETRY_STATUS.has(res.status) && i < waits.length) {
+      log(`  ${url} answered ${res.status}; trying again in ${waits[i] / 1e3}s`);
+      await sleep(waits[i]);
+      continue;
+    }
+    return res;
+  }
+}
+
+export async function fetchDocuments(base = API_BASE, fetchImpl = fetch,
+  { waits = FETCH_RETRY_MS, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = console.log } = {}) {
   const out = {};
   for (const name of DOCUMENTS) {
-    const res = await fetchImpl(`${base}/${name}`, { headers: { Accept: 'application/json' } });
+    const res = await fetchPatiently(`${base}/${name}`, fetchImpl, waits, sleep, log);
     if (!res.ok) {
       let detail = '';
       try {

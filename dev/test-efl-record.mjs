@@ -1141,4 +1141,56 @@ ok('the outside capture that exposed it stays on the record', () => {
     'and it records that nothing of ours caught the fault');
 });
 
+/* ── Fetching: a blip on the route is retried, an answer is not ───── */
+{
+  const json = (status, body) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
+  const docs = { squads: [{ id: 1 }], players: [{ id: 2 }], rounds: [{ id: 3 }] };
+  const slept = [];
+  const sleep = async (ms) => { slept.push(ms); };
+  const waits = [1, 2, 3];
+  const log = () => {};
+
+  /* The 28 October failure: the connection itself fails, then recovers. */
+  let calls = 0;
+  const flaky = async (url) => {
+    calls += 1;
+    if (calls <= 2) throw new TypeError('fetch failed');
+    return json(200, docs[url.split('/').pop()]);
+  };
+  const got = await lib.fetchDocuments('https://x/api/efl', flaky, { waits, sleep, log });
+  ok('a connection blip is retried', () => {
+    assert.deepEqual(got.rounds, docs.rounds, 'and the documents still arrive');
+    assert.deepEqual(slept, [1, 2], 'after waiting between attempts');
+  });
+
+  /* A gateway status is the route too. */
+  slept.length = 0; calls = 0;
+  const gateway = async (url) => { calls += 1; return calls === 1 ? json(503, {}) : json(200, docs[url.split('/').pop()]); };
+  await lib.fetchDocuments('https://x/api/efl', gateway, { waits, sleep, log });
+  ok('a 503 is retried once and then accepted', () => assert.deepEqual(slept, [1]));
+
+  /* An answer is not retried: a 404 is the feed telling us something. */
+  slept.length = 0;
+  let err = null;
+  try { await lib.fetchDocuments('https://x/api/efl', async () => json(404, { error: 'gone' }), { waits, sleep, log }); }
+  catch (e) { err = e; }
+  ok('a 404 fails at once, with its message', () => {
+    assert.match(String(err && err.message), /squads answered 404 — gone/);
+    assert.deepEqual(slept, [], 'without waiting');
+  });
+
+  /* And a route that stays down still fails, after the last wait. */
+  slept.length = 0; err = null;
+  try { await lib.fetchDocuments('https://x/api/efl', async () => { throw new TypeError('fetch failed'); }, { waits, sleep, log }); }
+  catch (e) { err = e; }
+  ok('an outage still fails, after every retry', () => {
+    assert.match(String(err && err.message), /fetch failed/);
+    assert.deepEqual(slept, waits);
+  });
+  ok('the real waits outlast a one-minute blip', () => {
+    const total = lib.FETCH_RETRY_MS.reduce((a, b) => a + b, 0);
+    assert.ok(total >= 75e3 && total <= 180e3, 'total wait ' + total / 1e3 + 's');
+  });
+}
+
 console.log(`✓ Fantasy EFL ledger: ${checks} checks passed`);
