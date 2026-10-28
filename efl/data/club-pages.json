@@ -1,12 +1,12 @@
 {
- "built": "2026-10-27T22:15:14.589Z",
+ "built": "2026-10-28T05:44:30.036Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-27T22:15:14.589Z",
+  "generatedAt": "2026-10-28T05:44:30.036Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -8241,12 +8241,6 @@
      "position": "FWD",
      "status": "doubtful",
      "news": "Knock, expected back 30 Oct"
-    },
-    {
-     "name": "J. Randall",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 28 Oct"
     },
     {
      "name": "M. Owolabi-Belewu",
