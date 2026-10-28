@@ -39,8 +39,8 @@ function slice(from, to) {
   return html.slice(a, b);
 }
 const src = slice('const SOC_ROTA=', 'function socPlanCard(');
-const ctx = new Function(src + '\nreturn {SOC_ROTA,SOC_PIN,SOC_WEEKS,SOC_SHOTS,socPostTimes,socSchedule,socWhen};')();
-const { SOC_ROTA, SOC_PIN, SOC_SHOTS, socPostTimes, socSchedule } = ctx;
+const ctx = new Function(src + '\nreturn {SOC_ROTA,SOC_PIN,SOC_TIPS,SOC_WEEKS,SOC_SHOTS,socPostTimes,socSchedule,socWhen};')();
+const { SOC_ROTA, SOC_PIN, SOC_TIPS, SOC_SHOTS, socPostTimes, socSchedule } = ctx;
 
 /* ── The rota must name real cards ───────────────────────────────────
    A typo here is invisible: the id simply never matches, the card silently
@@ -53,6 +53,8 @@ for (const id of SOC_ROTA) if (!presets.has(id)) fail('rota names "' + id + '", 
 if (!presets.has(SOC_PIN)) fail('pinned card "' + SOC_PIN + '" is not a preset');
 if (new Set(SOC_ROTA).size !== SOC_ROTA.length) fail('rota contains a duplicate');
 if (SOC_ROTA.includes(SOC_PIN)) fail('the pinned card is also in the rota — it would be scheduled twice');
+if (SOC_ROTA.includes(SOC_TIPS)) fail('the tips board is also in the rota — it would be scheduled twice');
+if (!presets.has(SOC_TIPS)) fail('the tips board "' + SOC_TIPS + '" is not a preset');
 if (!failed) ok('rota: ' + SOC_ROTA.length + ' cards, all real, no duplicates, pin held out');
 
 /* ── A fabricated season ─────────────────────────────────────────────
@@ -79,7 +81,7 @@ eq(plan.every((s, i) => !i || plan[i - 1].at <= s.at), true, 'slots come back in
 /* Two kinds of slot repeat by design — the pinned captaincy call and the
    screenshot posts. Everything else is the rota, and the rota must not. */
 const SHOTS = new Set(ctx.SOC_SHOTS.map((s) => s.id));
-const rotaSlots = plan.filter(s => s.id !== SOC_PIN && !SHOTS.has(s.id));
+const rotaSlots = plan.filter(s => s.id !== SOC_PIN && s.id !== SOC_TIPS && !SHOTS.has(s.id));
 eq(new Set(rotaSlots.map(s => s.id)).size, rotaSlots.length, 'no rota card is scheduled twice');
 if (!plan.length) fail('a season with eight upcoming deadlines produced no schedule');
 
@@ -122,6 +124,14 @@ eq(pinned.every(s => s.off === 2), true, 'the captaincy call is always two days 
 eq(pinned.length, new Set(plan.map(s => s.gw)).size,
   'on a weekly fixture list the captaincy call is scheduled every gameweek');
 eq(new Set(pinned.map(s => s.gw)).size, pinned.length, 'and never twice in the same gameweek');
+
+/* ── The tips board is every week, three days out ───────────────────
+   Mid-week, after the first price moves and before the captaincy call. */
+const tipsSlots = plan.filter(s => s.id === SOC_TIPS);
+eq(tipsSlots.every(s => s.off === 3), true, 'the tips board is always three days out');
+eq(tipsSlots.length, new Set(plan.map(s => s.gw)).size,
+  'on a weekly fixture list the tips board is scheduled every gameweek');
+eq(tipsSlots.every(s => s.at.getDay() === 3), true, 'a Saturday deadline puts the tips board on a Wednesday');
 
 /* ── The GW Debrief ──────────────────────────────────────────────────
    A screenshot post, not a card, and weekly like the captaincy call. It sits
