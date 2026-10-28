@@ -1,12 +1,12 @@
 {
- "built": "2026-10-28T05:44:30.036Z",
+ "built": "2026-10-28T19:54:41.364Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-28T05:44:30.036Z",
+  "generatedAt": "2026-10-28T19:54:41.364Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -322,7 +322,7 @@
      "name": "T. Collyer",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury, expected back 22 Nov"
+     "news": "Hamstring injury, expected back 6 Dec"
     },
     {
      "name": "M. Johnston",
@@ -650,6 +650,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "K. Bielik",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury"
+    },
     {
      "name": "R. Colwill",
      "position": "MID",
@@ -1264,7 +1270,7 @@
      "name": "B. Traoré",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 1 Nov"
     }
    ],
    "cardRisk": []
@@ -1898,7 +1904,7 @@
      "name": "N. Madsen",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury, expected back 22 Nov"
+     "news": "Muscle Injury, expected back 22 Nov"
     },
     {
      "name": "A. Mbengue",
@@ -2476,7 +2482,14 @@
      "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
     }
    ],
-   "unavailable": [],
+   "unavailable": [
+    {
+     "name": "K. Lamadrid",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 1 Nov"
+    }
+   ],
    "cardRisk": []
   },
   {
@@ -2559,50 +2572,50 @@
     {
      "name": "N. Moriah-Welsh",
      "position": "MID",
-     "rating": 78.3,
+     "rating": 75.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), 3 goals and 3 assists."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), 3 goals and 3 assists."
     },
     {
      "name": "M. Smith",
      "position": "FWD",
-     "rating": 77.7,
+     "rating": 75.1,
      "status": "available",
-     "minutesShare": 91,
-     "summary": "Started 10 of 11 (91%), playing at home."
+     "minutesShare": 83,
+     "summary": "Started 10 of 12 (83%), playing at home."
     },
     {
      "name": "L. Reed",
      "position": "MID",
-     "rating": 75.7,
+     "rating": 72.8,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
     },
     {
      "name": "R. Oates",
      "position": "FWD",
-     "rating": 74.7,
+     "rating": 71.8,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), playing at home."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), playing at home."
     },
     {
      "name": "R. Sweeney",
      "position": "DEF",
-     "rating": 74.4,
+     "rating": 71.8,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
     },
     {
      "name": "A. Oshilaja",
      "position": "DEF",
-     "rating": 74,
+     "rating": 71.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -3011,50 +3024,50 @@
     {
      "name": "F. Onyedinma",
      "position": "FWD",
-     "rating": 75.9,
+     "rating": 73.3,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), playing at home."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), playing at home."
     },
     {
      "name": "C. Boyd-Munce",
      "position": "MID",
-     "rating": 73.9,
+     "rating": 71.3,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 0 goals and 1 assist."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 0 goals and 1 assist."
     },
     {
      "name": "E. Henderson",
      "position": "MID",
-     "rating": 72,
+     "rating": 69.5,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), 1 goal and 4 assists."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), 1 goal and 4 assists."
     },
     {
      "name": "C. Taylor",
      "position": "DEF",
-     "rating": 71.8,
+     "rating": 69.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     },
     {
      "name": "J. Wareham",
      "position": "FWD",
-     "rating": 70.5,
+     "rating": 68.3,
      "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), playing at home."
+     "minutesShare": 77,
+     "summary": "Started 10 of 13 (77%), playing at home."
     },
     {
      "name": "C. Woodrow",
      "position": "FWD",
-     "rating": 68.3,
+     "rating": 65.9,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), playing at home."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), playing at home."
     }
    ],
    "unavailable": [
@@ -3311,7 +3324,7 @@
     {
      "name": "C. Ripley",
      "position": "GK",
-     "rating": 73.3,
+     "rating": 74,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
@@ -3319,7 +3332,7 @@
     {
      "name": "J. Thomson",
      "position": "MID",
-     "rating": 71.3,
+     "rating": 71,
      "status": "available",
      "minutesShare": 85,
      "summary": "Started 11 of 13 (85%), 0 goals and 2 assists."
@@ -3335,15 +3348,15 @@
     {
      "name": "K. Majekodunmi",
      "position": "DEF",
-     "rating": 66.1,
+     "rating": 66.7,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "O. Clarke",
-     "position": "MID",
-     "rating": 61.1,
+     "name": "B. Kirkman",
+     "position": "DEF",
+     "rating": 61.3,
      "status": "available",
      "minutesShare": 77,
      "summary": "Started 10 of 13 (77%), even fixture (rated 3 of 5)."
@@ -4731,7 +4744,7 @@
      "name": "L. Cissé",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 1 Nov"
     },
     {
      "name": "S. Gallagher",
@@ -5034,13 +5047,13 @@
      "name": "L. Kjerrumgaard",
      "position": "FWD",
      "status": "injured",
-     "news": "Head Injury"
+     "news": "Head Injury, expected back 1 Nov"
     },
     {
      "name": "S. Coulibaly",
      "position": "DEF",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 1 Nov"
     },
     {
      "name": "E. Bove",
@@ -5578,50 +5591,50 @@
     {
      "name": "H. Leonard",
      "position": "FWD",
-     "rating": 75.1,
+     "rating": 72.5,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), playing at home."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), playing at home."
     },
     {
      "name": "L. Kelly",
      "position": "MID",
-     "rating": 70.9,
+     "rating": 68.3,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     },
     {
      "name": "A. Bass",
      "position": "GK",
-     "rating": 69.8,
+     "rating": 67.3,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     },
     {
      "name": "B. Shofowoke",
      "position": "FWD",
-     "rating": 69.2,
+     "rating": 66.5,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), playing at home."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), playing at home."
     },
     {
      "name": "E. Williams",
      "position": "FWD",
-     "rating": 67.2,
+     "rating": 64.8,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), playing at home."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), playing at home."
     },
     {
      "name": "H. Mills",
      "position": "DEF",
-     "rating": 66.5,
+     "rating": 64.2,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -6590,50 +6603,50 @@
     {
      "name": "J. Kabia",
      "position": "MID",
-     "rating": 75.8,
+     "rating": 73.1,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 4 goals and 3 assists."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 4 goals and 3 assists."
     },
     {
      "name": "I. El Mizouni",
      "position": "MID",
-     "rating": 73.5,
+     "rating": 70.8,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 0 goals and 2 assists."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 0 goals and 2 assists."
     },
     {
      "name": "F. Stevens",
      "position": "DEF",
-     "rating": 72.5,
+     "rating": 70.1,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     },
     {
      "name": "J. Olowu",
      "position": "DEF",
-     "rating": 71.8,
+     "rating": 69.6,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), even fixture (rated 3 of 5)."
     },
     {
      "name": "Y. Akhamrich",
      "position": "FWD",
-     "rating": 71.6,
+     "rating": 69.2,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), playing at home."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), playing at home."
     },
     {
      "name": "I. Hayden",
      "position": "MID",
-     "rating": 68.3,
+     "rating": 65.8,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -7218,7 +7231,7 @@
      "name": "P. Mattsson",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 1 Nov"
     },
     {
      "name": "M. Touré",
@@ -7230,7 +7243,7 @@
      "name": "P. Diallo",
      "position": "FWD",
      "status": "injured",
-     "news": "Muscle Injury, expected back 1 Nov"
+     "news": "Thigh Injury, expected back 1 Nov"
     },
     {
      "name": "A. Ahmed",
@@ -7242,7 +7255,7 @@
      "name": "G. Forsyth",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 1 Nov"
     }
    ],
    "cardRisk": []
@@ -7637,50 +7650,50 @@
     {
      "name": "L. Ness",
      "position": "DEF",
-     "rating": 59,
+     "rating": 56.7,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "J. Belshaw",
      "position": "GK",
-     "rating": 58.8,
+     "rating": 56.5,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "N. Tsaroulla",
      "position": "DEF",
-     "rating": 55.8,
+     "rating": 53.5,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "J. Bedeau",
      "position": "DEF",
-     "rating": 55.8,
+     "rating": 53.5,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "C. Grant",
      "position": "MID",
-     "rating": 55,
+     "rating": 52.5,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "D. Lipsiuc",
      "position": "MID",
-     "rating": 52.4,
+     "rating": 50.4,
      "status": "available",
-     "minutesShare": 75,
-     "summary": "In and out of the side (9 starts in 12), tough fixture (rated 4 of 5)."
+     "minutesShare": 69,
+     "summary": "In and out of the side (9 starts in 13), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -8338,50 +8351,50 @@
     {
      "name": "B. Peacock-Farrell",
      "position": "GK",
-     "rating": 68.8,
+     "rating": 66.1,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), 2 clean sheets plus 1 attacking return."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), 2 clean sheets plus 1 attacking return."
     },
     {
      "name": "J. Bowler",
      "position": "MID",
-     "rating": 65.5,
+     "rating": 62.6,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), 2 goals and 3 assists."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), 2 goals and 3 assists."
     },
     {
      "name": "O. Casey",
      "position": "DEF",
-     "rating": 63,
+     "rating": 60.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "K. Anderson",
      "position": "MID",
-     "rating": 61.3,
+     "rating": 58.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "J. Williams",
      "position": "DEF",
-     "rating": 60.9,
+     "rating": 58.3,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "A. Morgan",
      "position": "MID",
-     "rating": 60.9,
+     "rating": 58,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -9491,50 +9504,50 @@
     {
      "name": "M. Pinnock",
      "position": "MID",
-     "rating": 67.1,
+     "rating": 64.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 1 goal and 2 assists."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 1 goal and 2 assists."
     },
     {
      "name": "K. Conteh",
      "position": "MID",
-     "rating": 66.7,
+     "rating": 64,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 0 goals and 1 assist."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 0 goals and 1 assist."
     },
     {
      "name": "M. Ifill",
      "position": "MID",
-     "rating": 63,
+     "rating": 60.3,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 0 goals and 1 assist."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 0 goals and 1 assist."
     },
     {
      "name": "O. Sowunmi",
      "position": "DEF",
-     "rating": 58.4,
+     "rating": 56.2,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "V. Adeboyejo",
      "position": "FWD",
-     "rating": 58.1,
+     "rating": 55.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "J. McKiernan",
      "position": "MID",
-     "rating": 56.1,
+     "rating": 53.7,
      "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), tough fixture (rated 4 of 5)."
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -10385,14 +10398,6 @@
      "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "K. Walker",
-     "position": "DEF",
-     "rating": 66.6,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "L. Pires",
      "position": "DEF",
      "rating": 66.4,
@@ -10415,9 +10420,23 @@
      "status": "available",
      "minutesShare": 75,
      "summary": "In and out of the side (9 starts in 12), playing at home."
+    },
+    {
+     "name": "R. Hatate",
+     "position": "MID",
+     "rating": 61.6,
+     "status": "available",
+     "minutesShare": 67,
+     "summary": "In and out of the side (8 starts in 12), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "K. Walker",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "J. Bruun Larsen",
      "position": "FWD",
