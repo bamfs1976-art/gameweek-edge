@@ -84,9 +84,18 @@ jobs:
         if: failure() || github.event.inputs.health == 'true'
         run: |
           echo "GET /api/efl/health"
-          CODE=$(curl -sS -m 60 -o health.json -w '%{http_code}' \
-            https://gameweekedge.co.uk/api/efl/health || echo 000)
+          # curl already prints 000 when nothing answered, so no fallback
+          # echo: the old `|| echo 000` made it read "HTTP 000000".
+          CODE=$(curl -sS -m 60 --retry 3 --retry-delay 10 --retry-all-errors \
+            -o health.json -w '%{http_code}' https://gameweekedge.co.uk/api/efl/health || true)
           echo "HTTP $CODE"
+          # No body means the site itself did not answer, which is a
+          # different problem from a feed in the wrong shape. Say so, rather
+          # than crashing on a missing file.
+          if [ ! -s health.json ]; then
+            echo "✗ gameweekedge.co.uk did not answer from this runner. The steps above failed on the route, not on the feed."
+            exit 1
+          fi
           node -e "
             const r = JSON.parse(require('fs').readFileSync('health.json', 'utf8'));
             console.log(r.ok ? '✓ ' + r.summary : '✗ ' + r.summary);
