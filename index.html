@@ -2553,6 +2553,21 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
    The picture was never the hard part. Having to leave the app to find the
    words is what stops a card getting posted, so the words live here. */
 .soc-cap{border-top:1px solid var(--border-2);padding:9px 10px 10px}
+/* The tips board editor: one folded row per club, a row per call. Stacked on a
+   phone, one line per call on anything wider. */
+.soc-ted{border-top:1px solid var(--border-2);padding:10px}
+.ste-club{border:1px solid var(--border-2);border-radius:var(--r-md);margin:0 0 6px;padding:0 8px}
+.ste-club summary{min-height:44px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:var(--fs-sm);
+  overflow:hidden;white-space:nowrap}
+.ste-club summary .dl-sub{overflow:hidden;text-overflow:ellipsis;margin:0}
+.ste-club[open]{padding-bottom:8px}
+.ste-row{display:grid;grid-template-columns:76px 1fr 1.4fr;gap:6px;margin-top:6px}
+.ste-row.ste-d{grid-template-columns:1fr 1.4fr}
+.ste-row select,.ste-row input{min-height:44px;font-size:var(--fs-sm);padding:0 8px;border-radius:var(--r-sm);
+  border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);min-width:0}
+.soc-ted-f{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+@media (max-width:560px){.ste-row{grid-template-columns:76px 1fr}.ste-row input[data-f=why]{grid-column:1 / -1}
+  .ste-row.ste-d{grid-template-columns:1fr}}
 /* Shown whole, never clamped. A Bluesky caption is capped at 300 characters,
    which is six lines here — and a caption you have to expand to read is a
    caption you cannot check before you post it. */
@@ -10225,6 +10240,125 @@ function managerCard(picks,liveEls,ev,els,entry){
   };
 }
 
+/* ── BUY · HOLD · SELL: the weekly tips board ──────────────────────────
+   The format every FPL account posts before a deadline: a tile per club,
+   its next three fixtures, and a call on the players that matter there.
+   Those boards are written on a hunch. This one is drafted by the model and
+   edited by a person (see socTipsEditor), so every call starts from a number
+   and the owner decides what goes out under the brand.
+
+   The number is projected points over each club's next three games, ranked
+   within the player's position among players fit to start. Three calls:
+
+     BUY   top tenth of the position, fit, and under 30% owned. Above that
+           ownership a top-tenth player is not a buy, he is already in most
+           teams, so he reads HOLD.
+     HOLD  top two-fifths and owned by at least one manager in ten. A board
+           only earns its keep on players people actually have.
+     SELL  owned by at least one in twelve and either flagged under 50% to
+           play, or in the bottom third of the position while costing
+           £6.0m or more. Calling a £4.5m bench defender a sell is noise.
+
+   Each tile keeps at most three calls: the strongest of each kind first, so
+   a club with a clear buy and a clear sell shows both, then the next
+   strongest overall, with no more than two buys, two holds or one sell. The eleven clubs with the strongest calls make the
+   board; the twelfth tile is differentials, the best projections under 10%
+   owned that are not already on it.
+
+   Pure: rows and fixtures in, tiles out. tipsRows does the model work. */
+const TIPS_CLUBS=11,TIPS_LINES=3,TIPS_DIFFS=6;
+const TIPS_FIT=0.75,TIPS_BUY_PCT=0.9,TIPS_HOLD_PCT=0.6,TIPS_SELL_PCT=0.35;
+const TIPS_BUY_OWN_MAX=30,TIPS_HOLD_OWN=10,TIPS_SELL_OWN=8,TIPS_SELL_COST=6.0,TIPS_DIFF_OWN=10;
+const TIPS_ORDER={buy:0,hold:1,sell:2},TIPS_CAP={buy:2,hold:2,sell:1};
+function tipsOwn(own){return (own<10?own.toFixed(1):String(Math.round(own)))+'% owned';}
+function tipsVerdict(r,pct){
+  const pts=r.xp3.toFixed(1)+' pts next 3';
+  if(r.chance<0.5&&r.own>=TIPS_SELL_OWN)
+    return {v:'sell',s:1.5+r.own/100,
+      why:(r.chance<=0?'Ruled out':Math.round(r.chance*100)+'% to play')+' \u00b7 '+tipsOwn(r.own)};
+  if(r.chance<TIPS_FIT)return null;
+  if(pct>=TIPS_BUY_PCT){
+    if(r.own<TIPS_BUY_OWN_MAX)
+      return {v:'buy',s:1+(pct-TIPS_BUY_PCT)*10+(1-r.own/100)*0.5,why:pts+' \u00b7 '+tipsOwn(r.own)};
+    return {v:'hold',s:0.8+r.own/100,why:pts+' \u00b7 '+tipsOwn(r.own)};
+  }
+  if(pct>=TIPS_HOLD_PCT&&r.own>=TIPS_HOLD_OWN)
+    return {v:'hold',s:0.5+r.own/100,why:pts+' \u00b7 '+tipsOwn(r.own)};
+  if(pct<TIPS_SELL_PCT&&r.own>=TIPS_SELL_OWN&&r.cost>=TIPS_SELL_COST)
+    return {v:'sell',s:1+(TIPS_SELL_PCT-pct)*4+r.own/100,
+      why:pts+' at \u00a3'+r.cost.toFixed(1)+'m'};
+  return null;
+}
+function tipsPick(rows,clubs,opts){
+  opts=opts||{};
+  const nClubs=opts.clubs||TIPS_CLUBS;
+  /* The share of fit, projected players in the same position scoring BELOW
+     this one. Fit players only, so a squad of injured reserves cannot make
+     an ordinary starter look elite. */
+  const byPos={};
+  rows.forEach(r=>{if(r.chance>=TIPS_FIT&&r.xp3>0)(byPos[r.pos]=byPos[r.pos]||[]).push(r.xp3);});
+  Object.keys(byPos).forEach(k=>byPos[k].sort((p,q)=>p-q));
+  const pct=r=>{
+    const a=byPos[r.pos];if(!a||!a.length)return 0;
+    let lo=0,hi=a.length;
+    while(lo<hi){const m=(lo+hi)>>1;if(a[m]<r.xp3)lo=m+1;else hi=m;}
+    return lo/a.length;
+  };
+  const byTeam={};
+  rows.forEach(r=>{
+    if(!clubs[r.team])return;
+    const v=tipsVerdict(r,pct(r));
+    if(v)(byTeam[r.team]=byTeam[r.team]||[]).push(Object.assign({id:r.id,nm:r.nm},v));
+  });
+  const used=new Set();
+  const tiles=Object.keys(byTeam).map(t=>{
+    const all=byTeam[t].sort((a,c)=>c.s-a.s||a.id-c.id);
+    const pick=[];
+    ['buy','hold','sell'].forEach(k=>{const f=all.find(l=>l.v===k);if(f)pick.push(f);});
+    pick.sort((a,c)=>c.s-a.s);
+    /* Then the next strongest, up to the cap for its kind. Uncapped, a club
+       with a cheap, strong defence filled its tile with three defender buys,
+       which is one call made three times rather than a board. */
+    const n=k=>pick.filter(l=>l.v===k).length;
+    all.forEach(l=>{if(!pick.includes(l)&&n(l.v)<TIPS_CAP[l.v])pick.push(l);});
+    const lines=pick.slice(0,TIPS_LINES).sort((a,c)=>TIPS_ORDER[a.v]-TIPS_ORDER[c.v]||c.s-a.s);
+    return {team:+t,nm:clubs[t].nm,name:clubs[t].name||clubs[t].nm,fx:(clubs[t].fx||[]).slice(0,3),
+      score:lines.reduce((s,l)=>s+l.s,0),lines};
+  }).sort((a,c)=>c.score-a.score||a.team-c.team).slice(0,nClubs);
+  tiles.forEach(t=>t.lines.forEach(l=>used.add(l.id)));
+  const perClub={};
+  const diffs=rows.filter(r=>r.own<TIPS_DIFF_OWN&&r.chance>=TIPS_FIT&&r.xp3>0&&r.cost<10&&!used.has(r.id))
+    .sort((a,c)=>c.xp3-a.xp3||a.id-c.id)
+    .filter(r=>{perClub[r.team]=(perClub[r.team]||0)+1;return perClub[r.team]<=2;})
+    .slice(0,TIPS_DIFFS)
+    .map(r=>({id:r.id,nm:r.nm,team:clubs[r.team]?clubs[r.team].nm:'',why:r.xp3.toFixed(1)+' pts \u00b7 '+tipsOwn(r.own)}));
+  tiles.forEach(t=>{t.lines=t.lines.map(l=>({id:l.id,v:l.v,nm:l.nm,why:l.why}));delete t.score;});
+  return {tiles,diffs};
+}
+/* The owner's edits laid over the model's draft. Keyed by club and slot, so
+   an edit stays on the line it was made to; an empty name drops the line.
+   Returns a new spec and never touches the draft, which is what lets
+   "Reset to the model" be a plain delete. */
+function tipsApplyEdits(spec,edits){
+  edits=edits||{};
+  const line=(key,l)=>{
+    const e=edits[key];if(!e)return l;
+    const out=Object.assign({},l,e);
+    return String(out.nm||'').trim()?out:null;
+  };
+  return Object.assign({},spec,{
+    tiles:(spec.tiles||[]).map(t=>Object.assign({},t,{
+      lines:t.lines.map((l,j)=>line('t'+t.team+'-'+j,l)).filter(Boolean)})),
+    diffs:(spec.diffs||[]).map((d,j)=>line('d'+j,d)).filter(Boolean)});
+}
+/* The model's rows for the board: every player still at a club, with his
+   projection over his club's next three games. */
+function tipsRows(b,hz){
+  return (b.elements||[]).filter(e=>e.status!=='u').map(e=>({
+    id:e.id,nm:e.web_name,team:e.team,pos:e.element_type,cost:(e.now_cost||0)/10,
+    own:parseFloat(e.selected_by_percent)||0,xp3:horizonXP(b,e,hz),chance:availScale(e)}));
+}
+
 /* Every card the studio can produce. Each entry is built lazily so one
    failing preset never takes the whole panel down. */
 function socialSpecs(b,fixtures,live,me){
@@ -10285,6 +10419,22 @@ function socialSpecs(b,fixtures,live,me){
       groups:plan.map(r=>({label:'GW'+r.gw,
         items:r.picks.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1),
           crest:crestUrl(b,p.el.team),photos:socPhotoUrls(p.el)}))}))};
+  });
+
+  push('gw-tips',()=>{
+    const hz=buildHorizon(b,fixtures,3);
+    const clubs={};
+    Object.keys(hz).forEach(t=>{const tm=b.teams[t]||{};
+      clubs[t]={nm:teamShort(b,+t),name:tm.name||teamShort(b,+t),
+        fx:hz[t].map(f=>({opp:f.opp,home:f.home,diff:f.diff}))};});
+    const pick=tipsPick(tipsRows(b,hz),clubs);
+    if(pick.tiles.length<6)return null;
+    const tgw=(b.upcoming&&b.upcoming.id)||gw;
+    return {kind:'tips',gw:tgw,title:'BUY \u00b7 HOLD \u00b7 SELL',
+      sub:'GW'+tgw+' \u00b7 the model\u2019s calls for the next three games',
+      tiles:pick.tiles,diffs:pick.diffs,
+      note:'Points are projected over each club\u2019s next three games. Buy: top tenth of the position. '+
+        'Sell: flagged, or a poor return for the price. Fixtures: 1 easy to 5 hard.'};
   });
 
   push('differentials',()=>{
@@ -11083,6 +11233,71 @@ function renderSocialCard(spec,scale){
       x.font='600 17px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.45)';
       x.fillText(r.n+(r.n===1?' game':' games'),W-PAD-AVG/2,cy+22);
     });
+  } else if(spec.kind==='tips'){
+    /* Three across, four down: eleven club tiles and the differentials. A
+       tile is a club band, its next three fixtures in the app's 1-5 colours,
+       then up to three calls. The verdict is always a WORD in its pill, so
+       the colour repeats it and is never the only thing carrying it. */
+    const COLS=3,ROWS=4,PAD=32,G=14,top=236,bottom=H-146;
+    const tw=(W-PAD*2-G*(COLS-1))/COLS,th=(bottom-top-G*(ROWS-1))/ROWS;
+    const VC={buy:SOC_ACCENT,hold:'#fbbf24',sell:'#f87171'};
+    const VL={buy:'BUY',hold:'HOLD',sell:'SELL'};
+    /* Measured, not counted: a tile is a third of the card, and a name that
+       fits in characters can still run into the next column. */
+    const fit=(t,maxW)=>{t=String(t==null?'':t);if(x.measureText(t).width<=maxW)return t;
+      while(t.length>1&&x.measureText(t+'\u2026').width>maxW)t=t.slice(0,-1);return t+'\u2026';};
+    /* Fulham, Spurs and Leeds play in white, so the band's ink follows the
+       band rather than being fixed. */
+    const light=hex=>{const h=String(hex||'').replace('#','');if(h.length!==6)return false;
+      const v=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16)/255);
+      return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2]>0.6;};
+    const cells=(spec.tiles||[]).slice(0,COLS*ROWS-1).map(t=>({t}));
+    cells.push({d:spec.diffs||[]});
+    cells.forEach((c,i)=>{
+      const tx=PAD+(i%COLS)*(tw+G),ty=top+Math.floor(i/COLS)*(th+G);
+      const band=c.t?(KIT[c.t.nm]||[SOC_ACCENT,SOC_BG])[0]:SOC_ACCENT;
+      x.fillStyle='rgba(255,255,255,.06)';socRound(x,tx,ty,tw,th,14);x.fill();
+      x.save();socRound(x,tx,ty,tw,th,14);x.clip();
+      x.fillStyle=band;x.fillRect(tx,ty,tw,42);x.restore();
+      x.textAlign='left';x.font='800 22px system-ui,sans-serif';
+      x.fillStyle=light(band)?'#0c1014':'#ffffff';
+      x.fillText(fit(c.t?String(c.t.name).toUpperCase():'DIFFERENTIALS',tw-24),tx+12,ty+29);
+      if(c.t){
+        const fx=c.t.fx||[],fw=(tw-24-16)/3;
+        fx.slice(0,3).forEach((f,j)=>{
+          const fx0=tx+12+j*(fw+8),g=Math.max(1,Math.min(5,f.diff|0||3));
+          x.fillStyle=fdrBg(g);socRound(x,fx0,ty+52,fw,28,7);x.fill();
+          x.fillStyle=fdrInk(g);x.textAlign='center';x.font='800 16px system-ui,sans-serif';
+          x.fillText(fit(f.opp+(f.home?' (H)':' (A)'),fw-8),fx0+fw/2,ty+71);
+        });
+        const lh=Math.min(46,(th-96)/3);
+        c.t.lines.slice(0,3).forEach((l,j)=>{
+          const ly=ty+92+j*lh;
+          x.font='800 14px system-ui,sans-serif';
+          const lab=VL[l.v]||String(l.v||'').toUpperCase(),pw=x.measureText(lab).width+16;
+          x.fillStyle='rgba(255,255,255,.08)';socRound(x,tx+12,ly+2,pw,22,6);x.fill();
+          x.fillStyle=VC[l.v]||SOC_INK;x.textAlign='left';x.fillText(lab,tx+20,ly+18);
+          x.font='800 19px system-ui,sans-serif';x.fillStyle=SOC_INK;
+          x.fillText(fit(l.nm,tw-pw-34),tx+pw+20,ly+19);
+          x.font='600 15px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.62)';
+          x.fillText(fit(l.why,tw-24),tx+12,ly+40);
+        });
+      }else{
+        x.font='600 15px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.62)';x.textAlign='left';
+        x.fillText('Under 10% owned \u00b7 next 3 games',tx+12,ty+68);
+        const rh=Math.min(28,(th-84)/Math.max(1,c.d.length));
+        c.d.slice(0,6).forEach((d,j)=>{
+          const ry=ty+96+j*rh;
+          x.textAlign='left';x.font='800 18px system-ui,sans-serif';x.fillStyle=SOC_INK;
+          const nm=fit(d.nm,tw-150);x.fillText(nm,tx+12,ry);
+          const nw=x.measureText(nm).width;
+          x.font='600 14px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
+          x.fillText(d.team,tx+18+nw,ry);
+          x.textAlign='right';x.font='800 16px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+          x.fillText(String(d.why).split(' \u00b7 ')[0],tx+tw-12,ry);
+        });
+      }
+    });
   } else if(spec.kind==='ladder'){
     const gs=spec.groups||[],top=268,avail=H-top-190;
     /* Rows stretch to fill the card, and a short list is centred rather than
@@ -11442,6 +11657,22 @@ Who did you have? #FPL
 gameweekedge.co.uk`,
 a:`A ranked list of the highest-scoring players of the gameweek, with what each of them did and the points they scored.`},
 
+'gw-tips':{
+x:`Buy, hold or sell: the model's calls for the gameweek, club by club.
+
+Every call starts from projected points over the next three games, then gets a human read before it goes out.
+
+Disagree with one? Tell us which, and why.
+
+gameweekedge.co.uk`,
+b:`Buy, hold or sell: the model's calls for the gameweek, club by club.
+
+Every call starts from projected points over the next three games, then gets a human read before it goes out.
+
+Disagree with one? Tell us which. #FPL
+gameweekedge.co.uk`,
+a:`A grid of Premier League club tiles. Each shows the club's next three fixtures coloured by difficulty, then buy, hold or sell calls on key players with their projected points and ownership. The last tile lists low-owned differentials.`},
+
 'gw-differentials':{
 x:`The hauls almost nobody owned.
 
@@ -11681,6 +11912,7 @@ const SOC_ROTA=['gw-top-scorers','gw-week-in-numbers','set-pieces','defcon',
   'xg-runs','out-of-position','club-bonus','rotation-chain','attack-or-defence',
   'ladder-2','ladder-3','ladder-4','ladder-1','bank-xi','haaland-xi','big-three-xi'];
 const SOC_PIN='captains';                       /* every week, two days out */
+const SOC_TIPS='gw-tips';                       /* every week, three days out */
 const SOC_WEEKS=6;                              /* how far ahead to plan */
 
 /* ── Posts that come off your own screen ──────────────────────────────
@@ -11741,7 +11973,11 @@ function socSchedule(b,now,have){
     const base=rota.length?((ev.id-1)*2)%rota.length:0;
     const slots=[];
     SOC_SHOTS.forEach(s=>{if(ok(s.id))slots.push({off:s.off,id:s.id,shot:true});});
-    if(rota.length)slots.push({off:3,id:rota[base]});
+    /* The tips board is the week's other anchor: mid-week, once the price
+       moves and the first injury news are in, a day before the captaincy
+       call. The first rota card moves back a day to make room for it. */
+    if(rota.length)slots.push({off:4,id:rota[base]});
+    if(ok(SOC_TIPS))slots.push({off:3,id:SOC_TIPS});
     if(ok(SOC_PIN))slots.push({off:2,id:SOC_PIN});
     if(rota.length>1)slots.push({off:1,id:rota[(base+1)%rota.length]});
     slots.forEach(s=>{
@@ -11776,7 +12012,7 @@ function socSchedule(b,now,have){
      list almost nothing but captaincy ever got scheduled. Urgency first,
      anchor second. The losers drop out rather than shuffling to a free day —
      a card moved off its offset is no longer the post it was written to be. */
-  const rank=s=>s.id===SOC_PIN?0:s.shot?1:2;
+  const rank=s=>s.id===SOC_PIN||s.id===SOC_TIPS?0:s.shot?1:2;
   out.sort((a,c)=>a.at-c.at||a.gw-c.gw||rank(a)-rank(c)||a.off-c.off);
   const day=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
   const takenDay=new Set();
@@ -11784,7 +12020,7 @@ function socSchedule(b,now,have){
      the queue would be lying if it showed one of each a month out. The rota
      cards must not repeat inside the window, though: seeing the same card
      twice in a fortnight reads as a broken queue rather than a rotation. */
-  const weekly=s=>s.id===SOC_PIN||s.shot;
+  const weekly=s=>s.id===SOC_PIN||s.id===SOC_TIPS||s.shot;
   const seenCard=new Set();
   return out.filter(s=>{
     const k=day(s.at);
@@ -11910,6 +12146,87 @@ function socCapBlock(id,i){
     '</div></div>';
 }
 
+/* ── The tips board editor ────────────────────────────────────────────
+   "Model drafts, you edit": every call can be changed or dropped before the
+   card goes out. Edits live on this device, keyed to the gameweek, so next
+   week's board starts clean from the model rather than inheriting calls
+   about fixtures that have been played. */
+const SOC_TIPS_KEY='ge-soc-tips';
+function socTipsLoad(gw){
+  try{const o=JSON.parse(localStorage.getItem(SOC_TIPS_KEY)||'null');
+    return o&&o.gw===gw&&o.edits?o.edits:{};}catch(_){return {};}
+}
+function socTipsSave(gw,edits){
+  try{if(Object.keys(edits).length)localStorage.setItem(SOC_TIPS_KEY,JSON.stringify({gw,edits}));
+    else localStorage.removeItem(SOC_TIPS_KEY);}catch(_){/* this visit only */}
+}
+function socTipsEditorHtml(){
+  const T=window._soc&&window._soc.tips;if(!T)return '';
+  const m=T.model,ed=socTipsLoad(m.gw);
+  const val=(k,l,f)=>{const e=ed[k];return e&&e[f]!=null?e[f]:l[f];};
+  const VL={buy:'Buy',hold:'Hold',sell:'Sell'};
+  const row=(k,l,withV,who)=>'<div class="ste-row'+(withV?'':' ste-d')+'" data-k="'+k+'">'+
+    (withV?'<select data-f="v" aria-label="Call for '+esc(who)+'">'+Object.keys(VL).map(v=>
+      '<option value="'+v+'"'+(val(k,l,'v')===v?' selected':'')+'>'+VL[v]+'</option>').join('')+'</select>':'')+
+    '<input data-f="nm" maxlength="20" aria-label="Player, '+esc(who)+'" value="'+esc(val(k,l,'nm'))+'">'+
+    '<input data-f="why" maxlength="40" aria-label="Reason, '+esc(who)+'" value="'+esc(val(k,l,'why'))+'">'+
+    '</div>';
+  /* One folded row per club, its calls in the summary: thirty-odd lines
+     open at once is a long scroll on a phone, and most weeks only a few of
+     them need touching. */
+  const sum=(name,ls)=>'<summary><b>'+esc(name)+'</b> <span class="dl-sub">'+
+    esc(ls.map(l=>(l.v?VL[l.v]+' ':'')+l.nm).join(', '))+'</span></summary>';
+  const cur=(k,l)=>({v:val(k,l,'v'),nm:val(k,l,'nm')});
+  return (m.tiles||[]).map(t=>'<details class="ste-club">'+
+      sum(t.name,t.lines.map((l,j)=>cur('t'+t.team+'-'+j,l)).filter(l=>String(l.nm).trim()))+
+      t.lines.map((l,j)=>row('t'+t.team+'-'+j,l,true,t.name+' line '+(j+1))).join('')+'</details>').join('')+
+    '<details class="ste-club">'+sum('Differentials',(m.diffs||[]).map((d,j)=>({nm:val('d'+j,d,'nm')})).filter(l=>String(l.nm).trim()))+
+      (m.diffs||[]).map((d,j)=>row('d'+j,d,false,'differential '+(j+1))).join('')+'</details>'+
+    '<div class="soc-ted-f"><span class="dl-sub" style="flex:1 1 220px;margin:0">Clear a name to drop that line. '+
+      'Your edits stay on this device until the gameweek changes.</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="socTipsReset()">Reset to the model</button></div>';
+}
+function socTipsToggle(i,btn){
+  const box=document.getElementById('soc-ted-'+i);if(!box)return;
+  const open=box.hidden;
+  if(open&&!box.dataset.ready){box.innerHTML=socTipsEditorHtml();box.dataset.ready='1';
+    box.addEventListener('input',socTipsInput);box.addEventListener('change',socTipsInput);}
+  box.hidden=!open;
+  if(btn)btn.setAttribute('aria-expanded',String(open));
+}
+let SOC_TIPS_T=0;
+function socTipsInput(ev){
+  const T=window._soc&&window._soc.tips,row=ev.target&&ev.target.closest('.ste-row');
+  if(!T||!row)return;
+  const ed=socTipsLoad(T.model.gw),e={};
+  row.querySelectorAll('[data-f]').forEach(f=>{e[f.dataset.f]=f.value;});
+  ed[row.dataset.k]=e;
+  socTipsSave(T.model.gw,ed);
+  /* Keep the folded summary in step with what the card now says. */
+  const club=row.closest('details'),sm=club&&club.querySelector('summary .dl-sub');
+  if(sm){const VL={buy:'Buy',hold:'Hold',sell:'Sell'};
+    sm.textContent=[...club.querySelectorAll('.ste-row')].map(r=>{
+      const v=r.querySelector('[data-f=v]'),nm=r.querySelector('[data-f=nm]').value.trim();
+      return nm?(v?VL[v.value]+' ':'')+nm:'';}).filter(Boolean).join(', ');}
+  clearTimeout(SOC_TIPS_T);SOC_TIPS_T=setTimeout(socTipsRedraw,150);
+}
+function socTipsRedraw(){
+  const S=window._soc,T=S&&S.tips;if(!T)return;
+  S.specs[T.i]=tipsApplyEdits(T.model,socTipsLoad(T.model.gw));
+  const box=document.getElementById('soc-'+T.i);if(!box)return;
+  try{const cv=renderSocialCard(S.specs[T.i],0.34);cv.style.width='100%';cv.style.height='auto';
+    cv.style.display='block';cv.setAttribute('role','img');
+    cv.setAttribute('aria-label',S.specs[T.i].title+' · '+(S.specs[T.i].sub||''));
+    box.innerHTML='';box.appendChild(cv);}catch(_){}
+}
+function socTipsReset(){
+  const S=window._soc,T=S&&S.tips;if(!T)return;
+  socTipsSave(T.model.gw,{});
+  const box=document.getElementById('soc-ted-'+T.i);
+  if(box)box.innerHTML=socTipsEditorHtml();
+  socTipsRedraw();
+  toast('Back to the model\u2019s draft');
+}
 function socDownload(i){
   const S=window._soc;if(!S||!S.specs[i])return;
   const spec=S.specs[i];
@@ -12465,7 +12782,13 @@ async function hydrateSocial(host){
     if(sc)return 1;
     return 0;
   });
-  window._soc={specs,b,fixtures,custom:null,plan,slotBy};
+  window._soc={specs,b,fixtures,custom:null,plan,slotBy,tips:null};
+  /* The tips board is drawn from the owner's edits over the model's draft,
+     so a card edited on Tuesday is still the edited card on Wednesday. The
+     draft is kept beside it: the editor lists every line the model wrote,
+     including any the owner has dropped, so a drop can be undone. */
+  specs.forEach((sp,i)=>{if(sp.kind==='tips'){
+    window._soc.tips={i,model:sp};specs[i]=tipsApplyEdits(sp,socTipsLoad(sp.gw));}});
   socBuildLoad();
   /* Warm crests and photos before drawing. Best-effort: anything that fails
      simply falls back to the club-colour tile, so a slow or blocked CDN
@@ -12511,8 +12834,11 @@ async function hydrateSocial(host){
           '<span>'+esc(s.xTime)+' X · '+esc(s.bTime)+' Bluesky</span>'+
           '<span class="soc-gw">GW'+s.gw+' &minus;'+s.off+'d</span></div>':'')+
       '<div class="soc-bar"><span class="soc-nm">'+esc(sp.title)+'</span>'+
+      (sp.kind==='tips'?'<button class="btn btn-ghost btn-sm" aria-expanded="false" aria-controls="soc-ted-'+i+
+        '" onclick="socTipsToggle('+i+',this)">Edit</button>':'')+
       '<button class="btn btn-ghost btn-sm" onclick="socShare('+i+')">Share</button>'+
       '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div>'+
+      (sp.kind==='tips'?'<div class="soc-ted" id="soc-ted-'+i+'" hidden></div>':'')+
       socCapBlock(sp.id,i)+'</div>';}).join('')+
     '</div>';
   host.innerHTML=

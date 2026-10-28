@@ -122,6 +122,16 @@ const pieces = [
   extractFn(html, 'attribSrc'),
   extractLine(html, /const MEM=\{\};/),
   extractFn(html, 'ck'),
+  /* The tips board: verdicts, the board and the owner's edits. Pure over
+     rows the test writes, so every threshold is exercised on purpose. */
+  extractLine(html, /const TIPS_CLUBS=[^\n]+/),
+  extractLine(html, /const TIPS_FIT=[^\n]+/),
+  extractLine(html, /const TIPS_BUY_OWN_MAX=[^\n]+/),
+  extractLine(html, /const TIPS_ORDER=[^\n]+/),
+  extractFn(html, 'tipsOwn'),
+  extractFn(html, 'tipsVerdict'),
+  extractFn(html, 'tipsPick'),
+  extractFn(html, 'tipsApplyEdits'),
   extractLine(html, /const CACHE_SKEW_MS=[^;]+;/),
   extractFn(html, 'cacheOk'),
   extractFn(html, 'cached'),
@@ -460,7 +470,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, __resetFloor, BOOT_RECHECK_MS, cached, memo, cacheOk, CACHE_SKEW_MS, bootStale, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear, __lsSet};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, __resetFloor, BOOT_RECHECK_MS, cached, memo, cacheOk, CACHE_SKEW_MS, bootStale, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear, __lsSet, tipsVerdict, tipsPick, tipsApplyEdits, TIPS_CAP};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1278,6 +1288,68 @@ section('Refresh actually refreshes — including the player list');
   const d = load('fourth');
   ok(await core.cached('boot', TTL, d) === 'fourth',
      'and the next attempt still reaches the network');
+}
+
+section('Tips board: buy, hold and sell, and the owner\u2019s edits');
+{
+  /* A synthetic league: position 3 (midfield) with a spread of projections,
+     so percentiles are exact. 300 fit midfielders spread evenly up to 100,
+     large enough that the dozen buys below are a genuine top tenth. */
+  let id = 0;
+  const row = (o) => Object.assign({ id: ++id, nm: 'P' + id, team: 1, pos: 3, cost: 7, own: 5, xp3: 50, chance: 1 }, o);
+  const field = [];
+  for (let i = 1; i <= 300; i++) field.push(row({ team: 99, xp3: i / 3 }));
+  const V = (r) => { const all = field.concat([r]).filter((x) => x.chance >= 0.75 && x.xp3 > 0 && x.pos === r.pos).map((x) => x.xp3).sort((a, b) => a - b);
+    return core.tipsVerdict(r, all.filter((v) => v < r.xp3).length / all.length); };
+
+  ok(V(row({ xp3: 99.5, own: 12 })).v === 'buy', 'top tenth, fit and under 30% owned is a buy');
+  ok(V(row({ xp3: 99.5, own: 55 })).v === 'hold', 'top tenth but owned by most teams is a hold, not a buy');
+  ok(V(row({ xp3: 70.5, own: 20 })).v === 'hold', 'top two-fifths and owned by one in five is a hold');
+  ok(V(row({ xp3: 70.5, own: 4 })) === null, 'the same player owned by almost nobody gets no call: a board is about players people have');
+  ok(V(row({ xp3: 10.5, own: 15, cost: 8.5 })).v === 'sell', 'bottom third at £8.5m, owned by 15%, is a sell');
+  ok(V(row({ xp3: 10.5, own: 15, cost: 4.5 })) === null, 'but a £4.5m bench player in the bottom third is not worth a call');
+  const hurt = V(row({ xp3: 0, own: 30, chance: 0 }));
+  ok(hurt.v === 'sell' && /Ruled out/.test(hurt.why), 'a popular player ruled out is a sell, and says so');
+  ok(/25% to play/.test(V(row({ xp3: 5, own: 30, chance: 0.25 })).why), 'a doubt says how big a doubt');
+  ok(V(row({ xp3: 99.5, own: 12, chance: 0.6 })) === null, 'a doubt under 75% is never a buy, however good the projection');
+
+  /* The board: eleven clubs from twelve, strongest calls first. */
+  const rows = [];
+  const clubs = {};
+  for (let t = 1; t <= 12; t++) {
+    clubs[t] = { nm: 'C' + t, name: 'Club ' + t, fx: [{ opp: 'X', home: true, diff: 2 }, { opp: 'Y', home: false, diff: 4 }, { opp: 'Z', home: true, diff: 3 }, { opp: 'W', home: true, diff: 1 }] };
+    /* Club 1 has four strong buys: the cap must hold it to two. */
+    const nBuys = t === 1 ? 4 : 1;
+    for (let k = 0; k < nBuys; k++) rows.push(row({ team: t, xp3: 95 + t / 10 + k / 100, own: 5 }));
+    if (t === 2) rows.push(row({ team: t, xp3: 0, own: 40, chance: 0 }));
+    if (t === 12) rows.push(row({ team: t, xp3: 92, own: 2 }));
+  }
+  for (let i = 0; i < 8; i++) rows.push(row({ team: 1 + (i % 4), xp3: 80 - i, own: 3 }));  /* differentials */
+  const board = core.tipsPick(field.concat(rows), clubs);
+  ok(board.tiles.length === 11, 'the board holds eleven clubs (' + board.tiles.length + ')');
+  ok(board.tiles.every((t) => t.lines.length >= 1 && t.lines.length <= 3), 'every tile has one to three calls');
+  const c1 = board.tiles.find((t) => t.team === 1);
+  ok(c1 && c1.lines.filter((l) => l.v === 'buy').length === core.TIPS_CAP.buy, 'a club with four buys shows two');
+  const c2 = board.tiles.find((t) => t.team === 2);
+  ok(c2 && c2.lines.some((l) => l.v === 'sell') && c2.lines[c2.lines.length - 1].v === 'sell',
+    'a club with a buy and a sell shows both, buy first');
+  ok(board.tiles.every((t) => t.fx.length === 3), 'and three fixtures, never four');
+  ok(!board.tiles.some((t) => t.team === 99), 'a club with no calls never makes the board');
+  ok(board.diffs.length > 0 && board.diffs.length <= 6, 'differentials fill the twelfth tile (' + board.diffs.length + ')');
+  const onBoard = new Set(board.tiles.flatMap((t) => t.lines.map((l) => l.id)));
+  ok(board.diffs.every((d) => !onBoard.has(d.id)), 'and never repeat a player already on the board');
+  ok(JSON.stringify(core.tipsPick(field.concat(rows), clubs)) === JSON.stringify(board), 'the same data gives the same board');
+
+  /* Edits: change a call, drop a line, and the draft is untouched. */
+  const spec = { kind: 'tips', gw: 9, tiles: board.tiles, diffs: board.diffs };
+  const before = JSON.stringify(spec);
+  const k = 't' + c2.team + '-0';
+  const edited = core.tipsApplyEdits(spec, { [k]: { v: 'hold', nm: 'Changed', why: 'My reason' }, d0: { nm: '' } });
+  const e2 = edited.tiles.find((t) => t.team === c2.team);
+  ok(e2.lines[0].v === 'hold' && e2.lines[0].nm === 'Changed' && e2.lines[0].why === 'My reason', 'an edit replaces the call, the name and the reason');
+  ok(edited.diffs.length === board.diffs.length - 1, 'an emptied name drops the line');
+  ok(JSON.stringify(spec) === before, 'and the model\u2019s draft is never modified, so Reset is a plain delete');
+  ok(JSON.stringify(core.tipsApplyEdits(spec, {})) === JSON.stringify(spec), 'no edits gives the draft back');
 }
 
 section('Stale gameweek guards: a future stamp, a passed deadline, an index that never expired');
