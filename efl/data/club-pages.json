@@ -1,12 +1,12 @@
 {
- "built": "2026-10-28T20:16:17.964Z",
+ "built": "2026-10-29T00:58:43.706Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-28T20:16:17.964Z",
+  "generatedAt": "2026-10-29T00:58:43.706Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2049,12 +2049,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Price",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 29 Oct"
-    },
     {
      "name": "S. Proctor",
      "position": "GK",
