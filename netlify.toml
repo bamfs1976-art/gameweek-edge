@@ -7,6 +7,9 @@
   command = "npm run build:web"
   publish = "www"
   functions = "netlify/functions"
+  # Data-only bot commits deploy at most once per 6-hour window. Saves 15
+  # credits per skipped deploy. See the script.
+  ignore = "bash scripts/netlify-ignore.sh"
 
 [build.environment]
   # Node 24 LTS, supported to April 2028. Also sets the Functions runtime.
