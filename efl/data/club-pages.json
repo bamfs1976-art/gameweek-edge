@@ -1,12 +1,12 @@
 {
- "built": "2026-10-29T09:59:44.760Z",
+ "built": "2026-10-29T18:29:00.408Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-29T09:59:44.760Z",
+  "generatedAt": "2026-10-29T18:29:00.408Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1535,6 +1535,14 @@
      "summary": "Started 12 of 12 (100%), 2 goals and 1 assist."
     },
     {
+     "name": "K. Montgomery",
+     "position": "MID",
+     "rating": 76.8,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), 1 goal and 1 assist."
+    },
+    {
      "name": "A. Gudjohnsen",
      "position": "FWD",
      "rating": 76.1,
@@ -1557,34 +1565,20 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "S. Morsy",
-     "position": "MID",
-     "rating": 73.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
     {
-     "name": "K. Montgomery",
-     "position": "MID",
+     "name": "Y. Ribeiro",
+     "position": "DEF",
      "status": "doubtful",
-     "news": "Unknown injury, expected back 1 Nov"
+     "news": "Hamstring injury, expected back 1 Nov"
     },
     {
      "name": "R. Morishita",
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury, expected back 26 Nov"
-    },
-    {
-     "name": "Y. Ribeiro",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 4 Nov"
     },
     {
      "name": "A. Forshaw",
@@ -1596,7 +1590,7 @@
      "name": "M. Jørgensen",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 8 Nov"
+     "news": "Thigh Injury, expected back 23 Nov"
     },
     {
      "name": "Y. Ohashi",
@@ -4263,20 +4257,38 @@
      "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "E. Erhahon",
-     "position": "MID",
-     "rating": 72,
+     "name": "S. Iling-Junior",
+     "position": "FWD",
+     "rating": 67.6,
      "status": "available",
      "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
+     "summary": "Started 11 of 12 (92%), playing at home."
     }
    ],
    "unavailable": [
+    {
+     "name": "E. Erhahon",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Thigh Injury, expected back 22 Nov"
+    },
+    {
+     "name": "J. McAtee",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Knee Injury, expected back 1 Nov"
+    },
     {
      "name": "D. Harrington",
      "position": "GK",
      "status": "doubtful",
      "news": "Hand Injury"
+    },
+    {
+     "name": "R. Hardie",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
     },
     {
      "name": "J. Nelson",
@@ -4395,6 +4407,14 @@
      "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
     },
     {
+     "name": "P. Bamford",
+     "position": "FWD",
+     "rating": 72.7,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 11 of 12 (92%), playing at home."
+    },
+    {
      "name": "S. McCallum",
      "position": "DEF",
      "rating": 71.5,
@@ -4409,29 +4429,9 @@
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 11 of 12 (92%), playing at home."
-    },
-    {
-     "name": "H. Choudhury",
-     "position": "MID",
-     "rating": 68.3,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "P. Bamford",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Shoulder Injury"
-    },
-    {
-     "name": "M. McGuinness",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Concussion injury, expected back 31 Oct"
-    },
     {
      "name": "J. Shackleton",
      "position": "DEF",
@@ -4590,13 +4590,13 @@
      "name": "M. Melia",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 1 Nov"
+     "news": "Thigh Injury, expected back 22 Nov"
     },
     {
      "name": "E. Wheatley",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury, expected back 1 Nov"
+     "news": "Ankle Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -4744,7 +4744,7 @@
      "name": "S. Gallagher",
      "position": "FWD",
      "status": "injured",
-     "news": "Knock, expected back 1 Nov"
+     "news": "Knock, expected back 8 Nov"
     },
     {
      "name": "S. Ingelsson",
@@ -7388,12 +7388,6 @@
      "news": "Hamstring injury, expected back 22 Nov"
     },
     {
-     "name": "J. Key",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 1 Nov"
-    },
-    {
      "name": "Ronald",
      "position": "FWD",
      "status": "injured",
@@ -9085,20 +9079,20 @@
     {
      "name": "N. Chalobah",
      "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury"
+     "status": "doubtful",
+     "news": "Thigh Injury, expected back 1 Nov"
+    },
+    {
+     "name": "M. Godden",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Hamstring injury, expected back 1 Nov"
     },
     {
      "name": "C. Sichenje",
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 2 May"
-    },
-    {
-     "name": "M. Godden",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
     },
     {
      "name": "R. Apter",
@@ -9187,6 +9181,14 @@
    ],
    "players": [
     {
+     "name": "A. Devine",
+     "position": "MID",
+     "rating": 74.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "D. Iversen",
      "position": "GK",
      "rating": 73.9,
@@ -9225,23 +9227,9 @@
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 11 of 12 (92%), away from home."
-    },
-    {
-     "name": "A. Vukcevic",
-     "position": "DEF",
-     "rating": 67.3,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "A. Devine",
-     "position": "MID",
-     "status": "injured",
-     "news": "Calf Injury"
-    },
     {
      "name": "H. Clarke",
      "position": "DEF",
@@ -9252,7 +9240,7 @@
      "name": "L. Gibson",
      "position": "DEF",
      "status": "injured",
-     "news": "Groin Injury"
+     "news": "Groin Injury, expected back 22 Nov"
     },
     {
      "name": "L. Lindsay",
@@ -10441,7 +10429,7 @@
      "name": "Z. Amdouni",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury, expected back 1 Nov"
+     "news": "Ankle Injury, expected back 23 Nov"
     },
     {
      "name": "A. Broja",
@@ -10450,16 +10438,10 @@
      "news": "Groin Injury"
     },
     {
-     "name": "A. Ahmedhodzic",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Concussion injury, expected back 1 Nov"
-    },
-    {
      "name": "A. Ramsey",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury, expected back 1 Nov"
+     "news": "Hamstring injury, expected back 8 Nov"
     },
     {
      "name": "J. Vardy",
@@ -10477,19 +10459,7 @@
      "name": "B. Humphreys",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 1 Nov"
-    },
-    {
-     "name": "A. Barnes",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 1 Nov"
-    },
-    {
-     "name": "J. Banel",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock, expected back 1 Nov"
+     "news": "Knee Injury, expected back 7 Dec"
     }
    ],
    "cardRisk": []
