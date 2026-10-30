@@ -1,12 +1,12 @@
 {
- "built": "2026-10-29T18:29:00.408Z",
+ "built": "2026-10-30T01:01:21.298Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-29T18:29:00.408Z",
+  "generatedAt": "2026-10-30T01:01:21.298Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -3147,6 +3147,14 @@
    ],
    "players": [
     {
+     "name": "J. Woods",
+     "position": "FWD",
+     "rating": 74.3,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), playing at home."
+    },
+    {
      "name": "L. Moulden",
      "position": "GK",
      "rating": 71.6,
@@ -3185,23 +3193,9 @@
      "status": "available",
      "minutesShare": 85,
      "summary": "Started 11 of 13 (85%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "D. Love",
-     "position": "DEF",
-     "rating": 65.8,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Woods",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Calf Injury, expected back 30 Oct"
-    },
     {
      "name": "C. Caton",
      "position": "FWD",
@@ -3386,12 +3380,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "S. Inwood",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury, expected back 30 Oct"
     },
     {
      "name": "H. Smith",
@@ -3679,12 +3667,6 @@
    ],
    "unavailable": [
     {
-     "name": "N. Opoku",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Unknown injury, expected back 30 Oct"
-    },
-    {
      "name": "J. Perkins",
      "position": "MID",
      "status": "injured",
@@ -3827,12 +3809,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "B. Waine",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury, expected back 30 Oct"
-    },
     {
      "name": "L. Gordon",
      "position": "DEF",
@@ -8238,12 +8214,6 @@
    ],
    "unavailable": [
     {
-     "name": "J. Koroma",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Knock, expected back 30 Oct"
-    },
-    {
      "name": "M. Owolabi-Belewu",
      "position": "DEF",
      "status": "injured",
@@ -8721,28 +8691,10 @@
    ],
    "unavailable": [
     {
-     "name": "M. Dibley-Dias",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Unknown injury, expected back 30 Oct"
-    },
-    {
      "name": "C. Doidge",
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury"
-    },
-    {
-     "name": "M. Jacob",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 30 Oct"
-    },
-    {
-     "name": "T. Nyakuhwa",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury, expected back 30 Oct"
     },
     {
      "name": "K. Patten",
@@ -10079,24 +10031,6 @@
      "position": "GK",
      "status": "injured",
      "news": "Thigh Injury, expected back 26 Dec"
-    },
-    {
-     "name": "E. Dieseruvwe",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 30 Oct"
-    },
-    {
-     "name": "K. Taylor",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury, expected back 30 Oct"
-    },
-    {
-     "name": "T. Adebayo-Rowling",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury, expected back 30 Oct"
     },
     {
      "name": "D. Moss",
