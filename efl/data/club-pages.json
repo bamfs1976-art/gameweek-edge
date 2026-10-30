@@ -1,12 +1,12 @@
 {
- "built": "2026-10-30T01:01:21.298Z",
+ "built": "2026-10-30T10:03:05.221Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-30T01:01:21.298Z",
+  "generatedAt": "2026-10-30T10:03:05.221Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1735,10 +1735,16 @@
    ],
    "unavailable": [
     {
+     "name": "A. Priske",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Knock, expected back 1 Nov"
+    },
+    {
      "name": "P. Seung-Ho",
      "position": "MID",
      "status": "injured",
-     "news": "Knock, expected back 1 Nov"
+     "news": "Knock, expected back 8 Nov"
     },
     {
      "name": "K. Lund",
@@ -2921,12 +2927,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "D. Rose",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Broken Toe injury, expected back 15 Nov"
     },
     {
      "name": "A. Matthews",
@@ -4732,13 +4732,13 @@
      "name": "A. Cresswell",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 30 Dec"
+     "news": "Knee Injury, expected back 4 Nov"
     },
     {
      "name": "A. Ampah",
      "position": "FWD",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -5014,16 +5014,10 @@
    ],
    "unavailable": [
     {
-     "name": "L. Kjerrumgaard",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Head Injury, expected back 1 Nov"
-    },
-    {
      "name": "S. Coulibaly",
      "position": "DEF",
      "status": "injured",
-     "news": "Hamstring injury, expected back 1 Nov"
+     "news": "Hamstring injury, expected back 22 Nov"
     },
     {
      "name": "E. Bove",
@@ -5034,6 +5028,12 @@
     {
      "name": "J. Ngakia",
      "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "M. Antonio",
+     "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
     },
@@ -7047,7 +7047,7 @@
      "name": "H. Anderson",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Hamstring injury"
     },
     {
      "name": "K. Kouassi",
@@ -7204,10 +7204,22 @@
      "news": "Hamstring injury, expected back 1 Nov"
     },
     {
+     "name": "V. Kovacevic",
+     "position": "GK",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "M. Touré",
      "position": "FWD",
      "status": "injured",
      "news": "Shoulder Injury, expected back 2 May"
+    },
+    {
+     "name": "P. Maghoma",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "P. Diallo",
@@ -8214,6 +8226,12 @@
    ],
    "unavailable": [
     {
+     "name": "A. Whitney",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Hamstring injury"
+    },
+    {
      "name": "M. Owolabi-Belewu",
      "position": "DEF",
      "status": "injured",
@@ -8554,12 +8572,6 @@
      "news": "Knee Injury, expected back 31 Dec"
     },
     {
-     "name": "G. Sebine",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Calf Injury, expected back 31 Oct"
-    },
-    {
      "name": "M. Kaleta",
      "position": "DEF",
      "status": "injured",
@@ -8690,6 +8702,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "M. Dibley-Dias",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
     {
      "name": "C. Doidge",
      "position": "FWD",
@@ -9210,7 +9228,7 @@
      "name": "A. McCann",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury, expected back 18 Oct"
+     "news": "Hamstring injury, expected back 29 Nov"
     },
     {
      "name": "T. Carroll",
@@ -10205,6 +10223,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "E. Harrison",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
     {
      "name": "R. Harbottle",
      "position": "DEF",
