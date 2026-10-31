@@ -19,10 +19,10 @@
     },
     "other-fixtures": {
       "path": "data/pl_other_fixtures.js",
-      "sha256": "53534a9b4d636f007409bb6cce1fda60722214bd629a06d75b916b2496a4f99a",
+      "sha256": "a1e09aa81aa054cacfa9cf8a8e7c65d90563a5714338ad6732955c7c946dbae4",
       "pinned": false,
-      "fetched": "2026-10-30",
-      "changed": "2026-10-30",
+      "fetched": "2026-10-31",
+      "changed": "2026-10-31",
       "ref": "main"
     }
   }

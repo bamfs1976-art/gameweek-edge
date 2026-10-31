@@ -5,8 +5,8 @@
  * source   bamfs1976-art/pl-bookings  data/pl_other_fixtures.js
  * commit   eb9c75acc2809be6e8c06859f1a962f1c6775f1f
  * branch   main
- * sha256   53534a9b4d636f007409bb6cce1fda60722214bd629a06d75b916b2496a4f99a
- * fetched  2026-10-30
+ * sha256   a1e09aa81aa054cacfa9cf8a8e7c65d90563a5714338ad6732955c7c946dbae4
+ * fetched  2026-10-31
  *
  * Re-vendor with: node scripts/vendor-rotation.mjs
  * Verify with:    node scripts/vendor-rotation.mjs --check
@@ -25,7 +25,7 @@
 //   comp  UCL, UEL, UECL, FAC (FA Cup), LCUP (League Cup)
 //   v     H or A — the away leg is what the 72-hour European flag needs
 //
-// LCUP 96, UCL 40, UECL 8, UEL 24
+// LCUP 97, UCL 40, UECL 8, UEL 24
 const PL_OTHER_FIXTURES = [
   {c:"BRC",d:"2026-08-06T18:45:00+00:00",comp:"LCUP",v:"H"},
   {c:"WOL",d:"2026-08-07T18:45:00+00:00",comp:"LCUP",v:"H"},
@@ -173,11 +173,12 @@ const PL_OTHER_FIXTURES = [
   {c:"BHA",d:"2026-12-10T20:00:00+00:00",comp:"UECL",v:"H"},
   {c:"BOU",d:"2026-12-10T20:00:00+00:00",comp:"UEL",v:"H"},
   {c:"SUN",d:"2026-12-10T20:00:00+00:00",comp:"UEL",v:"A"},
-  {c:"BOU",d:"2026-12-14T19:45:00+00:00",comp:"LCUP",v:"A"},
-  {c:"CRY",d:"2026-12-14T19:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"LIV",d:"2026-12-14T19:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"MCI",d:"2026-12-14T19:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"SUN",d:"2026-12-14T19:45:00+00:00",comp:"LCUP",v:"A"},
+  {c:"BOU",d:"2026-12-15T19:45:00+00:00",comp:"LCUP",v:"A"},
+  {c:"CRY",d:"2026-12-15T19:45:00+00:00",comp:"LCUP",v:"H"},
+  {c:"EVE",d:"2026-12-15T19:45:00+00:00",comp:"LCUP",v:"A"},
+  {c:"LIV",d:"2026-12-15T19:45:00+00:00",comp:"LCUP",v:"H"},
+  {c:"MCI",d:"2026-12-15T19:45:00+00:00",comp:"LCUP",v:"H"},
+  {c:"SUN",d:"2026-12-15T19:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"BHA",d:"2026-12-17T20:00:00+00:00",comp:"UECL",v:"A"},
   {c:"AVL",d:"2027-01-19T20:00:00+00:00",comp:"UCL",v:"H"},
   {c:"LIV",d:"2027-01-19T20:00:00+00:00",comp:"UCL",v:"A"},
