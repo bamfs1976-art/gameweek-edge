@@ -1,12 +1,12 @@
 {
- "built": "2026-10-30T22:22:17.462Z",
+ "built": "2026-10-31T05:44:02.444Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-30T22:22:17.462Z",
+  "generatedAt": "2026-10-31T05:44:02.444Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -316,12 +316,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Groin Injury, expected back 8 Nov"
-    },
-    {
-     "name": "R. Gomes",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 1 Nov"
     },
     {
      "name": "R. Jiménez",
@@ -672,18 +666,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "M. Doherty",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 31 Oct"
-    },
-    {
-     "name": "R. Oné",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 31 Oct"
     }
    ],
    "cardRisk": []
@@ -8320,6 +8302,14 @@
    ],
    "players": [
     {
+     "name": "P. Mullin",
+     "position": "FWD",
+     "rating": 77.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
      "name": "T. Bradshaw",
      "position": "FWD",
      "rating": 69.3,
@@ -8358,29 +8348,9 @@
      "status": "available",
      "minutesShare": 77,
      "summary": "Started 10 of 13 (77%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "K. Spence",
-     "position": "MID",
-     "rating": 63.8,
-     "status": "available",
-     "minutesShare": 85,
-     "summary": "Started 11 of 13 (85%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "P. Mullin",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Dead Leg injury, expected back 31 Oct"
-    },
-    {
-     "name": "D. Iorfa",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Head Injury, expected back 31 Oct"
-    },
     {
      "name": "O. Ashley",
      "position": "MID",
