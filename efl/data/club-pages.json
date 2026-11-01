@@ -1,12 +1,12 @@
 {
- "built": "2026-11-01T13:27:09.120Z",
+ "built": "2026-11-01T19:41:50.951Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-01T13:27:09.120Z",
+  "generatedAt": "2026-11-01T19:41:50.951Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2887,14 +2887,26 @@
     {
      "name": "K. Bielik",
      "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury"
+     "status": "doubtful",
+     "news": "Groin Injury, expected back 5 Nov"
+    },
+    {
+     "name": "W. Fish",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Hamstring injury, expected back 5 Nov"
     },
     {
      "name": "D. Lawlor",
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "C. Chambers",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -4689,6 +4701,172 @@
    "cardRisk": []
   },
   {
+   "id": "92",
+   "name": "Blackpool",
+   "short": "BPL",
+   "slug": "blackpool",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 19,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "D",
+    "L",
+    "W"
+   ],
+   "rating": 44.9,
+   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.38
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.4
+    },
+    {
+     "label": "Home matches",
+     "value": 0.67
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "AFC Wimbledon",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Wigan Athletic",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Leicester City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "B. Peacock-Farrell",
+     "position": "GK",
+     "rating": 68.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), 2 clean sheets plus 1 attacking return."
+    },
+    {
+     "name": "J. Bowler",
+     "position": "MID",
+     "rating": 65.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), 2 goals and 3 assists."
+    },
+    {
+     "name": "O. Casey",
+     "position": "DEF",
+     "rating": 63,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Morgan",
+     "position": "MID",
+     "rating": 62.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), 1 goal and 1 assist."
+    },
+    {
+     "name": "J. Williams",
+     "position": "DEF",
+     "rating": 61.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "K. Anderson",
+     "position": "MID",
+     "rating": 61,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "J. Earl",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Foot Injury"
+    },
+    {
+     "name": "C. Hamilton",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "M. Ihiekwe",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Toe Injury"
+    },
+    {
+     "name": "F. Horsfall",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
+     "name": "O. Nwankwo",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "N. Ennis",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "288",
    "name": "Stevenage",
    "short": "STE",
@@ -5375,6 +5553,12 @@
      "position": "DEF",
      "status": "doubtful",
      "news": "Knee Injury, expected back 8 Nov"
+    },
+    {
+     "name": "K. Lamadrid",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 5 Nov"
     }
    ],
    "cardRisk": []
@@ -5814,6 +5998,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "C. O'Hare",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 5 Nov"
+    },
     {
      "name": "J. Windass",
      "position": "MID",
@@ -6856,172 +7046,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "92",
-   "name": "Blackpool",
-   "short": "BPL",
-   "slug": "blackpool",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 20,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "W",
-    "L"
-   ],
-   "rating": 41.4,
-   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.25
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.4
-    },
-    {
-     "label": "Home matches",
-     "value": 0.67
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "AFC Wimbledon",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Wigan Athletic",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Leicester City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "B. Peacock-Farrell",
-     "position": "GK",
-     "rating": 68.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), 2 clean sheets plus 1 attacking return."
-    },
-    {
-     "name": "J. Bowler",
-     "position": "MID",
-     "rating": 65,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), 2 goals and 3 assists."
-    },
-    {
-     "name": "O. Casey",
-     "position": "DEF",
-     "rating": 62.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "K. Anderson",
-     "position": "MID",
-     "rating": 61,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Williams",
-     "position": "DEF",
-     "rating": 60.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "A. Morgan",
-     "position": "MID",
-     "rating": 60.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "J. Earl",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Foot Injury"
-    },
-    {
-     "name": "C. Hamilton",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury"
-    },
-    {
-     "name": "M. Ihiekwe",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Toe Injury"
-    },
-    {
-     "name": "F. Horsfall",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury"
-    },
-    {
-     "name": "O. Nwankwo",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "N. Ennis",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -8071,7 +8095,7 @@
    "slug": "doncaster-rovers",
    "division": "league-one",
    "divisionName": "League One",
-   "position": 19,
+   "position": 20,
    "points": 0,
    "played": 0,
    "form": [
@@ -9111,6 +9135,160 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "19",
+   "name": "Sheffield Wednesday",
+   "short": "SHW",
+   "slug": "sheffield-wednesday",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 9,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "D",
+    "D",
+    "L"
+   ],
+   "rating": 34.1,
+   "summary": "Next 3 rated 3.6 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.13
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.35
+    },
+    {
+     "label": "Home matches",
+     "value": 0.33
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Plymouth Argyle",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Barnsley",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Stevenage",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "B. Bannan",
+     "position": "MID",
+     "rating": 74.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), 1 goal and 1 assist."
+    },
+    {
+     "name": "C. Slattery",
+     "position": "MID",
+     "rating": 73.8,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 3 goals and 3 assists."
+    },
+    {
+     "name": "D. Keillor-Dunn",
+     "position": "MID",
+     "rating": 68.2,
+     "status": "available",
+     "minutesShare": 77,
+     "summary": "Started 10 of 13 (77%), 3 goals and 1 assist."
+    },
+    {
+     "name": "K. Morrison",
+     "position": "MID",
+     "rating": 68.2,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "Y. Valery",
+     "position": "DEF",
+     "rating": 67.8,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Cooper",
+     "position": "DEF",
+     "rating": 66.5,
+     "status": "available",
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "J. Lumley",
+     "position": "GK",
+     "status": "injured",
+     "news": "Rib Injury"
+    },
+    {
+     "name": "L. Barry",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
+     "name": "T. Onyango",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury"
+    },
+    {
+     "name": "C. McGhee",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Shoulder Injury"
     }
    ],
    "cardRisk": []
@@ -10404,172 +10582,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Knock"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "19",
-   "name": "Sheffield Wednesday",
-   "short": "SHW",
-   "slug": "sheffield-wednesday",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 9,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "D",
-    "L",
-    "L"
-   ],
-   "rating": 30.6,
-   "summary": "Next 3 rated 3.6 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.35
-    },
-    {
-     "label": "Home matches",
-     "value": 0.33
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Plymouth Argyle",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Barnsley",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Stevenage",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "B. Bannan",
-     "position": "MID",
-     "rating": 73.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 12 of 12 (100%), 1 goal and 1 assist."
-    },
-    {
-     "name": "C. Slattery",
-     "position": "MID",
-     "rating": 73.1,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), 3 goals and 3 assists."
-    },
-    {
-     "name": "L. Cooper",
-     "position": "DEF",
-     "rating": 68.8,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Lowe",
-     "position": "FWD",
-     "rating": 68.7,
-     "status": "available",
-     "minutesShare": 83,
-     "summary": "Started 10 of 12 (83%), playing at home."
-    },
-    {
-     "name": "K. Morrison",
-     "position": "MID",
-     "rating": 68,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "Y. Valery",
-     "position": "DEF",
-     "rating": 67.6,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "J. Lumley",
-     "position": "GK",
-     "status": "injured",
-     "news": "Rib Injury"
-    },
-    {
-     "name": "L. Barry",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury"
-    },
-    {
-     "name": "R. Santos",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury"
-    },
-    {
-     "name": "J. Liongola",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "T. Onyango",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury"
-    },
-    {
-     "name": "C. McGhee",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Shoulder Injury"
     }
    ],
    "cardRisk": []
