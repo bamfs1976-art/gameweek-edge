@@ -1,12 +1,12 @@
 {
- "built": "2026-11-02T00:45:56.816Z",
+ "built": "2026-11-02T11:11:09.787Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-02T00:45:56.816Z",
+  "generatedAt": "2026-11-02T11:11:09.787Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -120,14 +120,6 @@
    ],
    "players": [
     {
-     "name": "W. Lankshear",
-     "position": "FWD",
-     "rating": 67.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), 13 goals and 1 assist."
-    },
-    {
      "name": "S. Berhalter",
      "position": "MID",
      "rating": 66.5,
@@ -166,9 +158,23 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "R. McGree",
+     "position": "MID",
+     "rating": 61,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "W. Lankshear",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury, expected back 21 Nov"
+    },
     {
      "name": "A. Jones",
      "position": "DEF",
@@ -316,6 +322,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Groin Injury, expected back 8 Nov"
+    },
+    {
+     "name": "J. James",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
     },
     {
      "name": "R. Jiménez",
@@ -635,7 +647,7 @@
      "name": "L. Cissé",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury, expected back 8 Nov"
+     "news": "Ankle Injury, expected back 27 Dec"
     },
     {
      "name": "S. Gallagher",
@@ -1368,6 +1380,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 4 Nov"
+    },
+    {
+     "name": "C. Jander",
+     "position": "MID",
+     "status": "injured",
+     "news": "Muscle Injury"
     }
    ],
    "cardRisk": []
@@ -1812,6 +1830,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Knock, expected back 8 Nov"
+    },
+    {
+     "name": "K. Lund",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock, expected back 4 Nov"
     },
     {
      "name": "M. Leonard",
@@ -2855,14 +2879,6 @@
      "summary": "Started 13 of 13 (100%), 6 goals and 3 assists."
     },
     {
-     "name": "A. Robertson",
-     "position": "MID",
-     "rating": 77.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), 0 goals and 0 assists."
-    },
-    {
      "name": "O. Tanner",
      "position": "FWD",
      "rating": 74.4,
@@ -2893,9 +2909,23 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
+     "name": "J. Colwill",
+     "position": "MID",
+     "rating": 69.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Ng",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
     {
      "name": "K. Bielik",
      "position": "DEF",
@@ -2907,6 +2937,12 @@
      "position": "DEF",
      "status": "doubtful",
      "news": "Hamstring injury, expected back 5 Nov"
+    },
+    {
+     "name": "A. Robertson",
+     "position": "MID",
+     "status": "injured",
+     "news": "Achilles Strain"
     },
     {
      "name": "D. Lawlor",
@@ -3066,7 +3102,7 @@
      "name": "R. Dickie",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 20 Dec"
+     "news": "Knee Injury, expected back 5 Nov"
     },
     {
      "name": "E. Adebayo",
@@ -5413,6 +5449,12 @@
    ],
    "unavailable": [
     {
+     "name": "H. Pickering",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Illness, expected back 4 Nov"
+    },
+    {
      "name": "R. Morishita",
      "position": "MID",
      "status": "injured",
@@ -5571,6 +5613,12 @@
      "position": "DEF",
      "status": "doubtful",
      "news": "Knee Injury, expected back 8 Nov"
+    },
+    {
+     "name": "K. Walker-Peters",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Thigh Injury, expected back 8 Nov"
     },
     {
      "name": "K. Lamadrid",
@@ -5873,6 +5921,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Illness"
+    },
+    {
+     "name": "S. Eustaquio",
+     "position": "MID",
+     "status": "injured",
+     "news": "Groin Injury"
     },
     {
      "name": "Ronald",
@@ -9022,7 +9076,7 @@
      "name": "T. Carroll",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 29 Nov"
     }
    ],
    "cardRisk": []
