@@ -29771,5 +29771,167 @@
       "3448": 82
     }
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-11-04T23:40:43.413Z",
+    "attribution": "clean",
+    "window": {
+      "lastKickoff": "2026-11-04T20:00:00.000Z",
+      "nextRoundKickoff": "2026-11-06T20:00:00.000Z"
+    },
+    "fixtures": {
+      "played": 52,
+      "total": 52
+    },
+    "pointsField": "totalPoints",
+    "clubBasis": "official-points",
+    "crowdClubs": {
+      "ids": [
+        "25",
+        "21"
+      ],
+      "value": 14
+    },
+    "squad": {
+      "players": [
+        {
+          "id": "235449",
+          "name": "G. Wickens",
+          "club": "Lincoln City",
+          "position": "GK",
+          "points": 3
+        },
+        {
+          "id": "178186",
+          "name": "J. Bowen",
+          "club": "West Ham United",
+          "position": "FWD",
+          "points": 20
+        },
+        {
+          "id": "510171",
+          "name": "D. Sanches Fernandes",
+          "club": "Huddersfield Town",
+          "position": "FWD",
+          "points": 16
+        },
+        {
+          "id": "229594",
+          "name": "P. Neumann",
+          "club": "Birmingham City",
+          "position": "DEF",
+          "points": 18
+        },
+        {
+          "id": "470255",
+          "name": "C. Taylor",
+          "club": "Millwall",
+          "position": "DEF",
+          "points": 10
+        },
+        {
+          "id": "523851",
+          "name": "J. Moylan",
+          "club": "Cardiff City",
+          "position": "MID",
+          "points": 33
+        },
+        {
+          "id": "491559",
+          "name": "I. Price",
+          "club": "West Bromwich Albion",
+          "position": "MID",
+          "points": 21
+        }
+      ],
+      "total": 121,
+      "unresolved": 0,
+      "formation": "1-2-2-2"
+    },
+    "captain": {
+      "id": "178186",
+      "points": 20,
+      "rank": 3,
+      "ties": 1,
+      "wasBest": false,
+      "bestPoints": 33,
+      "bestId": "523851",
+      "foregonePerMultiple": 13,
+      "vsOwnMean": 2.7142857142857153
+    },
+    "clubs": {
+      "basis": "official-points",
+      "total": 19,
+      "perClub": [
+        {
+          "id": "3448",
+          "value": 7,
+          "outcome": {
+            "played": 1,
+            "wins": 1,
+            "draws": 0,
+            "losses": 0,
+            "goalsFor": 2,
+            "goalsAgainst": 1,
+            "cleanSheets": 0,
+            "leaguePoints": 3
+          }
+        },
+        {
+          "id": "35",
+          "value": 12,
+          "outcome": {
+            "played": 2,
+            "wins": 1,
+            "draws": 1,
+            "losses": 0,
+            "goalsFor": 4,
+            "goalsAgainst": 2,
+            "cleanSheets": 0,
+            "leaguePoints": 4
+          }
+        }
+      ],
+      "fieldMean": 6.333333333333333,
+      "fieldMeanTwo": 12.666666666666666,
+      "bestTwo": 38,
+      "percentile": 0.7013888888888888
+    },
+    "baselines": {
+      "randomMean": 11.7115,
+      "randomMedian": 10,
+      "randomSamples": 2000,
+      "percentile": 1,
+      "naive": 40,
+      "ceiling": 193,
+      "ceilingFormation": "1-2-3-1",
+      "fieldMean": 1.715258855585831,
+      "fieldMeanSeven": 12.006811989100818
+    },
+    "model": {
+      "n": 3670,
+      "rho": 0.6606387861926899,
+      "topDecileLift": 4.006354249404289,
+      "byPosition": {
+        "GK": {
+          "n": 371,
+          "rho": 0.6310478645505778
+        },
+        "DEF": {
+          "n": 1136,
+          "rho": 0.6410160236635082
+        },
+        "MID": {
+          "n": 1243,
+          "rho": 0.676724085299678
+        },
+        "FWD": {
+          "n": 920,
+          "rho": 0.6832199717405865
+        }
+      }
+    },
+    "universe": {
+      "players": 3670
+    }
+  }
 }
