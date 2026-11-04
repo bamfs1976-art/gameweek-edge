@@ -1,12 +1,12 @@
 {
- "built": "2026-11-03T23:24:44.845Z",
+ "built": "2026-11-04T06:25:32.028Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-03T23:24:44.845Z",
+  "generatedAt": "2026-11-04T06:25:32.028Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -172,8 +172,8 @@
     {
      "name": "P. Mattsson",
      "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 4 Nov"
+     "status": "doubtful",
+     "news": "Hamstring injury, expected back 8 Nov"
     },
     {
      "name": "K. McLean",
@@ -191,7 +191,7 @@
      "name": "P. Diallo",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 4 Nov"
+     "news": "Thigh Injury, expected back 22 Nov"
     },
     {
      "name": "A. Ahmed",
@@ -203,7 +203,7 @@
      "name": "G. Forsyth",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury, expected back 4 Nov"
+     "news": "Knee Injury, expected back 8 Nov"
     }
    ],
    "cardRisk": []
@@ -773,7 +773,7 @@
      "name": "J. James",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 5 Nov"
     },
     {
      "name": "R. Jiménez",
@@ -918,10 +918,22 @@
    ],
    "unavailable": [
     {
+     "name": "Marezi",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
+    {
      "name": "C. Bishop",
      "position": "FWD",
      "status": "injured",
-     "news": "Knee Injury, expected back 4 Nov"
+     "news": "Knee Injury, expected back 8 Nov"
+    },
+    {
+     "name": "I. Mohamed",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury"
     },
     {
      "name": "B. Arthur",
@@ -1096,18 +1108,6 @@
    ],
    "unavailable": [
     {
-     "name": "P. Bamford",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Shoulder Injury, expected back 4 Nov"
-    },
-    {
-     "name": "J. Rothwell",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Groin Injury, expected back 4 Nov"
-    },
-    {
      "name": "J. Shackleton",
      "position": "DEF",
      "status": "injured",
@@ -1118,12 +1118,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 9 Dec"
-    },
-    {
-     "name": "A. Davies",
-     "position": "GK",
-     "status": "injured",
-     "news": "Back Injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -1277,7 +1271,7 @@
      "name": "A. Cresswell",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 4 Nov"
+     "news": "Knee Injury, expected back 8 Nov"
     },
     {
      "name": "A. Ampah",
@@ -1415,12 +1409,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "C. Larin",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 4 Nov"
-    },
     {
      "name": "C. Jander",
      "position": "MID",
@@ -2622,7 +2610,7 @@
      "name": "J. Beadle",
      "position": "GK",
      "status": "injured",
-     "news": "Knock, expected back 4 Nov"
+     "news": "Knock, expected back 8 Nov"
     },
     {
      "name": "P. Seung-Ho",
@@ -2634,13 +2622,13 @@
      "name": "D. Fry",
      "position": "DEF",
      "status": "injured",
-     "news": "Illness, expected back 4 Nov"
+     "news": "Illness, expected back 8 Nov"
     },
     {
      "name": "K. Lund",
      "position": "DEF",
      "status": "injured",
-     "news": "Knock, expected back 4 Nov"
+     "news": "Knock, expected back 22 Nov"
     },
     {
      "name": "M. Leonard",
@@ -3392,6 +3380,12 @@
    ],
    "unavailable": [
     {
+     "name": "L. Tolaj",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Hip Injury, expected back 5 Nov"
+    },
+    {
      "name": "N. Eile",
      "position": "DEF",
      "status": "doubtful",
@@ -3401,19 +3395,13 @@
      "name": "G. Yah",
      "position": "MID",
      "status": "injured",
-     "news": "Knock, expected back 5 Nov"
-    },
-    {
-     "name": "R. Dickie",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 5 Nov"
+     "news": "Knock, expected back 8 Nov"
     },
     {
      "name": "E. Adebayo",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 22 Nov"
+     "news": "Thigh Injury, expected back 8 Nov"
     }
    ],
    "cardRisk": []
@@ -4867,12 +4855,6 @@
      "news": "Thigh Injury, expected back 22 Nov"
     },
     {
-     "name": "G. Bazunu",
-     "position": "GK",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 4 Nov"
-    },
-    {
      "name": "E. Toal",
      "position": "DEF",
      "status": "injured",
@@ -4885,22 +4867,10 @@
      "news": "Hamstring injury"
     },
     {
-     "name": "J. McAtee",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury, expected back 4 Nov"
-    },
-    {
      "name": "J. Nelson",
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury, expected back 6 Dec"
-    },
-    {
-     "name": "T. Ritchie",
-     "position": "MID",
-     "status": "injured",
-     "news": "Concussion injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -7540,12 +7510,6 @@
    ],
    "unavailable": [
     {
-     "name": "S. Eustaquio",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Groin Injury, expected back 4 Nov"
-    },
-    {
      "name": "M. Yeo",
      "position": "MID",
      "status": "injured",
@@ -7854,12 +7818,6 @@
      "news": "Ankle Injury"
     },
     {
-     "name": "C. De Norre",
-     "position": "MID",
-     "status": "injured",
-     "news": "Calf Injury, expected back 4 Nov"
-    },
-    {
      "name": "L. Jensen",
      "position": "GK",
      "status": "injured",
@@ -8017,13 +7975,13 @@
      "name": "J. Windass",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury, expected back 5 Nov"
+     "news": "Ankle Injury, expected back 22 Nov"
     },
     {
      "name": "N. Broadhead",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 6 Dec"
+     "news": "Thigh Injury, expected back 8 Nov"
     },
     {
      "name": "L. Cacace",
@@ -8465,12 +8423,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "J. Collins",
-     "position": "FWD",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -9485,12 +9437,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Groin Injury, expected back 17 Jan"
-    },
-    {
-     "name": "D. Ozoh",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knock, expected back 4 Nov"
     },
     {
      "name": "C. Taylor",
