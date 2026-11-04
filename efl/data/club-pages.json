@@ -1,12 +1,12 @@
 {
- "built": "2026-11-04T06:25:32.028Z",
+ "built": "2026-11-04T17:16:03.461Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-04T06:25:32.028Z",
+  "generatedAt": "2026-11-04T17:16:03.461Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -122,7 +122,7 @@
     {
      "name": "A. Brooks",
      "position": "MID",
-     "rating": 64.7,
+     "rating": 65.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 2 goals and 4 assists."
@@ -138,7 +138,7 @@
     {
      "name": "R. McConville",
      "position": "DEF",
-     "rating": 58.4,
+     "rating": 58.1,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
@@ -146,7 +146,7 @@
     {
      "name": "J. Stacey",
      "position": "DEF",
-     "rating": 56.5,
+     "rating": 56.2,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
@@ -154,7 +154,7 @@
     {
      "name": "B. Chrisene",
      "position": "DEF",
-     "rating": 54.4,
+     "rating": 54.2,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
@@ -162,7 +162,7 @@
     {
      "name": "J. Córdoba",
      "position": "DEF",
-     "rating": 53,
+     "rating": 52.9,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
@@ -604,7 +604,7 @@
     {
      "name": "C. Brittain",
      "position": "DEF",
-     "rating": 62.9,
+     "rating": 62.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
@@ -637,7 +637,7 @@
      "name": "R. Pukstas",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury, expected back 5 Nov"
+     "news": "Hamstring injury, expected back 6 Dec"
     }
    ],
    "cardRisk": []
@@ -754,7 +754,7 @@
     {
      "name": "H. Bueno",
      "position": "DEF",
-     "rating": 58.4,
+     "rating": 58.1,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
@@ -870,7 +870,7 @@
     {
      "name": "E. Adams",
      "position": "MID",
-     "rating": 75.1,
+     "rating": 75.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 2 goals and 1 assist."
@@ -910,7 +910,7 @@
     {
      "name": "Z. Swanson",
      "position": "DEF",
-     "rating": 67.7,
+     "rating": 67.5,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
@@ -1076,7 +1076,7 @@
     {
      "name": "J. Tanganga",
      "position": "DEF",
-     "rating": 66.2,
+     "rating": 65.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 5 clean sheets plus 2 attacking returns."
@@ -1090,23 +1090,41 @@
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "S. McCallum",
-     "position": "DEF",
-     "rating": 55,
-     "status": "available",
-     "minutesShare": 79,
-     "summary": "Started 11 of 14 (79%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "O. Arblaster",
      "position": "MID",
      "rating": 55,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "S. McCallum",
+     "position": "DEF",
+     "rating": 54.8,
+     "status": "available",
+     "minutesShare": 79,
+     "summary": "Started 11 of 14 (79%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Bamford",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Shoulder Injury, expected back 8 Nov"
+    },
+    {
+     "name": "J. Rothwell",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Groin Injury, expected back 8 Nov"
+    },
+    {
+     "name": "K. Phillips",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 8 Nov"
+    },
     {
      "name": "J. Shackleton",
      "position": "DEF",
@@ -1118,6 +1136,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 9 Dec"
+    },
+    {
+     "name": "A. Davies",
+     "position": "GK",
+     "status": "injured",
+     "news": "Back Injury, expected back 8 Nov"
     }
    ],
    "cardRisk": []
@@ -1218,7 +1242,7 @@
     {
      "name": "B. Wilmot",
      "position": "DEF",
-     "rating": 65.5,
+     "rating": 65.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 4 clean sheets plus 3 attacking returns."
@@ -1226,7 +1250,7 @@
     {
      "name": "B. Johnson",
      "position": "DEF",
-     "rating": 60.3,
+     "rating": 60,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
@@ -1234,7 +1258,7 @@
     {
      "name": "L. Graham",
      "position": "DEF",
-     "rating": 60.1,
+     "rating": 59.9,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), 5 clean sheets plus 1 attacking return."
@@ -1242,7 +1266,7 @@
     {
      "name": "D. Soumaré",
      "position": "MID",
-     "rating": 59.4,
+     "rating": 59,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -1370,7 +1394,7 @@
     {
      "name": "F. Azaz",
      "position": "MID",
-     "rating": 65,
+     "rating": 65.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 3 goals and 6 assists."
@@ -1394,7 +1418,7 @@
     {
      "name": "J. Bree",
      "position": "DEF",
-     "rating": 62.2,
+     "rating": 61.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -1402,13 +1426,25 @@
     {
      "name": "K. Schlotterbeck",
      "position": "DEF",
-     "rating": 59.7,
+     "rating": 59.4,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), 3 clean sheets plus 2 attacking returns."
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Scienza",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury, expected back 8 Nov"
+    },
+    {
+     "name": "C. Larin",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 8 Nov"
+    },
     {
      "name": "C. Jander",
      "position": "MID",
@@ -2562,12 +2598,12 @@
      "rating": 78.2,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), 5 clean sheets plus 4 attacking returns."
+     "summary": "Started 14 of 14 (100%), 5 clean sheets plus 5 attacking returns."
     },
     {
      "name": "C. Klarer",
      "position": "DEF",
-     "rating": 74.8,
+     "rating": 74.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -2575,7 +2611,7 @@
     {
      "name": "A. Cochrane",
      "position": "DEF",
-     "rating": 74.6,
+     "rating": 74.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -2599,7 +2635,7 @@
     {
      "name": "B. Osayi-Samuel",
      "position": "DEF",
-     "rating": 69.8,
+     "rating": 69.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -3192,7 +3228,7 @@
     {
      "name": "J. Bagan",
      "position": "DEF",
-     "rating": 70.7,
+     "rating": 70.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
@@ -3220,12 +3256,6 @@
      "news": "Groin Injury, expected back 5 Nov"
     },
     {
-     "name": "W. Fish",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Hamstring injury, expected back 5 Nov"
-    },
-    {
      "name": "A. Robertson",
      "position": "MID",
      "status": "injured",
@@ -3235,7 +3265,13 @@
      "name": "I. Davies",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury, expected back 25 Nov"
+     "news": "Hamstring injury, expected back 6 Dec"
+    },
+    {
+     "name": "W. Fish",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 8 Nov"
     },
     {
      "name": "D. Lawlor",
@@ -3338,16 +3374,16 @@
      "summary": "Started 13 of 13 (100%), playing at home."
     },
     {
-     "name": "R. Cardines",
-     "position": "DEF",
-     "rating": 72,
+     "name": "J. Knight",
+     "position": "MID",
+     "rating": 71.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "J. Knight",
-     "position": "MID",
+     "name": "R. Cardines",
+     "position": "DEF",
      "rating": 71.7,
      "status": "available",
      "minutesShare": 100,
@@ -3533,6 +3569,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "G. Campbell",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 22 Nov"
+    },
     {
      "name": "N. Galves",
      "position": "DEF",
@@ -4809,7 +4851,7 @@
     {
      "name": "G. Larrazabal",
      "position": "DEF",
-     "rating": 59.4,
+     "rating": 59.1,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
@@ -4817,7 +4859,7 @@
     {
      "name": "M. Conway",
      "position": "DEF",
-     "rating": 59.4,
+     "rating": 59.1,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
@@ -4971,7 +5013,7 @@
     {
      "name": "M. Pollock",
      "position": "DEF",
-     "rating": 74.3,
+     "rating": 73.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -5018,13 +5060,25 @@
      "name": "M. Antonio",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury, expected back 22 Nov"
+     "news": "Thigh Injury, expected back 22 Nov"
     },
     {
      "name": "K. Baah",
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury, expected back 22 Nov"
+    },
+    {
+     "name": "J. Grieves",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Groin Injury"
+    },
+    {
+     "name": "N. Chikovani",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Broken Finger injury"
     },
     {
      "name": "J. Ngakia",
@@ -5121,9 +5175,17 @@
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
     },
     {
+     "name": "P. Smyth",
+     "position": "FWD",
+     "rating": 71,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), playing at home."
+    },
+    {
      "name": "R. Edwards",
      "position": "DEF",
-     "rating": 71.2,
+     "rating": 70.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -5131,18 +5193,10 @@
     {
      "name": "J. Dunne",
      "position": "DEF",
-     "rating": 71.1,
+     "rating": 70.8,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "P. Smyth",
-     "position": "FWD",
-     "rating": 71,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), playing at home."
     },
     {
      "name": "G. Kamara",
@@ -5185,6 +5239,18 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "J. Clarke-Salter",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury, expected back 8 Nov"
+    },
+    {
+     "name": "A. Lloyd",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 2 Jan"
     }
    ],
    "cardRisk": []
@@ -6146,7 +6212,7 @@
     {
      "name": "C. Kavanagh",
      "position": "FWD",
-     "rating": 61.9,
+     "rating": 61.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 5 goals and 4 assists."
@@ -6162,7 +6228,7 @@
     {
      "name": "M. Fondop",
      "position": "FWD",
-     "rating": 56.8,
+     "rating": 57.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -7008,7 +7074,7 @@
     {
      "name": "K. Walker",
      "position": "DEF",
-     "rating": 56.8,
+     "rating": 56.6,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
@@ -7024,7 +7090,7 @@
     {
      "name": "M. Alleyne",
      "position": "DEF",
-     "rating": 55.5,
+     "rating": 55.3,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
@@ -7032,7 +7098,7 @@
     {
      "name": "R. Hatate",
      "position": "MID",
-     "rating": 52.7,
+     "rating": 52.3,
      "status": "available",
      "minutesShare": 77,
      "summary": "Started 10 of 13 (77%), tough fixture (rated 4 of 5)."
@@ -7160,7 +7226,7 @@
     {
      "name": "S. McLoughlin",
      "position": "DEF",
-     "rating": 76,
+     "rating": 75.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -7200,7 +7266,7 @@
     {
      "name": "R. Alebiosu",
      "position": "DEF",
-     "rating": 69.8,
+     "rating": 69.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -7212,6 +7278,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury, expected back 26 Nov"
+    },
+    {
+     "name": "T. Atcheson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury, expected back 8 Nov"
     },
     {
      "name": "A. Forshaw",
@@ -7330,7 +7402,7 @@
     {
      "name": "M. Kilman",
      "position": "DEF",
-     "rating": 63.6,
+     "rating": 63.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), 4 clean sheets plus 1 attacking return."
@@ -7470,15 +7542,7 @@
     {
      "name": "J. Tymon",
      "position": "DEF",
-     "rating": 63.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "S. Welsh",
-     "position": "DEF",
-     "rating": 62,
+     "rating": 62.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -7486,7 +7550,7 @@
     {
      "name": "F. Lissah",
      "position": "DEF",
-     "rating": 62,
+     "rating": 61.6,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), 5 clean sheets plus 2 attacking returns."
@@ -7506,14 +7570,40 @@
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "Z. Vipotnik",
+     "position": "FWD",
+     "rating": 56.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "S. Welsh",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
     {
      "name": "M. Yeo",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "S. Eustaquio",
+     "position": "MID",
+     "status": "injured",
+     "news": "Groin Injury, expected back 22 Nov"
+    },
+    {
+     "name": "E. Ji-Sung",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knock, expected back 8 Nov"
     },
     {
      "name": "Ronald",
@@ -7618,7 +7708,7 @@
     {
      "name": "D. Elerewe",
      "position": "DEF",
-     "rating": 62,
+     "rating": 61.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -7634,7 +7724,7 @@
     {
      "name": "R. Hackett",
      "position": "MID",
-     "rating": 56.3,
+     "rating": 56.7,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
@@ -7664,6 +7754,12 @@
      "news": "Knee Injury, expected back 8 Nov"
     },
     {
+     "name": "M. Ladefoged",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury, expected back 8 Nov"
+    },
+    {
      "name": "T. Darikwa",
      "position": "DEF",
      "status": "injured",
@@ -7674,12 +7770,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Thigh Injury, expected back 22 Nov"
-    },
-    {
-     "name": "E. Wheatley",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -7764,7 +7854,7 @@
     {
      "name": "C. Taylor",
      "position": "DEF",
-     "rating": 66.9,
+     "rating": 66.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 4 clean sheets plus 5 attacking returns."
@@ -7772,7 +7862,7 @@
     {
      "name": "J. Cooper",
      "position": "DEF",
-     "rating": 66.2,
+     "rating": 65.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), 4 clean sheets plus 3 attacking returns."
@@ -7780,7 +7870,7 @@
     {
      "name": "Z. Sturge",
      "position": "DEF",
-     "rating": 62.2,
+     "rating": 61.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -7818,10 +7908,28 @@
      "news": "Ankle Injury"
     },
     {
+     "name": "T. Crama",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
+     "name": "R. Leonard",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 6 Dec"
+    },
+    {
+     "name": "C. De Norre",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury, expected back 8 Nov"
+    },
+    {
      "name": "L. Jensen",
      "position": "GK",
      "status": "injured",
-     "news": "Thigh Injury"
+     "news": "Thigh Injury, expected back 22 Nov"
     },
     {
      "name": "M. Servais",
@@ -7928,7 +8036,7 @@
     {
      "name": "D. Hyam",
      "position": "DEF",
-     "rating": 69.6,
+     "rating": 69.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
@@ -7944,7 +8052,7 @@
     {
      "name": "C. Doyle",
      "position": "DEF",
-     "rating": 68.2,
+     "rating": 68,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
@@ -8935,7 +9043,7 @@
     {
      "name": "L. Jones",
      "position": "DEF",
-     "rating": 74.8,
+     "rating": 74.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
@@ -8982,6 +9090,18 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "K. Ramsay",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "N. Chalobah",
+     "position": "MID",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
     {
      "name": "C. Sichenje",
      "position": "DEF",
@@ -9425,7 +9545,7 @@
     {
      "name": "D. Sanderson",
      "position": "DEF",
-     "rating": 63.9,
+     "rating": 63.7,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), even fixture (rated 3 of 5)."
@@ -9592,6 +9712,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Kenny",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
     {
      "name": "H. Clarke",
      "position": "DEF",
