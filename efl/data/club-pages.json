@@ -1,12 +1,12 @@
 {
- "built": "2026-11-04T23:40:46.216Z",
+ "built": "2026-11-05T06:49:25.700Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-04T23:40:46.216Z",
+  "generatedAt": "2026-11-05T06:49:25.700Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -169,12 +169,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "J. James",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 5 Nov"
-    },
     {
      "name": "R. Jiménez",
      "position": "FWD",
@@ -3255,12 +3249,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "K. Bielik",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Groin Injury, expected back 5 Nov"
-    },
     {
      "name": "I. Davies",
      "position": "FWD",
@@ -7908,12 +7896,6 @@
      "news": "Knee Injury"
     },
     {
-     "name": "C. O'Hare",
-     "position": "MID",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 5 Nov"
-    },
-    {
      "name": "J. Windass",
      "position": "MID",
      "status": "injured",
@@ -9391,12 +9373,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Thigh Injury, expected back 8 Nov"
-    },
-    {
-     "name": "K. Lamadrid",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury, expected back 5 Nov"
     }
    ],
    "cardRisk": []
