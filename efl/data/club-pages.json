@@ -1,12 +1,12 @@
 {
- "built": "2026-11-05T17:25:20.023Z",
+ "built": "2026-11-05T23:39:00.318Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-05T17:25:20.023Z",
+  "generatedAt": "2026-11-05T23:39:00.318Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -9463,14 +9463,6 @@
      "summary": "Started 14 of 14 (100%), 3 goals and 2 assists."
     },
     {
-     "name": "S. Szmodics",
-     "position": "MID",
-     "rating": 69.7,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "R. Hedges",
      "position": "MID",
      "rating": 65.3,
@@ -9501,9 +9493,23 @@
      "status": "available",
      "minutesShare": 79,
      "summary": "Started 11 of 14 (79%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Widell Zetterström",
+     "position": "GK",
+     "rating": 62.9,
+     "status": "available",
+     "minutesShare": 71,
+     "summary": "In and out of the side (10 starts in 14), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "S. Szmodics",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 13 Dec"
+    },
     {
      "name": "S. Langås",
      "position": "DEF",
