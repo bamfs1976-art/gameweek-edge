@@ -1,12 +1,12 @@
 {
- "built": "2026-11-05T23:39:00.318Z",
+ "built": "2026-11-06T06:49:41.975Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-05T23:39:00.318Z",
+  "generatedAt": "2026-11-06T06:49:41.975Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1428,16 +1428,10 @@
    ],
    "unavailable": [
     {
-     "name": "L. Scienza",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury, expected back 8 Nov"
-    },
-    {
      "name": "C. Larin",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury, expected back 8 Nov"
+     "news": "Hamstring injury, expected back 22 Nov"
     },
     {
      "name": "C. Jander",
@@ -2652,19 +2646,7 @@
      "name": "J. Beadle",
      "position": "GK",
      "status": "injured",
-     "news": "Knock, expected back 8 Nov"
-    },
-    {
-     "name": "P. Seung-Ho",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knock, expected back 8 Nov"
-    },
-    {
-     "name": "D. Fry",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Illness, expected back 8 Nov"
+     "news": "Knock, expected back 22 Nov"
     },
     {
      "name": "K. Lund",
@@ -3407,7 +3389,7 @@
      "name": "G. Yah",
      "position": "MID",
      "status": "injured",
-     "news": "Knock, expected back 8 Nov"
+     "news": "Knock, expected back 22 Nov"
     },
     {
      "name": "E. Adebayo",
@@ -4724,16 +4706,28 @@
      "news": "Thigh Injury, expected back 22 Nov"
     },
     {
+     "name": "G. Bazunu",
+     "position": "GK",
+     "status": "doubtful",
+     "news": "Thigh Injury, expected back 7 Nov"
+    },
+    {
      "name": "E. Toal",
      "position": "DEF",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 22 Nov"
     },
     {
      "name": "R. Hardie",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "J. McAtee",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury, expected back 26 Nov"
     },
     {
      "name": "J. Nelson",
@@ -7090,12 +7084,6 @@
      "news": "Broken Foot injury, expected back 17 Jan"
     },
     {
-     "name": "Z. Amdouni",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 23 Nov"
-    },
-    {
      "name": "A. Broja",
      "position": "FWD",
      "status": "injured",
@@ -7106,6 +7094,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 30 Dec"
+    },
+    {
+     "name": "D. Satpaev",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
     },
     {
      "name": "B. Humphreys",
@@ -8910,7 +8904,7 @@
      "name": "K. Ramsay",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Groin Injury"
     },
     {
      "name": "N. Chalobah",
@@ -8928,7 +8922,7 @@
      "name": "R. Apter",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 7 Feb"
     }
    ],
    "cardRisk": []
@@ -9504,6 +9498,18 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Ward",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Back Injury, expected back 22 Nov"
+    },
+    {
+     "name": "D. Ozoh",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Back Injury, expected back 7 Nov"
+    },
     {
      "name": "S. Szmodics",
      "position": "MID",
