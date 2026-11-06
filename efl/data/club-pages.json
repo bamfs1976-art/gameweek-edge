@@ -1,12 +1,12 @@
 {
- "built": "2026-11-06T06:49:41.975Z",
+ "built": "2026-11-06T16:46:27.918Z",
  "round": 13,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-06T06:49:41.975Z",
+  "generatedAt": "2026-11-06T16:46:27.918Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -169,6 +169,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. James",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 22 Nov"
+    },
     {
      "name": "R. Jiménez",
      "position": "FWD",
@@ -981,7 +987,7 @@
      "name": "J. Shackleton",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Thigh Injury"
     },
     {
      "name": "R. Oné",
@@ -1252,14 +1258,6 @@
      "summary": "Started 14 of 14 (100%), 3 goals and 2 assists."
     },
     {
-     "name": "W. Lankshear",
-     "position": "FWD",
-     "rating": 64.4,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), 13 goals and 1 assist."
-    },
-    {
      "name": "C. Brittain",
      "position": "DEF",
      "rating": 62.8,
@@ -1282,9 +1280,23 @@
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "R. McGree",
+     "position": "MID",
+     "rating": 59.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "W. Lankshear",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Muscle Injury, expected back 8 Nov"
+    },
     {
      "name": "A. Jones",
      "position": "DEF",
@@ -2179,6 +2191,12 @@
    ],
    "unavailable": [
     {
+     "name": "K. Naismith",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
      "name": "G. Kodua",
      "position": "FWD",
      "status": "injured",
@@ -2191,22 +2209,10 @@
      "news": "Hamstring injury"
     },
     {
-     "name": "S. Baptiste",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury"
-    },
-    {
      "name": "S. Sandal",
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury"
-    },
-    {
-     "name": "J. Luker",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -2642,6 +2648,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "A. Priske",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Knock, expected back 8 Nov"
+    },
     {
      "name": "J. Beadle",
      "position": "GK",
@@ -3231,6 +3243,18 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "K. Bielik",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Groin Injury, expected back 8 Nov"
+    },
+    {
+     "name": "P. Ng",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury, expected back 8 Nov"
+    },
     {
      "name": "I. Davies",
      "position": "FWD",
@@ -5604,6 +5628,12 @@
    ],
    "unavailable": [
     {
+     "name": "L. Thompson",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
      "name": "L. Akins",
      "position": "FWD",
      "status": "injured",
@@ -6622,6 +6652,12 @@
    ],
    "unavailable": [
     {
+     "name": "J. Armer",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "F. Delap",
      "position": "DEF",
      "status": "injured",
@@ -7228,26 +7264,32 @@
      "summary": "Started 13 of 14 (93%), 1 goal and 1 assist."
     },
     {
-     "name": "R. Alebiosu",
-     "position": "DEF",
-     "rating": 69.6,
+     "name": "J. Fevrier",
+     "position": "FWD",
+     "rating": 68.4,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+     "summary": "Started 14 of 14 (100%), playing at home."
     }
    ],
    "unavailable": [
+    {
+     "name": "R. Alebiosu",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Knock, expected back 8 Nov"
+    },
+    {
+     "name": "T. Atcheson",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Knock, expected back 8 Nov"
+    },
     {
      "name": "R. Morishita",
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury, expected back 26 Nov"
-    },
-    {
-     "name": "T. Atcheson",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury, expected back 8 Nov"
     },
     {
      "name": "A. Forshaw",
@@ -7372,14 +7414,6 @@
      "summary": "Started 13 of 14 (93%), 5 clean sheets plus 2 attacking returns."
     },
     {
-     "name": "M. Widell",
-     "position": "MID",
-     "rating": 57.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. Fulton",
      "position": "MID",
      "rating": 56.5,
@@ -7394,26 +7428,28 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Cabango",
+     "position": "DEF",
+     "rating": 56.4,
+     "status": "available",
+     "minutesShare": 86,
+     "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
     {
      "name": "S. Welsh",
      "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury"
+     "status": "doubtful",
+     "news": "Ankle Injury, expected back 8 Nov"
     },
     {
-     "name": "M. Yeo",
+     "name": "M. Widell",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
-    },
-    {
-     "name": "E. Ji-Sung",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock, expected back 8 Nov"
     },
     {
      "name": "S. Eustaquio",
@@ -7566,14 +7602,14 @@
     {
      "name": "C. McGrandles",
      "position": "MID",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Knee Injury, expected back 8 Nov"
     },
     {
      "name": "M. Ladefoged",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury, expected back 8 Nov"
+     "news": "Concussion injury, expected back 8 Nov"
     },
     {
      "name": "T. Darikwa",
@@ -7887,7 +7923,13 @@
      "name": "S. Smith",
      "position": "FWD",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "ACL Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "C. O'Hare",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 8 Nov"
     },
     {
      "name": "J. Windass",
@@ -8328,7 +8370,7 @@
      "name": "W. Keane",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Calf Injury"
     },
     {
      "name": "J. Husband",
@@ -9367,6 +9409,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Thigh Injury, expected back 8 Nov"
+    },
+    {
+     "name": "K. Lamadrid",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 8 Nov"
     }
    ],
    "cardRisk": []
@@ -9981,10 +10029,28 @@
    ],
    "unavailable": [
     {
+     "name": "O. Edwards",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "C. Johnston",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Illness"
+    },
+    {
      "name": "B. Woods",
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury"
+    },
+    {
+     "name": "R. Adebisi",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
