@@ -1,12 +1,12 @@
 {
- "built": "2026-11-06T23:09:59.020Z",
+ "built": "2026-11-07T05:59:46.339Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-06T23:09:59.020Z",
+  "generatedAt": "2026-11-07T05:59:46.339Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2598,12 +2598,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "A. Matthews",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Leg Injury"
     }
    ],
    "cardRisk": []
@@ -2741,12 +2735,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "R. Cundy",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
     {
      "name": "J. Tomlinson",
      "position": "DEF",
@@ -3845,6 +3833,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "B. Garrity",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knock"
+    },
     {
      "name": "L. Gordon",
      "position": "DEF",
@@ -6648,12 +6642,6 @@
      "news": "Thigh Injury, expected back 22 Nov"
     },
     {
-     "name": "G. Bazunu",
-     "position": "GK",
-     "status": "doubtful",
-     "news": "Thigh Injury, expected back 7 Nov"
-    },
-    {
      "name": "E. Toal",
      "position": "DEF",
      "status": "injured",
@@ -8857,12 +8845,6 @@
      "news": "Back Injury, expected back 22 Nov"
     },
     {
-     "name": "D. Ozoh",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Back Injury, expected back 7 Nov"
-    },
-    {
      "name": "S. Szmodics",
      "position": "MID",
      "status": "injured",
@@ -8873,12 +8855,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Groin Injury, expected back 17 Jan"
-    },
-    {
-     "name": "C. Taylor",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 7 Nov"
     },
     {
      "name": "C. Forsyth",
@@ -10353,12 +10329,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury"
-    },
-    {
-     "name": "E. Ebanks-Landell",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
     },
     {
      "name": "S. Beckwith",
