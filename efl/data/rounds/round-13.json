@@ -9562,5 +9562,157 @@
       "3448": 89
     }
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-11-07T19:26:20.636Z",
+    "attribution": "clean",
+    "window": {
+      "lastKickoff": "2026-11-07T15:00:00.000Z",
+      "nextRoundKickoff": "2026-11-14T12:30:00.000Z"
+    },
+    "fixtures": {
+      "played": 12,
+      "total": 12
+    },
+    "pointsField": "totalPoints",
+    "clubBasis": "official-points",
+    "crowdClubs": {
+      "ids": [
+        "25",
+        "20"
+      ],
+      "value": 5
+    },
+    "squad": {
+      "players": [
+        {
+          "id": "500196",
+          "name": "J. Ward",
+          "club": "Walsall",
+          "position": "GK",
+          "points": null
+        },
+        {
+          "id": "197394",
+          "name": "A. Collins",
+          "club": "MK Dons",
+          "position": "FWD",
+          "points": null
+        },
+        {
+          "id": "229594",
+          "name": "P. Neumann",
+          "club": "Birmingham City",
+          "position": "DEF",
+          "points": 7
+        },
+        {
+          "id": "443294",
+          "name": "S. McLoughlin",
+          "club": "Blackburn Rovers",
+          "position": "DEF",
+          "points": 3
+        },
+        {
+          "id": "79934",
+          "name": "O. Norwood",
+          "club": "Stockport County",
+          "position": "MID",
+          "points": null
+        },
+        {
+          "id": "523851",
+          "name": "J. Moylan",
+          "club": "Cardiff City",
+          "position": "MID",
+          "points": 10
+        },
+        {
+          "id": "160190",
+          "name": "K. Palmer",
+          "club": "Luton Town",
+          "position": "MID",
+          "points": null
+        }
+      ],
+      "total": 20,
+      "unresolved": 4,
+      "formation": "1-2-3-1"
+    },
+    "captain": null,
+    "clubs": {
+      "basis": "official-points",
+      "total": 16,
+      "perClub": [
+        {
+          "id": "39",
+          "value": 3,
+          "outcome": {
+            "played": 1,
+            "wins": 0,
+            "draws": 1,
+            "losses": 0,
+            "goalsFor": 1,
+            "goalsAgainst": 1,
+            "cleanSheets": 0,
+            "leaguePoints": 1
+          }
+        },
+        {
+          "id": "45",
+          "value": 13,
+          "outcome": {
+            "played": 1,
+            "wins": 1,
+            "draws": 0,
+            "losses": 0,
+            "goalsFor": 5,
+            "goalsAgainst": 0,
+            "cleanSheets": 1,
+            "leaguePoints": 3
+          }
+        }
+      ],
+      "fieldMean": 4.25,
+      "fieldMeanTwo": 8.5,
+      "bestTwo": 22,
+      "percentile": 0.6979166666666666
+    },
+    "baselines": {
+      "randomMean": 8.788,
+      "randomMedian": 8,
+      "randomSamples": 2000,
+      "percentile": 0.92925,
+      "naive": 25,
+      "ceiling": 97,
+      "ceilingFormation": "1-2-2-2",
+      "fieldMean": 1.24,
+      "fieldMeanSeven": 8.68
+    },
+    "model": {
+      "n": 1150,
+      "rho": 0.6386524923988499,
+      "topDecileLift": 3.113604488078541,
+      "byPosition": {
+        "GK": {
+          "n": 116,
+          "rho": 0.6475078081740342
+        },
+        "DEF": {
+          "n": 366,
+          "rho": 0.6361326674567943
+        },
+        "MID": {
+          "n": 368,
+          "rho": 0.6606748777195289
+        },
+        "FWD": {
+          "n": 300,
+          "rho": 0.6438163604602207
+        }
+      }
+    },
+    "universe": {
+      "players": 1150
+    }
+  }
 }
