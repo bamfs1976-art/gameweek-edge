@@ -5262,12 +5262,71 @@ async function isOwner(email){
   }catch(_){return false;}
 }
 
+/* WHERE THE SIGN-IN IS KEPT.
+
+   Reported from an iPhone: the Home Screen app forgot the sign-in every time
+   it was reopened, while the same app remembered the linked team. The
+   server logs showed two password sign-ins ten minutes apart and nothing in
+   between, no sign-out and no refused renewal, so the session was not being
+   ended, it was not surviving on the phone.
+
+   The pattern points at the storage, not the code: the Team ID was written
+   weeks ago and survived, the session was written minutes before the app
+   was closed and did not. WebKit hands localStorage writes to its storage
+   process in the background, and an iOS Home Screen app can be suspended
+   and closed before a recent write lands. IndexedDB is transactional: a
+   write that has completed is on disk.
+
+   So the session goes to both, and IndexedDB is read first. First, not as
+   a fallback: renewing a session rotates its refresh token, so a
+   localStorage copy that missed the latest write holds a token the server
+   has already used, and presenting that ends the session for good. A copy
+   found only in localStorage, which is every device signed in before this
+   change, is moved across on first read, so nobody is signed out by the
+   switch. Either store failing alone (private browsing, a blocked
+   database) leaves the other working. */
+function geAuthStorage(ls,idb){
+  const lsGet=k=>{try{return ls?ls.getItem(k):null;}catch(_){return null;}};
+  const lsSet=(k,v)=>{try{if(ls)ls.setItem(k,v);}catch(_){}};
+  const lsDel=k=>{try{if(ls)ls.removeItem(k);}catch(_){}};
+  return {
+    async getItem(k){
+      const d=await idb('get',k),l=lsGet(k);
+      if(typeof d==='string'){if(l!==d)lsSet(k,d);return d;}
+      if(l!=null)await idb('put',k,l);
+      return l;
+    },
+    async setItem(k,v){lsSet(k,v);await idb('put',k,v);},
+    async removeItem(k){lsDel(k);await idb('delete',k);}
+  };
+}
+/* One small key-value database. Every call resolves, to null when the
+   database cannot be opened or a transaction fails, so the adapter above
+   never has to handle a rejection. */
+let GE_AUTH_DB=null,GE_AUTH_STORE=null;
+function geAuthIdb(op,k,v){
+  if(!GE_AUTH_DB)GE_AUTH_DB=new Promise(res=>{
+    try{const r=indexedDB.open('ge-auth',1);
+      r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+      r.onsuccess=()=>res(r.result);r.onerror=r.onblocked=()=>res(null);}
+    catch(_){res(null);}
+  });
+  return GE_AUTH_DB.then(db=>db?new Promise(res=>{
+    try{const tx=db.transaction('kv',op==='get'?'readonly':'readwrite'),st=tx.objectStore('kv');
+      const q=op==='get'?st.get(k):op==='put'?st.put(v,k):st.delete(k);
+      tx.oncomplete=()=>res(op==='get'?q.result:null);tx.onerror=tx.onabort=()=>res(null);}
+    catch(_){res(null);}
+  }):null);
+}
 function initAuth(){
   detectStorage();
   if(!window.GE_SUPABASE)return;
+  let ls=null;try{ls=window.localStorage;}catch(_){}
+  GE_AUTH_STORE=window.indexedDB?geAuthStorage(ls,geAuthIdb):null;
   try{
     sb=window.GE_SUPABASE.createClient(SUPA.url,SUPA.key,
-      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,
+        storage:GE_AUTH_STORE||undefined}});
   }catch(_){return;}
   sb.auth.getSession().then(({data})=>onAuthChange(data&&data.session)).catch(()=>{});
   sb.auth.onAuthStateChange((_evt,session)=>onAuthChange(session));
@@ -5275,6 +5334,11 @@ function initAuth(){
 function onAuthChange(session){
   SESSION=session||null;
   updateAcctLabel();
+  /* Signed in is when this device's storage starts to matter, so ask the
+     browser to keep it rather than clear it under pressure. Safari grants
+     it to Home Screen apps; a refusal costs nothing. Asked once a visit. */
+  if(SESSION&&!window._gePersistAsked){window._gePersistAsked=true;
+    try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{});}catch(_){}}
   if(uid()&&uid()!==SYNCED_UID)syncOnLogin();
   if(!uid()){
     SYNCED_UID=null;
@@ -5639,7 +5703,18 @@ async function doReset(){
   catch(e){acctErr(friendlyAuthErr(e));}
 }
 async function doSignOut(){
-  if(sb)try{await sb.auth.signOut();}catch(_){}
+  /* The library ends the session on the server first and, if that call
+     fails, keeps the local copy and returns an error. Offline or on a bad
+     signal that meant "Signed out" on screen and the session back on the
+     next reload. This device is always signed out locally, whatever the
+     server said. */
+  if(sb){let failed=false;
+    try{const r=await sb.auth.signOut();failed=!!(r&&r.error);}catch(_){failed=true;}
+    /* Even scope:'local' calls the server first, so the stored copies are
+       removed here directly, from both stores. */
+    if(failed){const k=sb.auth.storageKey||'',st=GE_AUTH_STORE;
+      for(const key of [k,k+'-user',k+'-code-verifier']){
+        try{if(st)await st.removeItem(key);else localStorage.removeItem(key);}catch(_){}}}}
   SESSION=null;SYNCED_UID=null;window.GE_OWNER=false;
   /* Belt and braces with onAuthChange: drop the cached Pro tier
      immediately rather than waiting for the auth event. */

@@ -128,6 +128,7 @@ const pieces = [
   extractLine(html, /const TIPS_FIT=[^\n]+/),
   extractLine(html, /const TIPS_BUY_OWN_MAX=[^\n]+/),
   extractLine(html, /const TIPS_ORDER=[^\n]+/),
+  extractFn(html, 'geAuthStorage'),
   extractFn(html, 'tipsOwn'),
   extractFn(html, 'tipsVerdict'),
   extractFn(html, 'tipsPick'),
@@ -470,7 +471,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, __resetFloor, BOOT_RECHECK_MS, cached, memo, cacheOk, CACHE_SKEW_MS, bootStale, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear, __lsSet, tipsVerdict, tipsPick, tipsApplyEdits, TIPS_CAP};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, __resetFloor, BOOT_RECHECK_MS, cached, memo, cacheOk, CACHE_SKEW_MS, bootStale, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, LG_FORM_N, lgForm, lgFormHtml, LP_STAT_LABEL, lpBreakdown, priceStatus, priceChip, avInitials, mcMinute, mcLoser, fplIdFrom, leagueIdFrom, lfNorm, lfMatch, pricingRows, mcTeamStats, lgOvertakes, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, HAUL_CAL, calibrateHaul, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear, __lsSet, tipsVerdict, tipsPick, tipsApplyEdits, TIPS_CAP, geAuthStorage};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1288,6 +1289,49 @@ section('Refresh actually refreshes — including the player list');
   const d = load('fourth');
   ok(await core.cached('boot', TTL, d) === 'fourth',
      'and the next attempt still reaches the network');
+}
+
+section('Sign-in storage: the session survives a lost localStorage write');
+{
+  /* Reported from an iPhone Home Screen app: the team stayed linked, the
+     sign-in did not. Stand-ins for both stores, so each failure is chosen. */
+  const mkLs = () => { const m = {}; return { m, getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; };
+  const mkIdb = () => { const m = {}; const f = async (op, k, v) => { if (op === 'get') return k in m ? m[k] : undefined; if (op === 'put') m[k] = v; else delete m[k]; return null; }; f.m = m; return f; };
+  const K = 'sb-x-auth-token';
+
+  let ls = mkLs(), idb = mkIdb(), st = core.geAuthStorage(ls, idb);
+  await st.setItem(K, 'S1');
+  ok(ls.m[K] === 'S1' && idb.m[K] === 'S1', 'a sign-in is written to both stores');
+
+  delete ls.m[K];                       /* the iPhone case: the localStorage write never landed */
+  ok(await st.getItem(K) === 'S1', 'a session lost from localStorage is read back from IndexedDB');
+  ok(ls.m[K] === 'S1', 'and copied back, so the rest of the page sees it too');
+
+  /* Token rotation: a localStorage copy that missed the latest renewal holds
+     a refresh token the server has already used. The durable copy wins. */
+  ls.m[K] = 'S0-old'; idb.m[K] = 'S2-new';
+  ok(await st.getItem(K) === 'S2-new', 'when the two disagree, IndexedDB wins: a stale refresh token would end the session');
+
+  /* Devices signed in before this change hold the session in localStorage only. */
+  ls = mkLs(); idb = mkIdb(); st = core.geAuthStorage(ls, idb);
+  ls.m[K] = 'LEGACY';
+  ok(await st.getItem(K) === 'LEGACY' && idb.m[K] === 'LEGACY', 'an existing localStorage sign-in is kept and moved across, so nobody is signed out by the change');
+
+  await st.removeItem(K);
+  ok(!(K in ls.m) && !(K in idb.m), 'signing out clears both stores');
+  ok(await st.getItem(K) === null, 'and nothing comes back after sign-out');
+
+  /* Either store failing alone leaves the other working. */
+  const deadIdb = async () => null;
+  st = core.geAuthStorage(mkLs(), deadIdb);
+  await st.setItem(K, 'S3');
+  ok(await st.getItem(K) === 'S3', 'with IndexedDB unavailable, localStorage still holds the sign-in');
+  const throwingLs = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); }, removeItem() { throw new Error('denied'); } };
+  idb = mkIdb(); st = core.geAuthStorage(throwingLs, idb);
+  await st.setItem(K, 'S4');
+  ok(await st.getItem(K) === 'S4', 'with localStorage blocked, IndexedDB still holds the sign-in');
+  st = core.geAuthStorage(null, mkIdb());
+  ok(await st.getItem(K) === null, 'and an empty device simply has no session');
 }
 
 section('Tips board: buy, hold and sell, and the owner\u2019s edits');
