@@ -1,12 +1,12 @@
 {
- "built": "2026-11-08T00:38:07.858Z",
+ "built": "2026-11-08T10:24:58.573Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-08T00:38:07.858Z",
+  "generatedAt": "2026-11-08T10:24:58.573Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2048,7 +2048,7 @@
     {
      "name": "M. Munetsi",
      "position": "MID",
-     "rating": 70.2,
+     "rating": 70.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
@@ -4211,12 +4211,12 @@
      "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "R. McGree",
-     "position": "MID",
-     "rating": 70.2,
+     "name": "A. Malanda",
+     "position": "DEF",
+     "rating": 70,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -6500,7 +6500,7 @@
     {
      "name": "J. Tymon",
      "position": "DEF",
-     "rating": 72.5,
+     "rating": 72.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
@@ -7160,7 +7160,7 @@
     {
      "name": "E. Kayembe",
      "position": "MID",
-     "rating": 60.5,
+     "rating": 60.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
@@ -7332,7 +7332,7 @@
     {
      "name": "A. Robertson",
      "position": "MID",
-     "rating": 65.1,
+     "rating": 65.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), 1 goal and 1 assist."
@@ -7340,7 +7340,7 @@
     {
      "name": "J. Bagan",
      "position": "DEF",
-     "rating": 61.1,
+     "rating": 61.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
@@ -7348,7 +7348,7 @@
     {
      "name": "O. Tanner",
      "position": "FWD",
-     "rating": 60.2,
+     "rating": 60.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), 3 goals and 5 assists."
@@ -7488,7 +7488,7 @@
     {
      "name": "B. Whiteman",
      "position": "MID",
-     "rating": 58.1,
+     "rating": 57.8,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
@@ -7496,7 +7496,7 @@
     {
      "name": "J. Ekomié",
      "position": "DEF",
-     "rating": 57.2,
+     "rating": 57.3,
      "status": "available",
      "minutesShare": 87,
      "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
@@ -8381,50 +8381,50 @@
     {
      "name": "J. Laurent",
      "position": "MID",
-     "rating": 69,
+     "rating": 66.7,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
     },
     {
      "name": "L. Ramazani",
      "position": "FWD",
-     "rating": 67.9,
+     "rating": 65.9,
      "status": "available",
-     "minutesShare": 86,
-     "summary": "Started 12 of 14 (86%), playing at home."
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), playing at home."
     },
     {
      "name": "L. Pires",
      "position": "DEF",
-     "rating": 66.7,
+     "rating": 65,
      "status": "available",
-     "minutesShare": 86,
-     "summary": "Started 12 of 14 (86%), even fixture (rated 3 of 5)."
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), even fixture (rated 3 of 5)."
     },
     {
      "name": "K. Walker",
      "position": "DEF",
-     "rating": 66.6,
+     "rating": 64.6,
      "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), even fixture (rated 3 of 5)."
     },
     {
      "name": "M. Edwards",
      "position": "FWD",
-     "rating": 62.8,
+     "rating": 61,
      "status": "available",
-     "minutesShare": 79,
-     "summary": "Started 11 of 14 (79%), playing at home."
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), playing at home."
     },
     {
      "name": "R. Hatate",
      "position": "MID",
-     "rating": 62.7,
+     "rating": 60.9,
      "status": "available",
-     "minutesShare": 79,
-     "summary": "Started 11 of 14 (79%), even fixture (rated 3 of 5)."
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -9197,7 +9197,7 @@
     {
      "name": "D. Ballard",
      "position": "FWD",
-     "rating": 57.4,
+     "rating": 57.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
@@ -9684,7 +9684,7 @@
     {
      "name": "A. Engels",
      "position": "MID",
-     "rating": 72.1,
+     "rating": 71.7,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), 1 goal and 3 assists."
