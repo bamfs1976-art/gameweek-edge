@@ -1,12 +1,12 @@
 {
- "built": "2026-11-09T06:33:22.548Z",
+ "built": "2026-11-09T19:50:09.366Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-09T06:33:22.548Z",
+  "generatedAt": "2026-11-09T19:50:09.366Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1220,15 +1220,21 @@
      "summary": "Started 12 of 14 (86%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "B. Kirkman",
-     "position": "DEF",
-     "rating": 62.1,
+     "name": "A. Munda",
+     "position": "MID",
+     "rating": 61.1,
      "status": "available",
      "minutesShare": 79,
      "summary": "Started 11 of 14 (79%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "B. Kirkman",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 6 Dec"
+    },
     {
      "name": "O. Clarke",
      "position": "MID",
@@ -1239,7 +1245,7 @@
      "name": "J. Hungbo",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 15 Dec"
     },
     {
      "name": "B. Middlemas",
@@ -2226,6 +2232,12 @@
    ],
    "unavailable": [
     {
+     "name": "M. Hancock",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
      "name": "A. Evans",
      "position": "MID",
      "status": "injured",
@@ -2958,14 +2970,6 @@
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "D. Love",
-     "position": "DEF",
-     "rating": 56.4,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "T. Walton",
      "position": "MID",
      "rating": 56.3,
@@ -2980,6 +2984,14 @@
      "status": "available",
      "minutesShare": 79,
      "summary": "Started 11 of 14 (79%), 2 goals and 4 assists."
+    },
+    {
+     "name": "A. Henderson",
+     "position": "MID",
+     "rating": 51.2,
+     "status": "available",
+     "minutesShare": 79,
+     "summary": "Started 11 of 14 (79%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -2987,6 +2999,18 @@
      "name": "J. Woods",
      "position": "FWD",
      "status": "doubtful",
+     "news": "Calf Injury"
+    },
+    {
+     "name": "D. Love",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
+     "name": "D. Tutonda",
+     "position": "DEF",
+     "status": "injured",
      "news": "Calf Injury"
     },
     {
@@ -3119,14 +3143,6 @@
      "summary": "Started 13 of 13 (100%), 6 goals and 6 assists."
     },
     {
-     "name": "K. Tshimanga",
-     "position": "FWD",
-     "rating": 67.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), 10 goals and 6 assists."
-    },
-    {
      "name": "M. Cox",
      "position": "GK",
      "rating": 60.2,
@@ -3157,9 +3173,24 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Comley",
+     "position": "MID",
+     "rating": 57.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
     }
    ],
-   "unavailable": [],
+   "unavailable": [
+    {
+     "name": "K. Tshimanga",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
+    }
+   ],
    "cardRisk": []
   },
   {
@@ -5111,15 +5142,45 @@
      "summary": "Started 14 of 14 (100%), 6 goals and 1 assist."
     },
     {
-     "name": "A. Smith",
+     "name": "L. Dobbs",
      "position": "DEF",
-     "rating": 60.9,
+     "rating": 56.1,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 86,
+     "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "H. Waldock",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "C. McManus",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "T. Eaves",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "B. Dack",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "A. Smith",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock"
+    },
     {
      "name": "W. Goodwin",
      "position": "FWD",
@@ -6170,14 +6231,6 @@
    ],
    "players": [
     {
-     "name": "Z. Jeacock",
-     "position": "GK",
-     "rating": 64.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. Guthrie",
      "position": "DEF",
      "rating": 62,
@@ -6216,6 +6269,14 @@
      "status": "available",
      "minutesShare": 85,
      "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "L. Evans",
+     "position": "MID",
+     "rating": 52.2,
+     "status": "available",
+     "minutesShare": 77,
+     "summary": "Started 10 of 13 (77%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -6224,6 +6285,12 @@
      "position": "FWD",
      "status": "doubtful",
      "news": "Unknown injury"
+    },
+    {
+     "name": "Z. Jeacock",
+     "position": "GK",
+     "status": "injured",
+     "news": "Shoulder Injury"
     },
     {
      "name": "S. Hoskins",
@@ -10017,7 +10084,7 @@
      "name": "M. Demetriou",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Ankle Injury"
     },
     {
      "name": "O. Taylor",
