@@ -1,12 +1,12 @@
 {
- "built": "2026-11-09T19:50:09.366Z",
+ "built": "2026-11-10T03:34:57.441Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-09T19:50:09.366Z",
+  "generatedAt": "2026-11-10T03:34:57.441Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1252,6 +1252,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury, expected back 15 Jan"
+    },
+    {
+     "name": "O. Palmer",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury"
     },
     {
      "name": "R. Tafazolli",
@@ -4410,6 +4416,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury"
+    },
+    {
+     "name": "J. Mingi",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -4690,10 +4702,10 @@
    ],
    "unavailable": [
     {
-     "name": "O. Oseni",
-     "position": "FWD",
+     "name": "J. Pleguezuelo",
+     "position": "DEF",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Calf Injury"
     }
    ],
    "cardRisk": []
@@ -4790,14 +4802,6 @@
      "summary": "Started 13 of 14 (93%), 3 goals and 3 assists."
     },
     {
-     "name": "L. Reed",
-     "position": "MID",
-     "rating": 60.8,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), 2 goals and 0 assists."
-    },
-    {
      "name": "R. Sweeney",
      "position": "DEF",
      "rating": 60.5,
@@ -4828,9 +4832,23 @@
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), 6 goals and 4 assists."
+    },
+    {
+     "name": "J. Russell",
+     "position": "MID",
+     "rating": 55.9,
+     "status": "available",
+     "minutesShare": 64,
+     "summary": "In and out of the side (9 starts in 14), 3 goals and 3 assists."
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Reed",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hip Injury"
+    },
     {
      "name": "L. Thompson",
      "position": "MID",
@@ -4842,6 +4860,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury"
+    },
+    {
+     "name": "G. Abbott",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "D. McGoldrick",
@@ -9472,12 +9496,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury, expected back 4 Feb"
-    },
-    {
-     "name": "M. Kaleta",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 10 Nov"
     }
    ],
    "cardRisk": []
@@ -10745,6 +10763,12 @@
    ],
    "unavailable": [
     {
+     "name": "R. Hunt",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury"
+    },
+    {
      "name": "H. Anderson",
      "position": "MID",
      "status": "injured",
@@ -10763,6 +10787,12 @@
      "news": "Hamstring injury"
     },
     {
+     "name": "F. Terry",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
      "name": "J. Leake",
      "position": "DEF",
      "status": "injured",
@@ -10773,6 +10803,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
+    },
+    {
+     "name": "T. Smith",
+     "position": "GK",
+     "status": "injured",
+     "news": "Shoulder Injury"
     }
    ],
    "cardRisk": []
