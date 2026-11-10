@@ -1,12 +1,12 @@
 {
- "built": "2026-11-10T03:34:57.441Z",
+ "built": "2026-11-10T14:55:08.754Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-10T03:34:57.441Z",
+  "generatedAt": "2026-11-10T14:55:08.754Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1797,166 +1797,6 @@
    "cardRisk": []
   },
   {
-   "id": "106",
-   "name": "Oxford United",
-   "short": "OXF",
-   "slug": "oxford-united",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 3,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "W"
-   ],
-   "rating": 57,
-   "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.75
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Peterborough United",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Wycombe Wanderers",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Luton Town",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Sheffield Wednesday",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "S. Dembélé",
-     "position": "MID",
-     "rating": 67.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), 2 goals and 4 assists."
-    },
-    {
-     "name": "C. Brannagan",
-     "position": "MID",
-     "rating": 63.7,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), 2 goals and 1 assist."
-    },
-    {
-     "name": "J. Currie",
-     "position": "DEF",
-     "rating": 62.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "C. Brown",
-     "position": "DEF",
-     "rating": 61.9,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), 5 clean sheets plus 1 attacking return."
-    },
-    {
-     "name": "B. Spencer",
-     "position": "DEF",
-     "rating": 59.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "M. Harris",
-     "position": "FWD",
-     "rating": 59.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "J. McDonnell",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "F. Kent",
-     "position": "DEF",
-     "status": "injured",
-     "news": "ACL Knee Injury"
-    },
-    {
-     "name": "R. Roosken",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Broken Foot injury"
-    },
-    {
-     "name": "J. Jin-Woo",
-     "position": "MID",
-     "status": "injured",
-     "news": "Back Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "39",
    "name": "Wolverhampton Wanderers",
    "short": "WOL",
@@ -2100,6 +1940,160 @@
      "position": "DEF",
      "status": "injured",
      "news": "MCL Knee Injury, expected back 13 Dec"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "106",
+   "name": "Oxford United",
+   "short": "OXF",
+   "slug": "oxford-united",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 3,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "D",
+    "W"
+   ],
+   "rating": 55.4,
+   "summary": "7 points from the last 3. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.75
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.4
+    },
+    {
+     "label": "Home matches",
+     "value": 0.67
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 14,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Wycombe Wanderers",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 16,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Luton Town",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Sheffield Wednesday",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "S. Dembélé",
+     "position": "MID",
+     "rating": 78.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), 2 goals and 4 assists."
+    },
+    {
+     "name": "C. Brannagan",
+     "position": "MID",
+     "rating": 74.7,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), 2 goals and 1 assist."
+    },
+    {
+     "name": "M. Harris",
+     "position": "FWD",
+     "rating": 74.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
+     "name": "J. Currie",
+     "position": "DEF",
+     "rating": 72.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "C. Brown",
+     "position": "DEF",
+     "rating": 71.5,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "G. O'Donkor",
+     "position": "FWD",
+     "rating": 69.7,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), playing at home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "J. McDonnell",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "F. Kent",
+     "position": "DEF",
+     "status": "injured",
+     "news": "ACL Knee Injury"
+    },
+    {
+     "name": "R. Roosken",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Broken Foot injury"
+    },
+    {
+     "name": "J. Jin-Woo",
+     "position": "MID",
+     "status": "injured",
+     "news": "Back Injury"
     }
    ],
    "cardRisk": []
@@ -10114,166 +10108,6 @@
    "cardRisk": []
   },
   {
-   "id": "73",
-   "name": "Peterborough United",
-   "short": "PET",
-   "slug": "peterborough-united",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 22,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "D",
-    "L"
-   ],
-   "rating": 36,
-   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Oxford United",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Plymouth Argyle",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Cambridge United",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Leyton Orient",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "H. Leonard",
-     "position": "FWD",
-     "rating": 73.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), playing at home."
-    },
-    {
-     "name": "L. Kelly",
-     "position": "MID",
-     "rating": 70.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "A. Bass",
-     "position": "GK",
-     "rating": 70,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "B. Shofowoke",
-     "position": "FWD",
-     "rating": 68.8,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), playing at home."
-    },
-    {
-     "name": "E. Williams",
-     "position": "FWD",
-     "rating": 66.9,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), playing at home."
-    },
-    {
-     "name": "H. Mills",
-     "position": "DEF",
-     "rating": 66.6,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "O. Edwards",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "C. Johnston",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Illness"
-    },
-    {
-     "name": "B. Woods",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury"
-    },
-    {
-     "name": "R. Adebisi",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "82",
    "name": "Rochdale",
    "short": "ROC",
@@ -11387,6 +11221,160 @@
      "position": "FWD",
      "status": "injured",
      "news": "Thigh Injury, expected back 22 Nov"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "73",
+   "name": "Peterborough United",
+   "short": "PET",
+   "slug": "peterborough-united",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 22,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "D",
+    "L"
+   ],
+   "rating": 30.6,
+   "summary": "Next 3 rated 3.6 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.35
+    },
+    {
+     "label": "Home matches",
+     "value": 0.33
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 14,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Plymouth Argyle",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 16,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Cambridge United",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Leyton Orient",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "A. Bass",
+     "position": "GK",
+     "rating": 64,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "L. Kelly",
+     "position": "MID",
+     "rating": 59.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "H. Leonard",
+     "position": "FWD",
+     "rating": 58.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "H. Mills",
+     "position": "DEF",
+     "rating": 56.9,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Shofowoke",
+     "position": "FWD",
+     "rating": 53.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Khela",
+     "position": "MID",
+     "rating": 51.9,
+     "status": "available",
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "O. Edwards",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "C. Johnston",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Illness"
+    },
+    {
+     "name": "B. Woods",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "R. Adebisi",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
