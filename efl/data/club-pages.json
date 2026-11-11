@@ -1,12 +1,12 @@
 {
- "built": "2026-11-11T10:59:57.345Z",
+ "built": "2026-11-11T19:37:12.627Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-11T10:59:57.345Z",
+  "generatedAt": "2026-11-11T19:37:12.627Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -42,6 +42,155 @@
   "full": false
  },
  "clubs": [
+  {
+   "id": "3448",
+   "name": "Salford City",
+   "short": "SAL",
+   "slug": "salford-city",
+   "division": "league-two",
+   "divisionName": "League Two",
+   "position": 1,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "W",
+    "W"
+   ],
+   "rating": 66.1,
+   "summary": "9 points from the last 3, next 3 rated 2.9 of 5 on average.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 1
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.53
+    },
+    {
+     "label": "Home matches",
+     "value": 0.67
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Northampton Town",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Accrington Stanley",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 16,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Gillingham",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "M. Langstaff",
+     "position": "FWD",
+     "rating": 74.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), playing at home."
+    },
+    {
+     "name": "B. Wiredu",
+     "position": "MID",
+     "rating": 72.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "W. Norris",
+     "position": "GK",
+     "rating": 71.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Grant",
+     "position": "MID",
+     "rating": 69.3,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "W. Aimson",
+     "position": "DEF",
+     "rating": 67.6,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "D. Udoh",
+     "position": "FWD",
+     "rating": 65.8,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), playing at home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "L. Molyneux",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "J. Powell",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knock"
+    },
+    {
+     "name": "M. Rose",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    }
+   ],
+   "cardRisk": []
+  },
   {
    "id": "22",
    "name": "MK Dons",
@@ -198,160 +347,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "3448",
-   "name": "Salford City",
-   "short": "SAL",
-   "slug": "salford-city",
-   "division": "league-two",
-   "divisionName": "League Two",
-   "position": 1,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "W",
-    "W"
-   ],
-   "rating": 64,
-   "summary": "9 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 1
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Northampton Town",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Accrington Stanley",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Gillingham",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Tranmere Rovers",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "M. Langstaff",
-     "position": "FWD",
-     "rating": 74.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), playing at home."
-    },
-    {
-     "name": "B. Wiredu",
-     "position": "MID",
-     "rating": 72.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "W. Norris",
-     "position": "GK",
-     "rating": 71.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Grant",
-     "position": "MID",
-     "rating": 69.3,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "W. Aimson",
-     "position": "DEF",
-     "rating": 67.6,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "D. Udoh",
-     "position": "FWD",
-     "rating": 65.8,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), playing at home."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "L. Molyneux",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "J. Powell",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knock"
-    },
-    {
-     "name": "M. Rose",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -944,154 +939,6 @@
      "position": "MID",
      "status": "injured",
      "news": "ACL Knee Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "44",
-   "name": "Tranmere Rovers",
-   "short": "TRA",
-   "slug": "tranmere-rovers",
-   "division": "league-two",
-   "divisionName": "League Two",
-   "position": 11,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "W"
-   ],
-   "rating": 57,
-   "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.75
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Fleetwood Town",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Colchester United",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Bristol Rovers",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Salford City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "W. Vaulks",
-     "position": "MID",
-     "rating": 64.8,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), 2 goals and 5 assists."
-    },
-    {
-     "name": "T. Ince",
-     "position": "MID",
-     "rating": 64.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), 2 goals and 4 assists."
-    },
-    {
-     "name": "C. Whitaker",
-     "position": "MID",
-     "rating": 59.3,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Slater",
-     "position": "DEF",
-     "rating": 58.9,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "T. Conlon",
-     "position": "MID",
-     "rating": 58.1,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Senior",
-     "position": "DEF",
-     "rating": 56.7,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "Z. Okoro",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "C. Jennings",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -2099,6 +1946,149 @@
    "cardRisk": []
   },
   {
+   "id": "44",
+   "name": "Tranmere Rovers",
+   "short": "TRA",
+   "slug": "tranmere-rovers",
+   "division": "league-two",
+   "divisionName": "League Two",
+   "position": 11,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "D",
+    "W"
+   ],
+   "rating": 54.9,
+   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.75
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.47
+    },
+    {
+     "label": "Home matches",
+     "value": 0.33
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Fleetwood Town",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Colchester United",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 16,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Bristol Rovers",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "W. Vaulks",
+     "position": "MID",
+     "rating": 64.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), 2 goals and 5 assists."
+    },
+    {
+     "name": "T. Ince",
+     "position": "MID",
+     "rating": 64.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), 2 goals and 4 assists."
+    },
+    {
+     "name": "C. Whitaker",
+     "position": "MID",
+     "rating": 59.3,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Slater",
+     "position": "DEF",
+     "rating": 58.9,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "T. Conlon",
+     "position": "MID",
+     "rating": 58.1,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Senior",
+     "position": "DEF",
+     "rating": 56.7,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "Z. Okoro",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "C. Jennings",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "42",
    "name": "Walsall",
    "short": "WAL",
@@ -2235,6 +2225,12 @@
      "name": "M. Hancock",
      "position": "DEF",
      "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "R. Leak",
+     "position": "DEF",
+     "status": "injured",
      "news": "Unknown injury"
     },
     {
@@ -5196,6 +5192,18 @@
     {
      "name": "A. Smith",
      "position": "DEF",
+     "status": "injured",
+     "news": "Knock"
+    },
+    {
+     "name": "R. McKenzie",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "L. Sillah",
+     "position": "FWD",
      "status": "injured",
      "news": "Knock"
     },
@@ -10600,7 +10608,7 @@
      "name": "R. Hunt",
      "position": "DEF",
      "status": "injured",
-     "news": "Groin Injury"
+     "news": "Unknown injury"
     },
     {
      "name": "H. Anderson",
@@ -10634,6 +10642,12 @@
     },
     {
      "name": "M. Jolliffe",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "K. Lisbie",
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
