@@ -53,7 +53,10 @@ jobs:
             sleep $((2 ** i))
           done
           exit 1
-      - run: npx playwright install --with-deps chromium
+      # Retries, then falls back to the browser alone when Ubuntu's mirrors
+      # are unreachable. See scripts/install-browser.sh.
+      - name: Install Chromium
+        run: bash scripts/install-browser.sh
 
       # Writes scripts/content/content.json and sets `published` for the
       # steps below. Reads scripts/content/history.json from the repo, which
