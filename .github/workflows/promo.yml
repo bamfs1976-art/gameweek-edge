@@ -26,7 +26,7 @@ jobs:
       - name: Install Chromium
         run: |
           npm i playwright ffmpeg-static --no-save
-          npx playwright install --with-deps chromium
+          bash scripts/install-browser.sh
 
       - name: Render the promo video
         run: node scripts/promo/render.mjs

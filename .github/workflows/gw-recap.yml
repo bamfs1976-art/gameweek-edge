@@ -56,7 +56,7 @@ jobs:
         if: steps.gate.outputs.skip == 'false'
         run: |
           npm i playwright ffmpeg-static --no-save
-          npx playwright install --with-deps chromium
+          bash scripts/install-browser.sh
 
       - name: Render the recap video
         if: steps.gate.outputs.skip == 'false'

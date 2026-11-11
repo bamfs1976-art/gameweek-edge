@@ -163,7 +163,7 @@ jobs:
           npm ci --omit=dev
           PW=$(node -p "require('./package-lock.json').packages['node_modules/playwright'].version")
           npm install --no-save "playwright@$PW"
-          npx playwright install --with-deps chromium
+          bash scripts/install-browser.sh
 
       # The suite serves www/, so build it exactly as Netlify does.
       - name: Build the web bundle
