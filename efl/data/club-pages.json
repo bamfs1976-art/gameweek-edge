@@ -1,12 +1,12 @@
 {
- "built": "2026-11-12T11:14:49.299Z",
+ "built": "2026-11-12T19:55:32.673Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-12T11:14:49.299Z",
+  "generatedAt": "2026-11-12T19:55:32.673Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1313,166 +1313,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "102",
-   "name": "Luton Town",
-   "short": "LUT",
-   "slug": "luton-town",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 4,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "D",
-    "W",
-    "W"
-   ],
-   "rating": 57,
-   "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.75
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Cambridge United",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Burton Albion",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Oxford United",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Blackpool",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "K. Palmer",
-     "position": "MID",
-     "rating": 79.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), 3 goals and 6 assists."
-    },
-    {
-     "name": "N. Wells",
-     "position": "FWD",
-     "rating": 75.8,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), playing at home."
-    },
-    {
-     "name": "J. Donley",
-     "position": "MID",
-     "rating": 75.7,
-     "status": "available",
-     "minutesShare": 86,
-     "summary": "Started 12 of 14 (86%), 4 goals and 3 assists."
-    },
-    {
-     "name": "J. Richards",
-     "position": "MID",
-     "rating": 73.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), 1 goal and 5 assists."
-    },
-    {
-     "name": "L. Walsh",
-     "position": "MID",
-     "rating": 71.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "G. Johnston",
-     "position": "DEF",
-     "rating": 71.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "K. Naismith",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury"
-    },
-    {
-     "name": "G. Kodua",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "S. Morris",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "S. Sandal",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -2854,6 +2694,160 @@
      "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury, expected back 2 Jan"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "102",
+   "name": "Luton Town",
+   "short": "LUT",
+   "slug": "luton-town",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 4,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "D",
+    "W",
+    "W"
+   ],
+   "rating": 51.6,
+   "summary": "7 points from the last 3. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.75
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.35
+    },
+    {
+     "label": "Home matches",
+     "value": 0.33
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 14,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Burton Albion",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 16,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Oxford United",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Blackpool",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "K. Palmer",
+     "position": "MID",
+     "rating": 68.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), 3 goals and 6 assists."
+    },
+    {
+     "name": "J. Donley",
+     "position": "MID",
+     "rating": 64.7,
+     "status": "available",
+     "minutesShare": 86,
+     "summary": "Started 12 of 14 (86%), 4 goals and 3 assists."
+    },
+    {
+     "name": "J. Richards",
+     "position": "MID",
+     "rating": 62.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), 1 goal and 5 assists."
+    },
+    {
+     "name": "G. Johnston",
+     "position": "DEF",
+     "rating": 61.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "M. Andersen",
+     "position": "DEF",
+     "rating": 61.2,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), 2 clean sheets plus 2 attacking returns."
+    },
+    {
+     "name": "N. Wells",
+     "position": "FWD",
+     "rating": 60.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), 7 goals and 2 assists."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "K. Naismith",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
+     "name": "G. Kodua",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "S. Sandal",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "S. Morris",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -10656,148 +10650,6 @@
    "cardRisk": []
   },
   {
-   "id": "101",
-   "name": "Cambridge United",
-   "short": "CAM",
-   "slug": "cambridge-united",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 8,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "D",
-    "L"
-   ],
-   "rating": 36,
-   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Luton Town",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 15,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Stockport County",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Peterborough United",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Leicester City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "B. Knight",
-     "position": "MID",
-     "rating": 68.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), 4 goals and 2 assists."
-    },
-    {
-     "name": "K. Watts",
-     "position": "DEF",
-     "rating": 63,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Eastwood",
-     "position": "GK",
-     "rating": 62.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "P. Mpanzu",
-     "position": "MID",
-     "rating": 61,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "Z. Bradshaw",
-     "position": "DEF",
-     "rating": 60.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "O. Moxon",
-     "position": "MID",
-     "rating": 55.4,
-     "status": "available",
-     "minutesShare": 86,
-     "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "D. Ball",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "2623",
    "name": "AFC Wimbledon",
    "short": "WIM",
@@ -11229,6 +11081,142 @@
      "position": "FWD",
      "status": "injured",
      "news": "Thigh Injury, expected back 22 Nov"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "101",
+   "name": "Cambridge United",
+   "short": "CAM",
+   "slug": "cambridge-united",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 8,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "D",
+    "L"
+   ],
+   "rating": 34.4,
+   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.4
+    },
+    {
+     "label": "Home matches",
+     "value": 0.67
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 14,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 15,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Stockport County",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 16,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Peterborough United",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Leicester City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "B. Knight",
+     "position": "MID",
+     "rating": 79.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), 4 goals and 2 assists."
+    },
+    {
+     "name": "K. Watts",
+     "position": "DEF",
+     "rating": 72.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "P. Mpanzu",
+     "position": "MID",
+     "rating": 72,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "Z. Bradshaw",
+     "position": "DEF",
+     "rating": 70.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Eastwood",
+     "position": "GK",
+     "rating": 68.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "S. Lavery",
+     "position": "FWD",
+     "rating": 68.7,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), playing at home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "D. Ball",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
