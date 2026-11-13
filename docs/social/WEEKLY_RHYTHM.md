@@ -84,6 +84,25 @@ Hashtags: `#FPL` on Bluesky, none on X. The Bluesky tag is what gets you into
 the custom feeds; on X the algorithm reads the text and the tag only leaks
 attention away.
 
+## Scheduling rules (owner decision, 13 Nov 2026)
+
+These apply to every post scheduled in Typefully, by hand or by Claude.
+
+1. **One link, at the end.** Every thread ends with exactly one link to the
+   site, tagged by platform: `gameweekedge.co.uk/?src=x` on X and
+   `gameweekedge.co.uk/?src=bluesky` on Bluesky. No other links in the thread.
+2. **Check before scheduling.** Read the Typefully publishing quota (used,
+   remaining, reset date) and everything already scheduled before adding a
+   post. A post scheduled for X and Bluesky together counts once.
+3. **Never exceed the quota.** If the month has fewer slots than posts, the
+   lower-priority posts stay in drafts.
+4. **Priority, highest first:** captaincy, model record, suspension watch,
+   price watch.
+5. **Live data beats generic.** When a post built from live data covers the
+   same topic as a generic `AUTO ·` post (title starts `AUTO ·`), move the
+   AUTO post back to drafts (unschedule it).
+6. **Never delete.** Drafts are unscheduled or left alone, never deleted.
+
 ---
 
 # The four posts
