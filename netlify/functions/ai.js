@@ -154,6 +154,38 @@ async function checkQuota(supaUrl, serviceKey, userId) {
   } catch (_) { return true; /* metering must never take the feature down */ }
 }
 
+/* One free answer from the AI scout, per account, for good.
+   Free users never met Pro, so the ask box gives a signed-in free account a
+   single conversational answer before the gate. The claim is recorded in
+   gwedge_ai_usage under a sentinel day (2000-01-01) so no schema change is
+   needed and the daily meter is untouched. Read-then-insert, and it fails
+   CLOSED: if the claim cannot be recorded the answer is not given away. */
+const TASTER_DAY = '2000-01-01';
+async function claimTaster(supaUrl, serviceKey, userId) {
+  const headers = { apikey: serviceKey, Authorization: 'Bearer ' + serviceKey, 'Content-Type': 'application/json' };
+  try {
+    const r = await fetch(supaUrl + '/rest/v1/gwedge_ai_usage?user_id=eq.' + encodeURIComponent(userId) + '&day=eq.' + TASTER_DAY + '&select=count', { headers });
+    if (!r.ok) return false;
+    const rows = await r.json();
+    if (rows && rows[0]) return false;
+    const w = await fetch(supaUrl + '/rest/v1/gwedge_ai_usage', {
+      method: 'POST',
+      headers: { ...headers, Prefer: 'return=minimal' },
+      body: JSON.stringify({ user_id: userId, day: TASTER_DAY, count: 1 })
+    });
+    return w.ok;      /* a 409 from a concurrent claim is not ok, so only one wins */
+  } catch (_) { return false; }
+}
+/* Hand the claim back when the answer never arrived, so an upstream error
+   does not cost the account its one free answer. Best-effort. */
+async function releaseTaster(supaUrl, serviceKey, userId) {
+  try {
+    await fetch(supaUrl + '/rest/v1/gwedge_ai_usage?user_id=eq.' + encodeURIComponent(userId) + '&day=eq.' + TASTER_DAY, {
+      method: 'DELETE', headers: { apikey: serviceKey, Authorization: 'Bearer ' + serviceKey }
+    });
+  } catch (_) {}
+}
+
 /* ── Squad screenshot import ──────────────────────────────
    A photo of an FPL team (the official app, the website, a friend's
    screenshot) read into fifteen names, so a beginner can load a squad
@@ -255,12 +287,20 @@ exports.handler = async (event) => {
   const t = TASKS[body.task];
   if (!t) return json(400, { error: 'Unknown task' });
 
+  let taster = false;
   if (t.pro) {
     const tier = await userTier(supaUrl, serviceKey, user.id);
-    if (tier !== 'pro') return json(403, { error: 'AI features are part of Gameweek Edge Pro. Upgrade to unlock the scout — the rest of the app stays free.' });
+    if (tier !== 'pro') {
+      /* The ask box only: one answer per free account, then the gate. */
+      if (body.task === 'ask' && await claimTaster(supaUrl, serviceKey, user.id)) taster = true;
+      else return json(403, { error: body.task === 'ask'
+        ? 'You have used your free answer from the AI scout. It is part of The Edge. Everything else in the app stays free.'
+        : 'AI features are part of Gameweek Edge Pro. Upgrade to unlock the scout — the rest of the app stays free.' });
+    }
   }
 
   if (!(await checkQuota(supaUrl, serviceKey, user.id))) {
+    if (taster) await releaseTaster(supaUrl, serviceKey, user.id);
     return json(429, { error: 'You have reached today’s AI limit (' + DAILY_QUOTA + ' calls). It resets at midnight UTC — the model tools keep working in the meantime.' });
   }
 
@@ -295,13 +335,18 @@ exports.handler = async (event) => {
     if (!r.ok && r.status === 404 && t.model !== FALLBACK_MODEL) {
       const errText = await r.text();
       if (/model/i.test(errText)) r = await callModel(FALLBACK_MODEL);
-      else return json(502, { error: 'AI service error' });
+      else { if (taster) await releaseTaster(supaUrl, serviceKey, user.id); return json(502, { error: 'AI service error' }); }
     }
     const data = await r.json();
-    if (!r.ok) return json(502, { error: 'AI service error', detail: (data && data.error && data.error.message) || null });
+    if (!r.ok) {
+      if (taster) await releaseTaster(supaUrl, serviceKey, user.id);
+      return json(502, { error: 'AI service error', detail: (data && data.error && data.error.message) || null });
+    }
     const text = (data.content || []).map((c) => c.text || '').join('').trim();
-    return json(200, { text });
+    if (taster && !text) await releaseTaster(supaUrl, serviceKey, user.id);
+    return json(200, taster && text ? { text, taster: true } : { text });
   } catch (e) {
+    if (taster) await releaseTaster(supaUrl, serviceKey, user.id);
     return json(502, { error: 'Upstream request failed' });
   }
 };

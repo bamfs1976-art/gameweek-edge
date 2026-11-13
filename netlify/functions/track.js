@@ -24,7 +24,7 @@ exports.handler = async (event) => {
   if (!name || !/^[a-z0-9_.-]+$/i.test(name)) return resp(204);
 
   let props = null;
-  if (b.props && typeof b.props === 'object') {
+  if (b.count_only !== true && b.props && typeof b.props === 'object') {
     const s = JSON.stringify(b.props);
     if (s.length <= 2000) props = b.props;
   }
@@ -37,12 +37,28 @@ exports.handler = async (event) => {
     props = Object.assign({}, props || {}, { src: b.src });
   }
 
-  const row = {
-    event: name,
-    props,
-    anon_id: String(b.anon_id || '').slice(0, 64) || null,
-    ua: String(event.headers['user-agent'] || '').slice(0, 300) || null
-  };
+  const uaRaw = String(event.headers['user-agent'] || '');
+  let row;
+  if (b.count_only === true) {
+    /* A bare tally sent before the analytics choice is made: no identifier,
+       no client props, and the user-agent reduced to a device class so the
+       row cannot be tied to a browser. Only the funnel events are accepted. */
+    const COUNT_ONLY = ['app_open', 'landing_view', 'landing_cta_click', 'team_linked', 'onboard_done',
+      'sign_up', 'upgrade_modal_shown', 'checkout_started', 'checkout_success', 'taster_used'];
+    if (!COUNT_ONLY.includes(name)) return resp(204);
+    const dev = /bot|crawl|spider|headless|lighthouse|preview|curl|python|playwright|monitor/i.test(uaRaw) ? 'bot'
+      : /iphone|android|mobile/i.test(uaRaw) ? 'mobile' : 'desktop';
+    const p = { count_only: true, dev };
+    if (props && props.src) p.src = props.src;
+    row = { event: name, props: p, anon_id: null, ua: null };
+  } else {
+    row = {
+      event: name,
+      props,
+      anon_id: String(b.anon_id || '').slice(0, 64) || null,
+      ua: uaRaw.slice(0, 300) || null
+    };
+  }
 
   try {
     await fetch(supaUrl + '/rest/v1/gwedge_events', {

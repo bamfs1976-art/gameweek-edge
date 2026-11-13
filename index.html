@@ -4045,6 +4045,11 @@ function renderConsentBar(){
   const el=document.getElementById('consent-bar');
   if(!el)return;
   if(analyticsConsent()!=null){el.hidden=true;el.innerHTML='';return;}
+  /* Not during the first run. On a phone the bar covered a third of the
+     "Rate my squad" screen and hid the second way in, before the visitor
+     had seen anything worth being counted for. It is asked once they leave
+     that flow (onboardFinish re-renders it). */
+  if(typeof onboardActive==='function'&&onboardActive()){el.hidden=true;el.innerHTML='';return;}
   el.innerHTML=consentBarHtml();
   el.hidden=false;
   const done=v=>{
@@ -4057,8 +4062,34 @@ function renderConsentBar(){
   if(yes)yes.addEventListener('click',()=>done('yes'));
   if(no)no.addEventListener('click',()=>done('no'));
 }
+/* COUNT-ONLY, BEFORE THE CHOICE IS MADE (Nov 2026).
+   With consent unasked the app was blind: from 1 October only visitors who
+   tapped Allow were counted, which is a sample of nine. A handful of funnel
+   events are therefore counted with NO identifier and NO storage: nothing
+   is written to the device and nothing stored on it is read, so PECR reg 6
+   is not engaged, and the row that lands is a bare tally (event, optional
+   channel tag from this page's own URL, coarse device class). It cannot
+   follow a visitor from one page view to the next, and that is the point.
+   A 'no' on the bar is an objection and stops these too. Everything richer
+   (the anon id, per-panel events, a persisted channel tag) still waits for
+   a yes, exactly as before. */
+const COUNT_ONLY={app_open:1,team_linked:1,onboard_done:1,sign_up:1,upgrade_modal_shown:1,
+  checkout_started:1,checkout_success:1,taster_used:1};
+function countOnly(event){
+  try{
+    const body={event:String(event),count_only:true};
+    const src=(typeof window!=='undefined'&&window.__GE_SRC)||null;
+    if(src)body.src=src;
+    fetch(apiBase()+'/api/track',{method:'POST',keepalive:true,
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    }).catch(()=>{});
+  }catch(_){/* analytics must never break the app */}
+}
 function track(event,props){
-  if(!consentGiven())return;
+  const choice=analyticsConsent();
+  if(choice==='no')return;
+  if(choice==null){if(COUNT_ONLY[event])countOnly(event);return;}
   try{
     const id=anonId();
     if(!id)return;
@@ -7431,6 +7462,12 @@ function renderPage(panelId){
      AI endpoints regardless of anything the client shows.) */
   if(locked){
     body+=proLockWrap(WIRED[panelId]?skel(5):standardLayout(panel,content),'ge-data');
+    /* Free users never met Pro: three people saw the upgrade sheet in four
+       months. The ask box sits under the locked Scout, unblurred. The
+       on-device model answers for free as it always did, and a signed-in
+       free account gets ONE answer from the AI scout (the server enforces
+       the one), after which the next question opens the upgrade sheet. */
+    if(panelId==='scout')body+='<div id="ask-taster" style="margin-top:16px">'+askCardHtml()+'</div>';
   } else {
     if(isPaid){
       body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
@@ -7460,6 +7497,10 @@ function renderPage(panelId){
       body+
     '</main>';
 
+  if(locked&&panelId==='scout'){
+    const th=document.getElementById('ask-taster');
+    if(th){try{wireAsk(th);}catch(_){}}
+  }
   if(WIRED[panelId]&&!locked){
     const host=document.getElementById('ge-data');
     Promise.resolve().then(()=>WIRED[panelId](host))
@@ -24019,8 +24060,8 @@ async function hydrateScout(host){
   const team=bestXI(scoutScored(b,nf));
   /* No predictions yet is not a reason to withhold the ask box — it answers
      from the model directly and does not need this week's XI. */
-  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.')+askCardHtml();
-    wireAsk(host);return;}
+  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.')+(isPro()?askCardHtml():'');
+    if(isPro())wireAsk(host);return;}
   const capP=Math.max.apply(null,team.xi.map(s=>s.p));
   const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
     return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
@@ -24050,8 +24091,11 @@ async function hydrateScout(host){
       '<button class="btn btn-primary btn-sm" onclick="genScoutReport()">Generate AI scout report</button>'+
       '<div id="scout-report" style="margin-top:14px"></div>'+
     '</div>'+
-    askCardHtml();
-  wireAsk(host);
+    /* A free account sees this panel blurred and inert, with the one live
+       ask box rendered beneath it by renderPage. A second copy in here
+       would duplicate its ids and swallow the thread. */
+    (isPro()?askCardHtml():'');
+  if(isPro())wireAsk(host);
 }
 
 /* Build the compact payload Claude reasons over. */
@@ -24099,7 +24143,7 @@ async function runAI(task,contextFn,boxId,opts){
     const r=await fetch(apiBase()+'/api/ai',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify({task,context})});
-    if(r.status===503){box.innerHTML=stateBox('spark','AI needs setup','Add an ANTHROPIC_API_KEY to the Netlify site environment to switch on AI features.');return;}
+    if(r.status===503){box.innerHTML=stateBox('spark','The AI scout is offline','It is switched off at the moment. The model tools all still work.');return;}
     if(r.status===401){box.innerHTML=aiSignInBox();return;}
     if(r.status===403||r.status===429){
       const msg=await aiErrText(r);
@@ -24261,7 +24305,7 @@ function localAnswer(q,ctx){
   const start=sq.filter(p=>p.starting);
   const byXP=a=>a.slice().sort((x,y)=>y.xP-x.xP);
   const inSquad=nm=>sq.some(p=>p.name===nm);
-  const foot='\n\n_xP is our validated projection (minutes × xGI/90 × fixture strength). Add an `ANTHROPIC_API_KEY` in Netlify to turn on conversational answers._';
+  const foot='\n\n_xP is our validated projection (minutes × xGI/90 × fixture strength)._';
 
   /* Player-specific verdict (sell / keep / is X good). */
   const named=findNamed(q,ctx);
@@ -24373,7 +24417,7 @@ async function sendAsk(text){
     const token=aiToken();
     if(!token){                                      /* signed out: the local engine still answers */
       local();
-      ASK_MSGS.push({role:'assistant',content:'_The reply above comes from the free on-device model. Log in to get conversational answers from the AI scout, which runs on your account._',local:true});
+      ASK_MSGS.push({role:'assistant',content:'_The reply above comes from the free on-device model. Log in and your first answer from the AI scout is free._',local:true});
     }else{
     track('ai_call',{task:'ask'});
     const r=await fetch(apiBase()+'/api/ai',{method:'POST',
@@ -24383,9 +24427,15 @@ async function sendAsk(text){
     else if(r.status===403||r.status===429){
       const msg=await aiErrText(r);local();
       if(msg)ASK_MSGS.push({role:'assistant',content:'_'+msg+'_',local:true});
+      /* The free AI answer is spent: show what The Edge adds, once a session. */
+      if(r.status===403&&!window.__GE_UPSOLD){window.__GE_UPSOLD=1;try{openUpgrade();}catch(_){}}
     }
     else if(!r.ok)throw new Error('HTTP '+r.status);
-    else{const data=await r.json();ASK_MSGS.push({role:'assistant',content:data.text||'(no answer)'});window.GENative&&GENative.hapticLight();}
+    else{const data=await r.json();ASK_MSGS.push({role:'assistant',content:data.text||'(no answer)'});window.GENative&&GENative.hapticLight();
+      if(data.taster){
+        track('taster_used');
+        ASK_MSGS.push({role:'assistant',content:'_That was your free answer from the AI scout. The Edge answers every question this way, from '+PRICE.monthly+' a month. The on-device model stays free._'});
+      }}
     }
   }catch(e){
     if(context)local();                              /* network hiccup: still answer locally */
@@ -24401,7 +24451,7 @@ async function sendAsk(text){
 function askCardHtml(){
   const chips=['Who should I captain this week?','Suggest one transfer for my team','Best differential under 10% owned?','Best value picks right now?','Is my defence strong enough?','Who has the kindest fixtures?'];
   return '<div class="card"><div class="card-title">'+svg(ICON.chat,'width="15" height="15"')+' Ask the Scout</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers, differentials, value or fixtures. Answered straight from our projection model, free. '+(getMid()?'':'<b>Link your team</b> for personalised advice. ')+'Add an API key in Netlify to upgrade to conversational replies.</p>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers, differentials, value or fixtures. Answered straight from our projection model, free. '+(getMid()?'':'<b>Link your team</b> for personalised advice. ')+(isPro()?'':'Log in and your first answer from the AI scout is free.')+'</p>'+
       '<div class="ask-thread" id="ask-thread" role="log" aria-live="polite"></div>'+
       '<div class="ask-suggest">'+chips.map(q=>'<button class="ask-chip" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
       '<div class="ask-input"><input id="ask-text" placeholder="Ask the scout…" autocomplete="off" aria-label="Ask the scout a question">'+
@@ -30785,6 +30835,8 @@ function onboardDone(){try{return localStorage.getItem('ge-onboard')==='done';}c
 function onboardFinish(reason){
   try{localStorage.setItem('ge-onboard','done');}catch(_){}
   try{track('onboard_done',{action:reason||'unknown'});}catch(_){}
+  /* The analytics question, held back during the first run, is asked now. */
+  setTimeout(()=>{try{renderConsentBar();}catch(_){}},1500);
 }
 function onboardActive(){
   if(onboardDone())return false;

@@ -28,21 +28,22 @@ try{
   }
 }catch(_){}
 </script>
-<title>Gameweek Edge: the calm, clear edge for FPL managers</title>
+<title>Gameweek Edge: rate your FPL squad in under a minute</title>
 <meta name="description" content="Gameweek Edge is the smart companion for Fantasy Premier League managers: predicted points, an AI scout, a Match Centre and a per-gameweek debrief that tells you what your captain cost you. The app that tells you what to do next. Ad-free, from the official data.">
 <link rel="canonical" href="https://gameweekedge.co.uk/">
 <!-- Social / Open Graph -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Gameweek Edge: for fantasy managers">
+<meta property="og:title" content="Rate your FPL squad in under a minute | Gameweek Edge">
 <meta property="og:description" content="Predicted points, an AI scout and a per-gameweek debrief that tells you what your captain cost you. The FPL companion that tells you what to do next. Ad-free.">
 <meta property="og:image" content="https://gameweekedge.co.uk/icons/og.png">
 <meta property="og:url" content="https://gameweekedge.co.uk/">
 <meta property="og:site_name" content="Gameweek Edge">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Gameweek Edge: for fantasy managers">
+<meta name="twitter:title" content="Rate your FPL squad in under a minute | Gameweek Edge">
 <meta name="twitter:description" content="Predicted points, an AI scout and a per-gameweek debrief that tells you what your captain cost you. The FPL companion that tells you what to do next. Ad-free.">
 <meta name="twitter:image" content="https://gameweekedge.co.uk/icons/og.png">
-<meta name="theme-color" content="#0a0c0f">
+<meta name="theme-color" content="#0a0c0f" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,6 +60,19 @@ try{
   --display:'Inter',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace;
   --r:4px;--r-lg:6px;--shadow:0 0 0 0 rgba(0,0,0,0);
 }
+/* Light follows the device, as the app does. A visitor on a light phone used
+   to meet a dark pitch page and then a light app with amber buttons: one
+   product, two brands. These are the app's own light tokens (DESIGN.md). */
+@media (prefers-color-scheme: light){
+  :root{
+    --green:#147e48;--green-bright:#0f6d3d;--green-soft:rgba(20,126,72,.10);--on-brand:#ffffff;
+    --ink:#12161b;--ink-2:#46515d;--ink-3:#5f6a76;
+    --bg:#f4f6f8;--surface:#ffffff;--surface-2:#eef1f4;--border:rgba(12,16,20,.12);
+    --amber:#8f5a12;--purple:#6a4bc4;--blue:#2e6ac2;
+    --cta:#a46615;--cta-ink:#ffffff;--header-bg:rgba(244,246,248,.9);
+  }
+}
+
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
@@ -67,7 +81,7 @@ img{max-width:100%}
 .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
 .btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;border-radius:var(--r);padding:13px 22px;cursor:pointer;border:none;transition:transform .12s,filter .15s,background .15s;font-family:var(--body)}
 .btn:active{transform:scale(.98)}
-.btn-primary{background:var(--green);color:var(--on-brand)}
+.btn-primary{background:var(--cta,var(--green));color:var(--cta-ink,var(--on-brand))}
 .btn-primary:hover{filter:brightness(1.07)}
 .btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
 .btn-ghost:hover{background:var(--surface-2)}
@@ -75,7 +89,7 @@ img{max-width:100%}
 h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;line-height:1.1}
 
 /* Header */
-header{position:sticky;top:0;z-index:50;background:rgba(10,12,15,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+header{position:sticky;top:0;z-index:50;background:var(--header-bg,rgba(10,12,15,.86));backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
 .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand .mk{width:34px;height:34px}
@@ -231,11 +245,11 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
 <section class="hero">
   <div class="wrap hero-grid">
     <div>
-      <span class="eyebrow">For fantasy managers</span>
-      <h1>The calm, clear edge for FPL managers.</h1>
-      <p class="lead">Predicted points, an AI scout, and a per-gameweek debrief that tells you what your captain cost you. The companion that tells you what to do next, not just what happened. All from the official Fantasy Premier League data, ad-free.</p>
+      <span class="eyebrow">Free FPL squad rating</span>
+      <h1>Rate your FPL squad in under a minute.</h1>
+      <p class="lead">Paste your FPL link. The model rates your eleven against its own, then tells you the one thing worth doing this week. No account needed. Built on the official Fantasy Premier League data, with no ads.</p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="/">Launch the app: free</a>
+        <a class="btn btn-primary" href="/">Rate my squad: free</a>
         <a class="btn btn-ghost" href="#features">See what's inside</a>
       </div>
       <p class="trust">Live <b>official data</b> · No ads · Works on iPhone &amp; Android · Your data stays yours</p>
@@ -425,23 +439,34 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
 </footer>
 
 <script>
-/* First-party analytics: a page-view ping and CTA clicks, posted to our
-   own /api/track function. No third-party scripts, no cookies. */
+/* First-party analytics, posted to our own /api/track function. No
+   third-party scripts and no cookies. This page used to write an analytics
+   id to localStorage for every visitor, which the app itself refuses to do
+   without consent. It now mirrors the app: a yes made there sends the
+   existing id, a no sends nothing, and with no choice made it sends a bare
+   count (no id, nothing stored, nothing read back). */
 (function(){
-  function anonId(){
-    try{
-      var a=localStorage.getItem('ge-anon');
-      if(!a){a=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('ge-anon',a);}
-      return a;
-    }catch(_){return 'anon';}
-  }
+  var src=null;
+  try{var m=location.search.match(/[?&]src=([a-z]+)/);
+    if(m&&/^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(m[1]))src=m[1];}catch(_){}
+  var choice=null,anon=null;
+  try{var c=localStorage.getItem('ge-consent');if(c==='yes'||c==='no')choice=c;
+    if(choice==='yes')anon=localStorage.getItem('ge-anon');}catch(_){}
   function track(event,props){
+    if(choice==='no')return;
     try{
+      var body=(choice==='yes'&&anon)?{event:event,props:props||null,anon_id:anon}:{event:event,count_only:true};
+      if(src)body.src=src;
       fetch('/api/track',{method:'POST',keepalive:true,
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({event:event,props:props||null,anon_id:anonId()})
+        body:JSON.stringify(body)
       }).catch(function(){});
     }catch(_){}
+  }
+  /* The channel tag rides on into the app in the link itself, so a sign-up
+     from an X or Bluesky post can be told apart without storing anything. */
+  if(src){
+    Array.prototype.forEach.call(document.querySelectorAll('a[href="/"]'),function(a){a.setAttribute('href','/?src='+src);});
   }
   track('landing_view');
   document.addEventListener('click',function(e){
