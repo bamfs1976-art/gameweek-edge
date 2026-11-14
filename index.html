@@ -4743,11 +4743,47 @@ function crestUrl(b,teamId){
   const t=b.teams[teamId];
   return t&&t.code?`https://resources.premierleague.com/premierleague/badges/50/t${t.code}.png`:'';
 }
+/* WHERE THE HEADSHOTS LIVE (checked against all 672 players, Nov 2026).
+   The Premier League moved its photos to a new folder and stopped adding
+   to the old one. The old address, the only one this app asked for, had a
+   photo for 396 players: every signing and promoted squad since the move
+   came back 403 and showed as initials or a blank shirt, De Cuyper and
+   Donnarumma among them. The new folder has 627. Twelve players exist only
+   in the old one, so it stays as the second try; 33 fringe players have no
+   photo anywhere and keep the fallback.
+     new: /premierleague25/photos/players/110x140/{code}.png   (no "p")
+     old: /premierleague/photos/players/110x140/p{code}.png
+   If headshots vanish again at a season rollover, this folder name is the
+   first thing to check. */
+const PL_PHOTO_NEW='https://resources.premierleague.com/premierleague25/photos/players/110x140/';
+const PL_PHOTO_OLD='https://resources.premierleague.com/premierleague/photos/players/110x140/p';
+function photoCode(el){
+  const p=el&&(el.photo||el.code);
+  return p?String(p).replace('.jpg','').replace('.png','').replace(/[^0-9a-z_-]/gi,''):'';
+}
 function photoUrl(el){
   if(!USE_OFFICIAL_IMAGERY)return '';
-  const p=el&&(el.photo||el.code);
-  if(!p)return '';
-  return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${String(p).replace('.jpg','').replace('.png','')}.png`;
+  const c=photoCode(el);
+  return c?PL_PHOTO_NEW+c+'.png':'';
+}
+/* The second address for the same player, carried on the <img> as data-fb. */
+function photoFallbackUrl(el){
+  if(!USE_OFFICIAL_IMAGERY)return '';
+  const c=photoCode(el);
+  return c?PL_PHOTO_OLD+c+'.png':'';
+}
+/* One error handler for every headshot. First failure: try the old folder.
+   Second: take the image away so the initials or the kit shirt show, and
+   tell a pitch token it has no photo. */
+function phFail(img){
+  const fb=img.getAttribute('data-fb');
+  if(fb&&img.getAttribute('src')!==fb){img.removeAttribute('data-fb');img.src=fb;return;}
+  const par=img.parentNode;img.remove();
+  if(par&&par.classList&&par.classList.contains('pp-fig'))par.classList.add('no-photo');
+}
+function photoImg(el){
+  const url=photoUrl(el);
+  return url?'<img src="'+url+'" data-fb="'+photoFallbackUrl(el)+'" alt="" loading="lazy" onerror="phFail(this)">':'';
 }
 /* Small crest chip: real badge over a club-colour tile; if the badge
    404s it removes itself and the colour tile remains. */
@@ -4774,7 +4810,7 @@ function avatar(b,el,px){
      white circle with nothing to say whose row it was. */
   return `<span class="avatar" style="width:${px}px;height:${px}px;background:${kit[0]};color:${kit[1]||'#fff'};font-size:${Math.round(px*0.36)}px">`+
     `<span class="av-i" aria-hidden="true">${esc(avInitials(el.web_name))}</span>`+
-    (url?`<img src="${url}" alt="" loading="lazy" onerror="this.remove()">`:'')+`</span>`;
+    photoImg(el)+`</span>`;
 }
 /* Club kit colours (primary, trim) keyed by FPL short name — 2026/27. */
 const KIT={ARS:['#EF0107','#fff'],AVL:['#67022a','#95bfe5'],BOU:['#B50E12','#000'],
@@ -4819,7 +4855,7 @@ const PITCH_SVG='<svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRa
 function ppFigure(b,el){
   const url=photoUrl(el),kit=KIT[teamShort(b,el.team)]||['#8a8a8a','#ffffff'];
   const style='--kit:'+kit[0]+';--kit2:'+(kit[1]||'#fff');
-  const img=url?'<img src="'+url+'" alt="" loading="lazy" onerror="this.remove();this.parentNode&&this.parentNode.classList.add(\'no-photo\')">':'';
+  const img=photoImg(el);
   return '<span class="pp-fig'+(url?'':' no-photo')+'" style="'+style+'">'+img+
     crest(b,el.team,16).replace('class="crest"','class="crest pp-crest"')+'</span>';
 }
@@ -10169,11 +10205,13 @@ function socLoadImg(url){
 /* Photos come at 250px where available, falling back to the small size the
    rest of the app uses, so a 1080-wide card is not drawing upscaled mush. */
 function socPhotoUrls(el){
-  const p=el&&(el.photo||el.code);
-  if(!p||!USE_OFFICIAL_IMAGERY)return [];
-  const id=String(p).replace('.jpg','').replace('.png','');
+  const id=photoCode(el);
+  if(!id||!USE_OFFICIAL_IMAGERY)return [];
+  /* The 250px size only exists in the old folder, so it is still the first
+     choice where there is one; then the new folder, which has most players. */
   return ['https://resources.premierleague.com/premierleague/photos/players/250x250/p'+id+'.png',
-          'https://resources.premierleague.com/premierleague/photos/players/110x140/p'+id+'.png'];
+          PL_PHOTO_NEW+id+'.png',
+          PL_PHOTO_OLD+id+'.png'];
 }
 async function socFirstImg(urls){
   for(const u of urls||[]){const im=await socLoadImg(u);if(im)return im;}
