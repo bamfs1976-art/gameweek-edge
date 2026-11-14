@@ -1,12 +1,12 @@
 {
- "built": "2026-11-14T01:27:12.490Z",
+ "built": "2026-11-14T10:28:47.715Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-14T01:27:12.490Z",
+  "generatedAt": "2026-11-14T10:28:47.715Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -476,7 +476,7 @@
      "name": "M. Touré",
      "position": "FWD",
      "status": "injured",
-     "news": "Shoulder Injury, expected back 2 May"
+     "news": "Shoulder Injury, expected back 2 Jan"
     },
     {
      "name": "P. Diallo",
@@ -489,6 +489,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "G. Forsyth",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -637,6 +643,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury, expected back 22 Nov"
+    },
+    {
+     "name": "A. Cresswell",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -769,6 +781,12 @@
    ],
    "unavailable": [
     {
+     "name": "A. Priske",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Knock, expected back 22 Nov"
+    },
+    {
      "name": "J. Beadle",
      "position": "GK",
      "status": "injured",
@@ -784,7 +802,7 @@
      "name": "M. Leonard",
      "position": "MID",
      "status": "injured",
-     "news": "Achilles Tendon Rupture injury, expected back 31 Dec"
+     "news": "Achilles Tendon Rupture injury, expected back 2 Jan"
     }
    ],
    "cardRisk": []
@@ -1457,12 +1475,6 @@
      "news": "Unknown injury"
     },
     {
-     "name": "L. Smyth",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
      "name": "M. Platt",
      "position": "DEF",
      "status": "injured",
@@ -1567,14 +1579,6 @@
    ],
    "players": [
     {
-     "name": "F. López",
-     "position": "FWD",
-     "rating": 73.9,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), playing at home."
-    },
-    {
      "name": "André",
      "position": "MID",
      "rating": 71.9,
@@ -1613,14 +1617,34 @@
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "A. Armstrong",
+     "position": "FWD",
+     "rating": 67.4,
+     "status": "available",
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), playing at home."
     }
    ],
    "unavailable": [
+    {
+     "name": "F. López",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knock, expected back 22 Nov"
+    },
     {
      "name": "J. James",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "J. Bellegarde",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knock"
     },
     {
      "name": "R. Jiménez",
@@ -2529,6 +2553,24 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Bamford",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Shoulder Injury, expected back 22 Nov"
+    },
+    {
+     "name": "J. Rothwell",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Groin Injury, expected back 22 Nov"
+    },
+    {
+     "name": "F. Seriki",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 2 May"
+    },
     {
      "name": "J. Shackleton",
      "position": "DEF",
@@ -4198,14 +4240,6 @@
    ],
    "players": [
     {
-     "name": "W. Lankshear",
-     "position": "FWD",
-     "rating": 77.1,
-     "status": "available",
-     "minutesShare": 87,
-     "summary": "Started 13 of 15 (87%), 13 goals and 1 assist."
-    },
-    {
      "name": "S. Berhalter",
      "position": "MID",
      "rating": 75.1,
@@ -4244,9 +4278,23 @@
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. McGree",
+     "position": "MID",
+     "rating": 69.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "W. Lankshear",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Muscle Injury, expected back 22 Nov"
+    },
     {
      "name": "A. Jones",
      "position": "DEF",
@@ -6552,10 +6600,16 @@
      "news": "Thigh Injury, expected back 22 Nov"
     },
     {
+     "name": "G. Bazunu",
+     "position": "GK",
+     "status": "doubtful",
+     "news": "Thigh Injury, expected back 22 Nov"
+    },
+    {
      "name": "E. Toal",
      "position": "DEF",
      "status": "injured",
-     "news": "Ankle Injury, expected back 22 Nov"
+     "news": "Ankle Injury, expected back 27 Dec"
     },
     {
      "name": "R. Hardie",
@@ -6872,6 +6926,12 @@
      "news": "Knee Injury, expected back 6 Dec"
     },
     {
+     "name": "C. De Norre",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury, expected back 22 Nov"
+    },
+    {
      "name": "L. Jensen",
      "position": "GK",
      "status": "injured",
@@ -7017,25 +7077,31 @@
      "name": "Marezi",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury"
+     "news": "Thigh Injury, expected back 7 Feb"
     },
     {
      "name": "I. Mohamed",
      "position": "MID",
      "status": "injured",
-     "news": "Calf Injury"
+     "news": "Calf Injury, expected back 22 Nov"
+    },
+    {
+     "name": "C. Bishop",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury, expected back 22 Nov"
     },
     {
      "name": "B. Arthur",
      "position": "DEF",
      "status": "injured",
-     "news": "Back Injury, expected back 27 Dec"
+     "news": "Back Injury, expected back 2 Jan"
     },
     {
      "name": "L. Brooke-Smith",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury, expected back 2 May"
+     "news": "Ankle Injury, expected back 2 Jan"
     },
     {
      "name": "K. Anderson",
@@ -7530,6 +7596,12 @@
    ],
    "unavailable": [
     {
+     "name": "G. Osho",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 9 Dec"
+    },
+    {
      "name": "I. Davies",
      "position": "FWD",
      "status": "injured",
@@ -7636,14 +7708,6 @@
      "summary": "Started 15 of 15 (100%), 3 clean sheets."
     },
     {
-     "name": "K. Moore",
-     "position": "FWD",
-     "rating": 60.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), 5 goals and 3 assists."
-    },
-    {
      "name": "C. Doyle",
      "position": "DEF",
      "rating": 59.6,
@@ -7674,9 +7738,23 @@
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "D. Hyam",
+     "position": "DEF",
+     "rating": 55.1,
+     "status": "available",
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "K. Moore",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Back Injury, expected back 25 Nov"
+    },
     {
      "name": "S. Smith",
      "position": "FWD",
@@ -7684,10 +7762,22 @@
      "news": "ACL Knee Injury, expected back 2 May"
     },
     {
+     "name": "C. O'Hare",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 22 Nov"
+    },
+    {
      "name": "J. Windass",
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury, expected back 22 Nov"
+    },
+    {
+     "name": "N. Broadhead",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Thigh Injury, expected back 22 Nov"
     },
     {
      "name": "L. Cacace",
@@ -8579,14 +8669,6 @@
      "summary": "Started 12 of 15 (80%), playing at home."
     },
     {
-     "name": "L. Pires",
-     "position": "DEF",
-     "rating": 65,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "K. Walker",
      "position": "DEF",
      "rating": 64.6,
@@ -8609,9 +8691,23 @@
      "status": "available",
      "minutesShare": 73,
      "summary": "In and out of the side (11 starts in 15), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "M. Alleyne",
+     "position": "DEF",
+     "rating": 60.8,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Pires",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Knock, expected back 23 Nov"
+    },
     {
      "name": "J. Bruun Larsen",
      "position": "FWD",
@@ -8623,6 +8719,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury"
+    },
+    {
+     "name": "A. Ahmedhodzic",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Illness, expected back 23 Nov"
     },
     {
      "name": "D. Satpaev",
@@ -8773,10 +8875,16 @@
    ],
    "unavailable": [
     {
+     "name": "R. Alebiosu",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 14 Mar"
+    },
+    {
      "name": "R. Morishita",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury, expected back 26 Nov"
+     "news": "Ankle Injury, expected back 23 Nov"
     },
     {
      "name": "A. Forshaw",
@@ -8794,7 +8902,7 @@
      "name": "M. Jørgensen",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 23 Nov"
+     "news": "Thigh Injury, expected back 6 Dec"
     }
    ],
    "cardRisk": []
@@ -8909,23 +9017,29 @@
      "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "R. Hedges",
-     "position": "MID",
-     "rating": 51.9,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "L. Salvesen",
      "position": "FWD",
      "rating": 49.6,
      "status": "available",
      "minutesShare": 87,
      "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "O. Fraulo",
+     "position": "MID",
+     "rating": 46.8,
+     "status": "available",
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "R. Hedges",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Hamstring injury, expected back 22 Nov"
+    },
     {
      "name": "J. Ward",
      "position": "MID",
@@ -8945,16 +9059,16 @@
      "news": "Groin Injury, expected back 17 Jan"
     },
     {
+     "name": "C. Taylor",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
      "name": "C. Forsyth",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 27 Dec"
-    },
-    {
-     "name": "E. Cashin",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury, expected back 29 Nov"
+     "news": "Knee Injury, expected back 2 Jan"
     },
     {
      "name": "D. Murkin",
@@ -9043,28 +9157,12 @@
    ],
    "players": [
     {
-     "name": "L. Jones",
-     "position": "DEF",
-     "rating": 61.9,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), 3 clean sheets plus 3 attacking returns."
-    },
-    {
      "name": "A. Okonkwo",
      "position": "GK",
      "rating": 61.6,
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 12 of 15 (80%), 3 clean sheets."
-    },
-    {
-     "name": "T. Campbell",
-     "position": "FWD",
-     "rating": 57.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "C. Coventry",
@@ -9083,15 +9181,61 @@
      "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "K. Grant",
-     "position": "FWD",
-     "rating": 53.6,
+     "name": "I. Mesík",
+     "position": "DEF",
+     "rating": 51,
      "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Bell",
+     "position": "DEF",
+     "rating": 49.6,
+     "status": "available",
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "M. Alli",
+     "position": "FWD",
+     "rating": 49.4,
+     "status": "available",
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "M. Leaburn",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Concussion injury, expected back 22 Nov"
+    },
+    {
+     "name": "L. Jones",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hip Injury"
+    },
+    {
+     "name": "T. Campbell",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury, expected back 22 Nov"
+    },
+    {
+     "name": "K. Grant",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Back Injury"
+    },
+    {
+     "name": "T. Bindon",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
     {
      "name": "K. Ramsay",
      "position": "DEF",
@@ -9914,7 +10058,20 @@
      "summary": "Started 14 of 15 (93%), playing at home."
     }
    ],
-   "unavailable": [],
+   "unavailable": [
+    {
+     "name": "K. Walker-Peters",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Thigh Injury, expected back 9 Dec"
+    },
+    {
+     "name": "K. Lamadrid",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 22 Nov"
+    }
+   ],
    "cardRisk": []
   },
   {
