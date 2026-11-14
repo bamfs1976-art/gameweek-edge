@@ -8,6 +8,7 @@
 import { loadSnapshot } from './provider.js';
 import { buildContext, playerScore, POSITION_NAMES } from './model.js';
 import { buildFlags } from './availability.js';
+import { readLog, seasonFor, usageCounts, CLUB_SEASON_USES } from './clubs.js';
 import {
   checklist, nextDeadline, countdownText, fmtDeadline, buildIcs, REMIND_OPTIONS, DEFAULT_REMIND
 } from './deadline.js';
@@ -44,7 +45,7 @@ async function start() {
       mount('fixtures-body', '<p class="sec-note">Fixtures show here once you have saved a seven.</p>');
       mount('ahead-body', '<p class="sec-note">Blank and double rounds for your clubs show here once you have saved a seven.</p>');
     } else {
-      const ck = checklist(ctx, ids, { scored, flags });
+      const ck = checklist(ctx, ids, { scored, flags, clubs: clubsThisRound(ctx) });
       renderChecks(ck);
       renderFixtures(ctx, ck);
       renderAhead(ctx, ck);
@@ -56,6 +57,19 @@ async function start() {
     const retry = document.getElementById('retry');
     if (retry) retry.addEventListener('click', () => window.location.reload());
   }
+}
+
+/* This round's clubs from the club-uses log, or null when there is no log. */
+function clubsThisRound(ctx) {
+  let store = null;
+  try { store = window.localStorage; } catch (_) { return null; }
+  const log = readLog(store, seasonFor(), new Set(ctx.clubs.map((c) => c.id)));
+  if (!Object.keys(log.rounds).length) return null;
+  const counts = usageCounts(log);
+  const ids = log.rounds[String(ctx.currentRound)] || [];
+  const exhausted = ids.filter((id) => counts[id] > CLUB_SEASON_USES)
+    .map((id) => (ctx.clubById[id] ? ctx.clubById[id].name : id));
+  return { ids, exhausted };
 }
 
 function readSeven() {
@@ -106,7 +120,8 @@ function renderChecks(ck) {
         <a href="/fantasy-efl/#mine" style="color:var(--efl)">team builder</a>.</p>`
     : '';
   mount('check-body', `<ul class="ck-items">${items}</ul>${warned}${unknown}
-    <p style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="/fantasy-efl/#mine">Change your seven</a></p>`);
+    <p style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px"><a class="btn btn-ghost btn-sm" href="/fantasy-efl/#mine">Change your seven</a>
+      <a class="btn btn-ghost btn-sm" href="/fantasy-efl/club-uses/">Log this round's clubs</a></p>`);
 }
 
 /* ── Fixtures ────────────────────────────────────────────── */

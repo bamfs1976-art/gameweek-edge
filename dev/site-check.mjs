@@ -27,6 +27,7 @@ const CHECKS = [
   { path: '/fantasy-efl/players/', status: 200, why: 'player finder' },
   { path: '/fantasy-efl/availability/', status: 200, why: 'availability hub' },
   { path: '/fantasy-efl/clubs/', status: 200, why: 'club picker' },
+  { path: '/fantasy-efl/club-uses/', status: 200, why: 'club uses tracker' },
   { path: '/fantasy-efl/record/', status: 200, why: 'the model\'s record' },
   { path: '/fantasy-efl/how-to-play/', status: 200, why: 'the guide' },
 

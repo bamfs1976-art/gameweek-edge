@@ -239,6 +239,15 @@ export function checklist(ctx, ids, opts = {}) {
     { key: 'fixtures', ok: picks.length > 0 && !blanking.length,
       text: blanking.length ? `${blanking.length} with no game this round` : 'Everyone has a game this round' }
   ];
+  /* Clubs, only when the reader keeps a club-uses log: without one there
+     is nothing to check, and a permanent "not done" would be noise. */
+  if (opts.clubs) {
+    const { ids, exhausted } = opts.clubs;
+    items.push({ key: 'clubs', ok: ids.length === 2 && !exhausted.length,
+      text: exhausted.length ? `${exhausted.join(' and ')} logged past five uses`
+        : ids.length === 2 ? 'Two clubs logged for this round'
+          : `${ids.length} of 2 clubs logged for this round` });
+  }
 
   return {
     round: ctx.currentRound,

@@ -15,6 +15,15 @@ import { esc } from './ui.js';
 const el = document.getElementById('deadline-bar');
 if (el) start();
 
+/* Nine tabs do not fit a phone. Bring the current one into view, so a
+   reader can see where they are without swiping the bar. This module is
+   on every page, so it is the one place to do it. */
+const current = document.querySelector('.tabs [aria-current="page"]');
+const strip = current && current.parentElement;
+if (strip && strip.scrollWidth > strip.clientWidth) {
+  strip.scrollLeft = Math.max(0, current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2);
+}
+
 async function start() {
   try {
     const { rounds } = await loadRounds();

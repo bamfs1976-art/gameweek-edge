@@ -15,6 +15,7 @@ import {
   DIVISION_LABELS
 } from './ui.js';
 import { buildFlags, squadWarnings, isWarning, FLAG_LABELS } from './availability.js';
+import { readLog, seasonFor, usesLeft, CLUB_SEASON_USES } from './clubs.js';
 
 initTheme();
 
@@ -159,6 +160,19 @@ function differentialCard(rec, ctx) {
     </div>`);
 }
 
+/* The club-uses log, if the reader keeps one. Read here so the model's
+   club pick can say when it is a club they cannot pick any more. */
+function clubUsesNote(ctx, clubId) {
+  let store = null;
+  try { store = window.localStorage; } catch (_) { return ''; }
+  const log = readLog(store, seasonFor(), new Set(ctx.clubs.map((x) => x.id)));
+  if (!Object.keys(log.rounds).length) return '';
+  const left = usesLeft(log, clubId);
+  if (left > 0) return `<p class="pick-why" style="color:var(--text-3)">${left} of ${CLUB_SEASON_USES} uses left on your log.</p>`;
+  return `<p class="pick-why" style="color:var(--red)"><b>No uses left on your log.</b> You have picked this club
+    ${CLUB_SEASON_USES} times. See the <a href="/fantasy-efl/club-uses/" style="color:var(--efl)">club uses</a> page for the next best.</p>`;
+}
+
 function clubCard(rec, ctx) {
   if (!rec) return card('Best club pick', emptyState('No club rating', 'No club has enough played fixtures to rate.'));
   const c = rec.club;
@@ -172,6 +186,7 @@ function clubCard(rec, ctx) {
     </div>
     ${fixtureLine(first, ctx)}
     <p class="pick-why">${esc(rec.summary)}</p>
+    ${clubUsesNote(ctx, c.id)}
     <div class="pick-foot">
       <span>${formStrip(c.form)}</span>
       <span class="pick-score" title="Modelled club rating out of 100">${rec.score.toFixed(1)}</span>
