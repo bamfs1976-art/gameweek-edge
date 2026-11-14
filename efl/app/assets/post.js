@@ -86,8 +86,22 @@ export function postModel(ctx, opts = {}) {
     rows,
     captain,
     clubs: clubs.map((c) => ({ name: c.club.name, reason: c.summary })),
+    clubCount: ctx.clubs.length,
     ...roundBlanksDoubles(ctx)
   };
+}
+
+/* Past this many clubs a list of names stops helping: a midweek round
+   where half the league plays twice is better said as a count. */
+export const LIST_LIMIT = 12;
+
+/** The round's blanks and doubles as one sentence. */
+export function roundNote(model) {
+  const total = model.clubCount || 72;
+  const part = (list, verb) => (list.length > LIST_LIMIT
+    ? `${list.length} of ${total} clubs ${verb}`
+    : `${verb === 'play twice' ? 'Doubles' : 'Blanks'}: ${nameList(list)}`);
+  return `${part(model.doubles, 'play twice')}. ${part(model.blanks, 'have no game')}.`;
 }
 
 /**
@@ -115,7 +129,7 @@ export function postText(model, opts = {}) {
     const gap = flavour === 'reddit' ? [''] : [];
     lines.push(`**Captain:** ${model.captain.name}. The highest modelled rating in the seven with a fixture that suits the armband.`, ...gap);
     if (model.clubs.length) lines.push(`**Clubs:** ${joinAnd(model.clubs.map((c) => c.name))}.`, ...gap);
-    lines.push(`**Round ${model.round}:** Doubles: ${nameList(model.doubles)}. Blanks: ${nameList(model.blanks)}.`);
+    lines.push(`**Round ${model.round}:** ${roundNote(model)}`);
     lines.push('', 'Who is everyone else going with this week?');
     if (opts.sourceLine) lines.push('', `Ratings: ${SITE_LINE}`);
     return lines.join('\n');

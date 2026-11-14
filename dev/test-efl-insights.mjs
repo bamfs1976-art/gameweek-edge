@@ -208,6 +208,14 @@ ok('blank and double lists name names and cap long lists', () => {
   assert.equal(po.nameList(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], 6), 'A, B, C, D, E, F and 2 more');
 });
 
+ok('a round where many clubs double or blank is given as a count', () => {
+  const many = Array.from({ length: 36 }, (_, i) => `Club ${i}`);
+  assert.equal(po.roundNote({ doubles: many, blanks: [], clubCount: 72 }),
+    '36 of 72 clubs play twice. Blanks: none.');
+  assert.equal(po.roundNote({ doubles: ['A'], blanks: many, clubCount: 72 }),
+    'Doubles: A. 36 of 72 clubs have no game.');
+});
+
 ok('the card model mirrors the post', () => {
   const card = po.cardModel(model);
   assert.equal(card.rows.length, 7);
