@@ -14,6 +14,7 @@ import { loadSnapshot } from './provider.js';
 import { buildContext, playerScore, differentialScore, POSITION_NAMES, ordinal, PLAYER_WEIGHTS } from './model.js';
 import { POSITION_COLUMNS, TARIFF, statPoints } from './tariff.js';
 import { buildFlags, isWarning } from './availability.js';
+import { playerRates, divisionPercentiles, percentileWords, homeAwaySplit } from './stats.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
   methodNote, divisionBadge, homeAwayBadge, meter, statCell, fmtDay,
@@ -31,6 +32,12 @@ const state = {
 let ctx = null;
 let rows = [];       // every player, scored once
 let flags = new Map();
+/* What the source publishes decides which of the deeper columns exist:
+   per 90 needs minutes, home and away needs per-match history. The
+   official feed has neither, so those columns are left off with a note
+   rather than filled with dashes on every row. */
+let hasMinutes = false;
+let hasHistory = false;
 
 start();
 
@@ -57,12 +64,18 @@ async function start() {
       + 'measured correlations on 83,698 real Fantasy EFL appearances rather than picked by '
       + 'feel — see the guide for the numbers.'));
 
+    const pct = divisionPercentiles(ctx.players, (p) => playerRates(p).perApp);
+    hasMinutes = ctx.players.some((p) => p.minutes > 0);
+    hasHistory = ctx.players.some((p) => p.last5 && p.last5.length);
     rows = ctx.players.map((p) => {
       const rec = playerScore(ctx, p);
       return {
         rec,
         player: p,
         flag: flags.get(p.id) || null,
+        rates: playerRates(p),
+        pct: pct.get(p.id),
+        split: hasHistory ? homeAwaySplit(ctx, p) : null,
         club: ctx.clubById[p.clubId],
         differential: differentialScore(ctx, p),
         formPoints: p.last5.reduce((s, m) => s + m.points, 0),
@@ -70,6 +83,18 @@ async function start() {
       };
     });
 
+    const missing = [];
+    if (!hasMinutes) missing.push('points per 90 (it needs minutes)');
+    if (!hasHistory) missing.push('home and away splits (they need match-by-match history)');
+    const sn = document.getElementById('stats-note');
+    if (sn && missing.length) {
+      sn.textContent = `This data source does not publish ${missing.join(' or ')}, so those columns are left out. `
+        + 'Points per appearance is ranked within each player\'s own division and position.';
+    }
+    if (!hasMinutes) {
+      const opt = document.querySelector('#f-sort option[value="per90"]');
+      if (opt) opt.remove();
+    }
     setupFilters();
     render();
   } catch (err) {
@@ -137,14 +162,21 @@ const SORTS = {
   differential: (r) => r.differential.score,
   /* Most bookings first — the players a manager is most likely to lose. */
   bookings: (r) => (r.player.stats && r.player.stats.yellowCards != null
-    ? r.player.stats.yellowCards : -1)
+    ? r.player.stats.yellowCards : -1),
+  /* Rates rank only players with enough appearances to mean something;
+     the rest sort last rather than topping the list on one good game. */
+  perApp: (r) => (r.pct == null ? -1 : r.rates.perApp),
+  per90: (r) => (r.rates.per90 == null || r.player.appearances < 3 ? -1 : r.rates.per90),
+  defensive: (r) => (r.rates.defPointsPerApp == null || r.player.appearances < 3 ? -1 : r.rates.defPointsPerApp)
 };
 
 const SORT_LABELS = {
   score: 'modelled pick rating', form: 'form over the last five', goals: 'goals',
   assists: 'assists', cleanSheets: 'clean sheets', minutes: 'minutes', starts: 'starts',
   fixture: 'next fixture difficulty (easiest first)', differential: 'differential score',
-  bookings: 'yellow cards, most first'
+  bookings: 'yellow cards, most first',
+  perApp: 'points per appearance', per90: 'points per 90 minutes',
+  defensive: 'defensive points per appearance'
 };
 
 function filtered() {
@@ -208,6 +240,10 @@ function render() {
             <th scope="col">Club</th>
             <th scope="col">Last 5</th>
             <th scope="col" class="num">Starts</th>
+            <th scope="col" class="num" title="Season points per appearance. The note ranks it within the player's own division and position.">Pts/app</th>
+            ${hasMinutes ? '<th scope="col" class="num" title="Season points per 90 minutes played">Per 90</th>' : ''}
+            <th scope="col" class="num" title="Clearances, blocks, tackles and interceptions per appearance, and the points the scoring rules pay this position for them">Def/app</th>
+            ${hasHistory ? '<th scope="col">Home / away</th>' : ''}
             ${columns.map((key) => `<th scope="col" class="num" title="${esc(columnTitle(key))}">`
     + `${esc(TARIFF[key].short)}</th>`).join('')}
             <th scope="col">Next</th>
@@ -317,6 +353,12 @@ function row(r, columns) {
       <span class="t-sub">${club ? esc(ordinal(club.position)) : ''}</span></td>
     <td data-label="Last 5">${meter(Math.min(1, perApp / 12), r.formApps ? perApp.toFixed(1) : '—', formLabel)}</td>
     <td class="num" data-label="Starts">${p.starts}</td>
+    <td class="num" data-label="Points per appearance">${r.rates.perApp == null ? '–' : r.rates.perApp.toFixed(2)}
+      ${r.pct == null ? '' : `<span class="t-sub" title="Within ${esc(DIVISION_LABELS[p.division])} ${esc(POSITION_NAMES[p.position].toLowerCase())}s">${esc(percentileWords(r.pct))} in div.</span>`}</td>
+    ${hasMinutes ? `<td class="num" data-label="Points per 90">${r.rates.per90 == null ? '–' : r.rates.per90.toFixed(2)}</td>` : ''}
+    <td class="num" data-label="Defensive per appearance">${r.rates.defPerApp == null ? '–' : r.rates.defPerApp.toFixed(1)}
+      ${r.rates.defPointsPerApp ? `<span class="t-sub">${r.rates.defPointsPerApp.toFixed(2)} pts</span>` : ''}</td>
+    ${hasHistory ? `<td data-label="Home / away (last five)">${splitCell(r.split)}</td>` : ''}
     ${statCells}
     <td data-label="Next fixture">${nextCell(rec.next, rec.fixtures)}</td>
     <td data-label="Status">${flagBadge(isWarning(r.flag) ? r.flag : null)}${suspensionBadge(rec.suspension)}
@@ -325,6 +367,14 @@ function row(r, columns) {
     <td class="num" data-label="Modelled rating"><b>${rec.score.toFixed(1)}</b>
       <span class="t-sub">${esc(rec.summary)}</span></td>
   </tr>`;
+}
+
+/* Points per appearance at home and away, from the last five rounds. */
+function splitCell(split) {
+  if (!split) return '<span class="t-sub">–</span>';
+  const one = (s) => (s.perApp == null ? '–' : s.perApp.toFixed(1));
+  return `<span class="mono">H ${one(split.home)} · A ${one(split.away)}</span>
+    <span class="t-sub">${split.home.apps} home, ${split.away.apps} away</span>`;
 }
 
 /* Every match in the round, not just the first. A double is the reason to

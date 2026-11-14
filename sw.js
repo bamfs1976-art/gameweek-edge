@@ -22,7 +22,7 @@
    removed; its shell is deliberately NOT listed below, and bumping VERSION
    is what evicts it from the caches of everyone who already had it. */
 
-const VERSION = 'ge-v14';
+const VERSION = 'ge-v15';
 const EFL = '/fantasy-efl/';
 /* Fantasy EFL's six routes and the modules behind them. Listed here rather
    than derived, because addAll() rejects the whole install if a single URL
@@ -36,6 +36,9 @@ const EFL_SHELL = [
   '/fantasy-efl/availability/',
   '/fantasy-efl/clubs/',
   '/fantasy-efl/club-uses/',
+  '/fantasy-efl/post/',
+  '/fantasy-efl/captain/',
+  '/fantasy-efl/chips/',
   '/fantasy-efl/record/',
   '/fantasy-efl/how-to-play/',
   '/fantasy-efl/assets/efl.css',
@@ -45,6 +48,9 @@ const EFL_SHELL = [
   '/fantasy-efl/assets/availability.js',
   '/fantasy-efl/assets/deadline.js',
   '/fantasy-efl/assets/clubs.js',
+  '/fantasy-efl/assets/stats.js',
+  '/fantasy-efl/assets/chips.js',
+  '/fantasy-efl/assets/post.js',
   '/fantasy-efl/assets/deadline-bar.js',
   '/fantasy-efl/assets/sample-data.js',
   '/fantasy-efl/assets/page-home.js',
@@ -54,6 +60,9 @@ const EFL_SHELL = [
   '/fantasy-efl/assets/page-availability.js',
   '/fantasy-efl/assets/page-clubs.js',
   '/fantasy-efl/assets/page-club-uses.js',
+  '/fantasy-efl/assets/page-post.js',
+  '/fantasy-efl/assets/page-captain.js',
+  '/fantasy-efl/assets/page-chips.js',
   '/fantasy-efl/assets/page-record.js',
   '/fantasy-efl/assets/page-guide.js'
 ];

@@ -37,6 +37,9 @@ export const STATIC_PAGES = [
   { path: '/fantasy-efl/availability/', file: 'efl/app/availability/index.html' },
   { path: '/fantasy-efl/clubs/', file: 'efl/app/clubs/index.html' },
   { path: '/fantasy-efl/club-uses/', file: 'efl/app/club-uses/index.html' },
+  { path: '/fantasy-efl/captain/', file: 'efl/app/captain/index.html' },
+  { path: '/fantasy-efl/chips/', file: 'efl/app/chips/index.html' },
+  { path: '/fantasy-efl/post/', file: 'efl/app/post/index.html' },
   { path: '/fantasy-efl/record/', file: 'efl/app/record/index.html' },
   { path: '/fantasy-efl/how-to-play/', file: 'efl/app/how-to-play/index.html' },
 ];

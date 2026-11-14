@@ -84,7 +84,8 @@ function renderPicks(ctx) {
     + `<p class="sec-note" style="margin-top:11px">Scores are a modelled 0-100 rating built from `
     + `form, minutes, output, fixture and home advantage, weighted as set out in the `
     + `<a href="/fantasy-efl/how-to-play/#model" style="color:var(--efl)">model note</a>. `
-    + `They rank the options against stated criteria; they do not predict points.</p>`);
+    + `They rank the options against stated criteria; they do not predict points. `
+    + `<a href="/fantasy-efl/post/" style="color:var(--efl)">Turn the model's seven into a post</a>.</p>`);
 }
 
 function playerCard(role, rec, ctx) {
@@ -127,7 +128,7 @@ function captainCard(rec, ctx) {
     ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)} Highest-rated available pick with a fixture rated
       ${rec.next ? rec.next.rating : '—'} or better, which is what a captaincy needs before
-      anything else.</p>
+      anything else. <a href="/fantasy-efl/captain/?a=${encodeURIComponent(p.id)}" style="color:var(--efl)">Compare captains</a></p>
     <div class="pick-foot">
       <span>${formStrip(club ? club.form : [])}</span>
       <span class="pick-score" title="Modelled pick rating out of 100">${rec.score.toFixed(1)}</span>
@@ -313,7 +314,8 @@ function chipPanel(ctx, squad) {
   return `<div class="chips">${maxCaptain}${oneClub}</div>
     <p class="sec-note" style="margin-top:9px">Chip reads are this model's opinion of your
       own seven, not the game's advice. The official game is the authority on how many chips
-      you hold and when they reset.</p>`;
+      you hold and when they reset. For the best rounds left to play each chip, see
+      <a href="/fantasy-efl/chips/" style="color:var(--efl)">chip timing</a>.</p>`;
 }
 
 /* ── Your seven ─────────────────────────────────────────

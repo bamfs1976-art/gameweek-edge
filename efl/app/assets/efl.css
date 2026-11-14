@@ -653,3 +653,22 @@ details.coverage li{margin-bottom:5px}
 @media print{
   .hdr,.foot,.filters,.pager,.hero-actions{display:none}
 }
+
+/* ── Captain comparison ──────────────────────────────────
+   Two columns at every width: the point is side by side, and the
+   content is short enough to fit two on a phone. */
+.cmp-pick{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.cmp-grid{display:grid;gap:10px;grid-template-columns:1fr 1fr;align-items:start}
+.cmp-col{padding:12px;min-width:0}
+.cmp-col .t-name{overflow-wrap:anywhere}
+.cmp-range{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:10px 0 6px}
+.cmp-range div{background:var(--surface-3);border-radius:8px;padding:6px 4px;text-align:center;border:1px solid transparent}
+.cmp-range dt{font-size:var(--fs-min);color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
+.cmp-range dd{margin:2px 0 0;font-family:var(--font-mono);font-weight:700;font-size:var(--fs-md)}
+.cmp-range .cmp-better{border-color:var(--green)}
+.cmp-facts{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px;font-size:var(--fs-xs);color:var(--text-2)}
+/* Chip calendar bars */
+.chip-bar{height:8px;border-radius:4px;background:var(--surface-3);overflow:hidden;min-width:60px}
+.chip-bar > span{display:block;height:100%;background:var(--efl)}
+.chip-row{display:grid;grid-template-columns:3.2em 1fr 1fr;gap:6px 10px;align-items:center;font-size:var(--fs-xs)}
+.chip-row .t-sub{display:block}
