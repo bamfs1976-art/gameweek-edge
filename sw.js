@@ -22,7 +22,7 @@
    removed; its shell is deliberately NOT listed below, and bumping VERSION
    is what evicts it from the caches of everyone who already had it. */
 
-const VERSION = 'ge-v11';
+const VERSION = 'ge-v12';
 const EFL = '/fantasy-efl/';
 /* Fantasy EFL's six routes and the modules behind them. Listed here rather
    than derived, because addAll() rejects the whole install if a single URL
@@ -32,6 +32,7 @@ const EFL_SHELL = [
   '/fantasy-efl/',
   '/fantasy-efl/fixtures/',
   '/fantasy-efl/players/',
+  '/fantasy-efl/availability/',
   '/fantasy-efl/clubs/',
   '/fantasy-efl/record/',
   '/fantasy-efl/how-to-play/',
@@ -39,10 +40,12 @@ const EFL_SHELL = [
   '/fantasy-efl/assets/ui.js',
   '/fantasy-efl/assets/model.js',
   '/fantasy-efl/assets/provider.js',
+  '/fantasy-efl/assets/availability.js',
   '/fantasy-efl/assets/sample-data.js',
   '/fantasy-efl/assets/page-home.js',
   '/fantasy-efl/assets/page-fixtures.js',
   '/fantasy-efl/assets/page-players.js',
+  '/fantasy-efl/assets/page-availability.js',
   '/fantasy-efl/assets/page-clubs.js',
   '/fantasy-efl/assets/page-record.js',
   '/fantasy-efl/assets/page-guide.js'
@@ -80,8 +83,12 @@ const SHELL = [
   ...EFL_SHELL
 ];
 /* Code, not assets: always revalidated so a deploy reaches both apps. */
+/* Data the EFL pages read that changes between deploys: network-first like
+   code, never cache-first, or a committed team news update would never
+   reach an installed app. Not precached: the pages work without it. */
+const EFL_DATA = ['/fantasy-efl/data/availability.json'];
 const CODE = new Set(['/', '/index.html', '/native.js', '/auth.js', '/manifest.webmanifest',
-  ...ROTATION, ...EFL_SHELL]);
+  ...ROTATION, ...EFL_SHELL, ...EFL_DATA]);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

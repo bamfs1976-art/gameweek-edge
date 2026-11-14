@@ -251,6 +251,32 @@ h2.sec-title{
 .av-doubtful{color:var(--amber)}
 .av-injured,.av-suspended,.av-unavailable{color:var(--red)}
 
+/* Availability hub flags. Out and suspended share red with the old
+   injured badge; rotation is a dashed outline because it is a modelled
+   read, not news. */
+.flag-out,.flag-suspended{color:var(--red)}
+.flag-doubt{color:var(--amber)}
+.flag-rotation{color:var(--text-2);border-style:dashed}
+.flag-fit{color:var(--green)}
+.flag-detail{display:flex;flex-direction:column;gap:2px;margin-top:4px;font-size:var(--fs-min);line-height:1.35}
+.flag-note{color:var(--text-2)}
+.flag-when{color:var(--text-3)}
+.flag-stale{color:var(--amber);font-weight:600}
+.flag-warn{border-left-color:var(--red);background:var(--red-soft)}
+.flag-warn .chip-verdict{color:var(--red)}
+.av-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.av-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding-top:10px;border-top:1px solid var(--border)}
+.av-item:first-child{border-top:0;padding-top:0}
+.av-item .t-name{display:block}
+.av-club{margin-bottom:12px}
+.av-summary{display:flex;flex-wrap:wrap;gap:8px 16px;margin:0 0 12px;font-size:var(--fs-sm);color:var(--text-2)}
+.av-summary b{color:var(--text)}
+.av-clean{font-size:var(--fs-sm);color:var(--text-2);line-height:1.6}
+.admin-results{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px}
+.admin-results button{width:100%;text-align:left}
+.admin-form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.admin-form .wide{grid-column:1/-1}
+.field textarea{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);min-height:110px}
 .badge-ha{background:var(--surface-3);color:var(--text-2);border-color:var(--border-2)}
 
 /* Fixture difficulty. The exact ramp the FPL app uses, so the colours mean

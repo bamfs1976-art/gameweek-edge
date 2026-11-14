@@ -23,6 +23,7 @@ const NAV = [
   { path: '/fantasy-efl/', label: 'Dashboard' },
   { path: '/fantasy-efl/fixtures/', label: 'Fixtures' },
   { path: '/fantasy-efl/players/', label: 'Players' },
+  { path: '/fantasy-efl/availability/', label: 'Availability' },
   { path: '/fantasy-efl/clubs/', label: 'Clubs' },
   { path: '/fantasy-efl/how-to-play/', label: 'How to play' },
 ];

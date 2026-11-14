@@ -56,6 +56,7 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       <a class="tab" href="/fantasy-efl/">Dashboard</a>
       <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
       <a class="tab" href="/fantasy-efl/players/" aria-current="page">Players</a>
+      <a class="tab" href="/fantasy-efl/availability/">Availability</a>
       <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
       <a class="tab" href="/fantasy-efl/record/">The record</a>
       <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
@@ -107,9 +108,13 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       <label for="f-availability">Availability</label>
       <select id="f-availability">
         <option value="all">Any status</option>
-        <option value="available">Available only</option>
-        <option value="risk">Available or doubtful</option>
-        <option value="out">Currently out</option>
+        <option value="clear">Hide flagged players</option>
+        <option value="risk">Hide out and suspended</option>
+        <option value="flagged">Flagged only</option>
+        <option value="out">Out</option>
+        <option value="doubt">Doubt</option>
+        <option value="suspended">Suspended</option>
+        <option value="rotation">Rotation risk</option>
       </select>
     </div>
     <div class="field">
@@ -172,6 +177,7 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
     <a href="/fantasy-efl/">Dashboard</a>
     <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
     <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/availability/">Availability</a>
     <a href="/fantasy-efl/clubs/">Club picker</a>
     <a href="/fantasy-efl/record/">The record</a>
     <a href="/fantasy-efl/how-to-play/">How to play</a>

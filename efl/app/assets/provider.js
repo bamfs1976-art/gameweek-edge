@@ -30,6 +30,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import { buildSampleSnapshot } from './sample-data.js';
+import { applyManualAvailability } from './availability.js';
 
 /** @typedef {import('./types.js')} */
 
@@ -73,7 +74,13 @@ export const DEFAULT_CONFIG = {
      enforces the cache TTLs that keep us a polite client. */
   base: '/api/efl',
   endpoint: '/api/efl/snapshot',
-  cacheMs: 5 * 60 * 1000
+  cacheMs: 5 * 60 * 1000,
+  /* The availability hub's manual layer: team news kept by hand from the
+     admin page and committed. An automated feed that returns the same
+     document shape (see normaliseManualDoc in availability.js) replaces it
+     by changing this one path, for example to '/api/efl/availability'.
+     Same-origin either way, so the CSP needs nothing new. */
+  availabilityUrl: '/fantasy-efl/data/availability.json'
 };
 
 /**
@@ -845,11 +852,41 @@ export function loadSnapshot(opts = {}) {
   if (inflight && !opts.force) return inflight;
   const cfg = readConfig(opts.window);
   const provider = createProvider(cfg, opts);
-  inflight = provider.load().catch((err) => {
-    inflight = null;   // a failure must not be cached as the answer
-    throw err;
-  });
+  inflight = provider.load()
+    .then((snapshot) => withManualAvailability(snapshot, cfg, opts))
+    .catch((err) => {
+      inflight = null;   // a failure must not be cached as the answer
+      throw err;
+    });
   return inflight;
 }
 
 export function resetSnapshotCache() { inflight = null; }
+
+/**
+ * Lay the manual availability document over a loaded snapshot.
+ *
+ * Unlike the snapshot itself, this layer is allowed to fail quietly: it
+ * only ever ADDS team news to real feed data, so a missing file leaves the
+ * page exactly as accurate as it was before the hub existed. What it may
+ * not do is fail invisibly, so `snapshot.availability` says what happened
+ * and the availability page prints it.
+ */
+export async function withManualAvailability(snapshot, cfg, opts = {}) {
+  const doFetch = opts.fetch || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
+  const url = cfg && cfg.availabilityUrl;
+  if (!doFetch || !url || opts.availability === false) {
+    return { ...snapshot, availability: { loaded: false, error: 'No availability file configured' } };
+  }
+  try {
+    /* no-cache: revalidate every load, so a commit reaches readers on
+       their next visit rather than whenever an HTTP cache lets go. */
+    const res = await doFetch(url, { headers: { Accept: 'application/json' }, cache: 'no-cache' });
+    if (!res.ok) throw new Error(`availability file answered ${res.status}`);
+    const doc = await res.json();
+    const { snapshot: merged, meta } = applyManualAvailability(snapshot, doc, { now: cfg.now });
+    return { ...merged, availability: meta };
+  } catch (err) {
+    return { ...snapshot, availability: { loaded: false, error: String(err && err.message || err) } };
+  }
+}

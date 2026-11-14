@@ -33,6 +33,7 @@ export const STATIC_PAGES = [
   { path: '/fantasy-efl/', file: 'efl/app/index.html' },
   { path: '/fantasy-efl/fixtures/', file: 'efl/app/fixtures/index.html' },
   { path: '/fantasy-efl/players/', file: 'efl/app/players/index.html' },
+  { path: '/fantasy-efl/availability/', file: 'efl/app/availability/index.html' },
   { path: '/fantasy-efl/clubs/', file: 'efl/app/clubs/index.html' },
   { path: '/fantasy-efl/record/', file: 'efl/app/record/index.html' },
   { path: '/fantasy-efl/how-to-play/', file: 'efl/app/how-to-play/index.html' },
@@ -122,7 +123,7 @@ export function sitemapXml(routes, pages, built, extra) {
 }
 
 export function robotsTxt() {
-  return ['User-agent: *', 'Allow: /', 'Disallow: /api/', 'Disallow: /.netlify/', '', 'Sitemap: ' + SITE + '/sitemap.xml', ''].join('\n');
+  return ['User-agent: *', 'Allow: /', 'Disallow: /api/', 'Disallow: /.netlify/', 'Disallow: /fantasy-efl/admin/', '', 'Sitemap: ' + SITE + '/sitemap.xml', ''].join('\n');
 }
 
 export const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

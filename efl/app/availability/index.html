@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fantasy EFL Injuries, Suspensions &amp; Team News | GameweekEdge</title>
+<meta name="description" content="Injuries, suspensions, doubts and rotation risk for every Championship, League One and League Two club in Fantasy EFL, with a note and a last checked time on each.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/availability/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="Fantasy EFL availability">
+<meta property="og:description" content="Who is out, doubtful, suspended or at risk of rotation across all 72 EFL clubs.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/availability/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fantasy EFL availability">
+<meta name="twitter:description" content="Injuries, bans and rotation risk for every EFL club, in one place.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge, home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge, Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/availability/" aria-current="page">Availability</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/record/">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1 style="font-size:var(--fs-xl);margin-bottom:7px">Fantasy EFL availability</h1>
+    <p class="sec-note" style="margin-bottom:14px">Who is out, doubtful, suspended or at risk
+      of rotation across all 72 clubs in the Championship, League One and League Two. Each
+      flag carries a short note, where it came from and when it was last checked. Flags show
+      on the <a href="/fantasy-efl/players/" style="color:var(--efl)">player finder</a>, the
+      <a href="/fantasy-efl/" style="color:var(--efl)">dashboard picks</a> and inside the
+      team rater for your saved seven.</p>
+  </section>
+
+  <div id="source-banner" style="margin-bottom:14px"></div>
+  <div id="summary"></div>
+
+  <form class="filters" id="filters" aria-label="Filter flagged players" hidden>
+    <div class="field" style="grid-column:span 2;min-width:220px">
+      <label for="f-search">Search player or club</label>
+      <input type="search" id="f-search" placeholder="Name or club" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="f-division">Division</label>
+      <select id="f-division">
+        <option value="all">All divisions</option>
+        <option value="championship">Championship</option>
+        <option value="league-one">League One</option>
+        <option value="league-two">League Two</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-club">Club</label>
+      <select id="f-club"><option value="all">All clubs</option></select>
+    </div>
+    <div class="field">
+      <label for="f-status">Status</label>
+      <select id="f-status">
+        <option value="all">All flags</option>
+        <option value="news">Out, doubt or suspended</option>
+        <option value="out">Out</option>
+        <option value="doubt">Doubt</option>
+        <option value="suspended">Suspended</option>
+        <option value="rotation">Rotation risk</option>
+        <option value="fit">Cleared to play</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="f-reset">Reset filters</button>
+    </div>
+  </form>
+
+  <p class="result-count" id="result-count" aria-live="polite"></p>
+  <div id="list"></div>
+
+  <section aria-labelledby="method-title" style="margin-top:24px">
+    <div class="sec-head"><h2 class="sec-title" id="method-title">Where the flags come from</h2></div>
+    <p class="note note-method"><b>Team news.</b> Entries kept by hand from club press
+      conferences and announcements. A team news entry replaces what the feed says for that
+      player until the round it is set to expire after, so a recovered player can be cleared
+      and a fresh injury can be added before the official game catches up. An entry more than
+      three days old is marked as possibly out of date.</p>
+    <p class="note note-method" style="margin-top:10px"><b>Official game feed.</b> The injury
+      details the official Fantasy EFL game publishes for every player. The checked time is
+      when this site last read the feed, not when the club made its announcement.</p>
+    <p class="note note-method" style="margin-top:10px"><b>Modelled rotation risk.</b> A
+      player in the top quarter of his position in his own division on points per appearance,
+      who has played between 35% and 70% of his club's league matches. This is worked out from
+      the data, not reported by anyone, and is labelled as modelled wherever it shows.</p>
+    <p class="note note-method" style="margin-top:10px"><b>How flags change the ratings.</b>
+      Out, doubt and suspended lower a player's modelled rating with the same multipliers the
+      model already uses, so the dashboard will not pick a player this page lists as out.
+      Rotation risk changes nothing, because the rating already counts how often a player
+      starts. The yellow card ban ladder is separate and shows on the
+      <a href="/fantasy-efl/players/" style="color:var(--efl)">player finder</a>.</p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/availability/">Availability</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League or the official Fantasy EFL game. Competition and club names are used
+    descriptively only.</p>
+  <p id="data-note"></p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-availability.js"></script>
+</body>
+</html>

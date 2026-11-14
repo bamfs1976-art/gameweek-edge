@@ -11,9 +11,10 @@ import {
 } from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
-  divisionBadge, homeAwayBadge, availabilityBadge, formStrip, fmtDay, suspensionBadge,
+  divisionBadge, homeAwayBadge, formStrip, fmtDay, suspensionBadge, flagBadge, flagDetail,
   DIVISION_LABELS
 } from './ui.js';
+import { buildFlags, squadWarnings, isWarning, FLAG_LABELS } from './availability.js';
 
 initTheme();
 
@@ -23,6 +24,10 @@ const DIVISIONS = ['championship', 'league-one', 'league-two'];
 let scoredPlayers = null;
 let context = null;
 let oneClubChip = false;
+/* The availability hub's flags, built once: every badge on this page and
+   the team rater's warning read the same map. */
+let flags = new Map();
+const flagOf = (id) => { const f = flags.get(id); return isWarning(f) ? f : null; };
 
 start();
 
@@ -38,6 +43,7 @@ async function start() {
     }
     const ctx = buildContext(snapshot);
     context = ctx;
+    flags = buildFlags(ctx, { feedCheckedAt: snapshot.source && snapshot.source.generatedAt });
     scoredPlayers = ctx.players.map((p) => playerScore(ctx, p));
     renderPicks(ctx);
     renderSquad();
@@ -93,8 +99,9 @@ function playerCard(role, rec, ctx) {
       <span class="badge">${esc(p.position)}</span>
       ${divisionBadge(p.division)}
       <span>${esc(club ? club.name : '—')}</span>
-      ${availabilityBadge(p.availability)}${suspensionBadge(rec.suspension)}
+      ${flagBadge(flagOf(p.id))}${suspensionBadge(rec.suspension)}
     </div>
+    ${flagOf(p.id) ? `<div class="pick-flag">${flagDetail(flagOf(p.id))}</div>` : ''}
     ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)}</p>
     <div class="pick-foot">
@@ -113,8 +120,9 @@ function captainCard(rec, ctx) {
       <span class="badge">${esc(p.position)}</span>
       ${divisionBadge(p.division)}
       <span>${esc(club ? club.name : '—')}</span>
-      ${availabilityBadge(p.availability)}
+      ${flagBadge(flagOf(p.id))}
     </div>
+    ${flagOf(p.id) ? `<div class="pick-flag">${flagDetail(flagOf(p.id))}</div>` : ''}
     ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)} Highest-rated available pick with a fixture rated
       ${rec.next ? rec.next.rating : '—'} or better, which is what a captaincy needs before
@@ -135,8 +143,9 @@ function differentialCard(rec, ctx) {
       <span class="badge">${esc(p.position)}</span>
       ${divisionBadge(p.division)}
       <span>${esc(club ? club.name : '—')}</span>
-      ${availabilityBadge(p.availability)}
+      ${flagBadge(flagOf(p.id))}
     </div>
+    ${flagOf(p.id) ? `<div class="pick-flag">${flagDetail(flagOf(p.id))}</div>` : ''}
     ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)}</p>
     <p class="pick-why" style="color:var(--text-3)"><b>Form differential ${rec.differential.score.toFixed(0)}</b>
@@ -327,7 +336,8 @@ function playerOptions(ctx, position, selectedId) {
   const groups = [...byClub.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   return `<option value="">Not picked</option>` + groups.map(([club, list]) => {
     const opts = list.sort((a, b) => a.name.localeCompare(b.name)).map((p) => {
-      const flag = p.availability.status === 'available' ? '' : ' (' + p.availability.status + ')';
+      const f = flagOf(p.id);
+      const flag = f ? ' (' + FLAG_LABELS[f.status] + ')' : '';
       return `<option value="${esc(p.id)}"${p.id === selectedId ? ' selected' : ''}>${esc(p.name)}${esc(flag)}</option>`;
     }).join('');
     return `<optgroup label="${esc(club)}">${opts}</optgroup>`;
@@ -373,9 +383,25 @@ function renderMine() {
 
   const problems = [];
   for (const issue of advice.issues) problems.push(issue);
-  for (const r of advice.unavailable) problems.push(`${r.player.name} is ${r.player.availability.status}`);
+  /* Flagged players get their own block below, with the note and the
+     checked time, so they are not repeated here as a bare status word. */
   for (const r of advice.blanking) problems.push(`${r.player.name} has no fixture this round`);
   if (advice.unknown.length) problems.push(`${advice.unknown.length} saved pick(s) are no longer in the game`);
+
+  const warned = squadWarnings(ctx, advice.picks.map((r) => r.player.id), flags);
+  const warnBlock = warned.length
+    ? `<div class="chip-card flag-warn" style="margin-top:11px" role="status">
+        <p class="chip-head"><span class="chip-name">Flagged in your seven</span>
+          <span class="chip-verdict">${warned.length} of ${advice.count}</span></p>
+        <ul class="av-list" style="margin-top:8px">${warned.map(({ player, flag }) => `
+          <li class="av-item">
+            <div><span class="t-name">${esc(player.name)}</span>${flagDetail(flag)}</div>
+            <div>${flagBadge(flag)}</div>
+          </li>`).join('')}</ul>
+        <p class="chip-say" style="margin-top:8px">Full list on the
+          <a href="/fantasy-efl/availability/" style="color:var(--efl)">availability page</a>.</p>
+      </div>`
+    : '';
 
   const problemList = problems.length
     ? `<div class="chip-card chip-consider" style="margin-top:11px">
@@ -426,7 +452,7 @@ function renderMine() {
       <button type="button" class="btn btn-ghost btn-sm" id="mine-copy">Start from the model's seven</button>
       <button type="button" class="btn btn-ghost btn-sm" id="mine-clear">Clear</button>
     </div>
-    ${verdict}${problemList}${swapBlock}${chipBlock}`);
+    ${verdict}${warnBlock}${problemList}${swapBlock}${chipBlock}`);
 
   const body = document.getElementById('mine-body');
   if (!body) return;
@@ -475,6 +501,7 @@ function squadCard(rec, isCaptain) {
     <p class="sq-name">${esc(p.name)}</p>
     <p class="sq-meta">${esc(club ? club.name : '—')} · ${esc(DIVISION_LABELS[p.division])}</p>
     ${rec.suspension.level === 'onEdge' ? `<p class="sq-meta" style="color:var(--red)">${esc(rec.suspension.note)}</p>` : ''}
+    ${flagOf(p.id) ? `<p class="sq-meta">${flagBadge(flagOf(p.id))}</p>` : ''}
     <div class="sq-foot">
       <span>${next ? fdrCell(next.rating) : fdrCell(null)}
         <span class="sq-meta">${next ? esc((opp ? opp.short : '???') + (next.home ? ' (H)' : ' (A)')) : 'Blank'}</span></span>
