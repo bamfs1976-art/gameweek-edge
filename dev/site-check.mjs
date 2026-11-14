@@ -28,6 +28,9 @@ const CHECKS = [
   { path: '/fantasy-efl/availability/', status: 200, why: 'availability hub' },
   { path: '/fantasy-efl/clubs/', status: 200, why: 'club picker' },
   { path: '/fantasy-efl/club-uses/', status: 200, why: 'club uses tracker' },
+  { path: '/fantasy-efl/captain/', status: 200, why: 'captain comparison' },
+  { path: '/fantasy-efl/chips/', status: 200, why: 'chip timing' },
+  { path: '/fantasy-efl/post/', status: 200, why: 'weekly post' },
   { path: '/fantasy-efl/record/', status: 200, why: 'the model\'s record' },
   { path: '/fantasy-efl/how-to-play/', status: 200, why: 'the guide' },
 
