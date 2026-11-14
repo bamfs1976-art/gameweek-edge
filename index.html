@@ -7397,7 +7397,9 @@ function proScrub(host){
   const w=document.createTreeWalker(host,NodeFilter.SHOW_TEXT);
   let n;while((n=w.nextNode())){
     const v=n.nodeValue;if(!v||!/[0-9A-Za-zÀ-ÿ]/.test(v))continue;
-    const pe=n.parentNode&&n.parentNode.nodeName;if(pe==='STYLE'||pe==='SCRIPT')continue;
+    const par=n.parentNode,pe=par&&par.nodeName;if(pe==='STYLE'||pe==='SCRIPT')continue;
+    /* Section headings name the tool, not its answer. They stay readable. */
+    if(par&&par.closest&&par.closest('.card-title'))continue;
     const o=proScrubText(v);if(o!==v)n.nodeValue=o;
   }
   host.querySelectorAll('[alt],[title],[aria-label],[data-tip],[placeholder]').forEach(el=>{

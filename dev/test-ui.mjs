@@ -2737,42 +2737,69 @@ section('the sidebar at tablet widths: no hover, so nothing may depend on it');
   }
 }
 
-section('the analytics bar: nothing leaves the browser before a choice');
+section('the analytics bar: nothing that identifies a reader leaves before a choice');
 {
   /* The unit tests prove the storage rule over a stub. This proves the part
-     only a browser can answer: that no request actually goes out, that the
-     bar renders, and that a choice sticks across a reload.
+     only a browser can answer: what actually goes out, that the bar renders,
+     and that a choice sticks across a reload.
+
+     Two rules changed in the "visitor to customer" work and this section
+     follows them. First, the bar is held back during the first run (the
+     "Rate my squad" screen) and asked once the reader leaves it. Second, a
+     short allowlist of funnel events is counted before the choice as a bare
+     tally: no identifier, nothing stored. So "nothing is sent" became
+     "nothing that could identify or follow a reader is sent", and that is
+     what is asserted, on the request bodies themselves.
 
      Every context here is fresh, so localStorage starts empty and the page
-     is meeting the reader for the first time, which is the only state the
-     bar is ever shown in. */
+     is meeting the reader for the first time. */
+  const COUNT_ONLY = ['app_open','team_linked','onboard_done','sign_up','upgrade_modal_shown',
+    'checkout_started','checkout_success','taster_used'];
+  const body = (route) => { try { return route.request().postDataJSON() || {}; } catch (_) { return { unreadable: true }; } };
+  const bare = (e) => e.count_only === true && !('anon_id' in e) && !('props' in e) && COUNT_ONLY.includes(e.event);
+  const leaveFirstRun = async (page) => {
+    await page.getByRole('button', { name: 'Browse without a team' }).click();
+    /* onboardFinish asks the question 1.5s after the first run ends. */
+    await page.waitForFunction(() => !document.getElementById('consent-bar').hidden, null, { timeout: 8000 }).catch(() => {});
+  };
+
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
   const p = await ctx.newPage();
   const tracked = [];
-  await p.route('**/api/track', (route) => { tracked.push(route.request().url()); route.fulfill({ status: 204, body: '' }); });
+  await p.route('**/api/track', (route) => { tracked.push(body(route)); route.fulfill({ status: 204, body: '' }); });
   await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
   await p.waitForTimeout(1500);
 
+  const first = await p.evaluate(() => ({
+    barShown: !document.getElementById('consent-bar').hidden,
+    keys: Object.keys(localStorage),
+  }));
+  ok(first.barShown === false, 'the bar stays out of the way during the first run');
+  ok(!first.keys.includes('ge-anon'),
+     'no analytics identifier is stored before a choice (' + first.keys.join(',') + ')');
+  ok(!first.keys.includes('ge-src'), 'and no attribution tag either');
+
+  await leaveFirstRun(p);
   const before = await p.evaluate(() => ({
     barShown: !document.getElementById('consent-bar').hidden,
     keys: Object.keys(localStorage),
     hasYes: !!document.getElementById('consent-yes'),
     hasNo: !!document.getElementById('consent-no'),
   }));
-  ok(before.barShown === true, 'the bar is shown to a reader who has not chosen');
+  ok(before.barShown === true, 'the bar is shown once the reader leaves the first run');
   ok(before.hasYes && before.hasNo, 'and offers both answers');
-  ok(!before.keys.includes('ge-anon'),
-     'no analytics identifier is stored before a choice (' + before.keys.join(',') + ')');
-  ok(!before.keys.includes('ge-src'), 'and no attribution tag either');
-  /* The one that would have failed before this change. */
-  ok(tracked.length === 0,
-     'and not one event has left the browser (' + tracked.length + ' seen)');
+  ok(!before.keys.includes('ge-anon'), 'still no identifier while the question is open');
+  /* The one that matters: whatever left the browser is a bare tally. */
+  ok(tracked.every(bare),
+     'every event sent before a choice is a count with no identifier (' +
+     tracked.map(e => e.event + (bare(e) ? '' : '!')).join(',') + ')');
 
   /* Neither button may be the quiet one. A decline styled to be missed is
      the dark pattern the ICO names, and consent collected that way is not
      consent, so this is a compliance assertion rather than a style one. */
   const btns = await p.evaluate(() => {
-    const r = (id) => { const b = document.getElementById(id).getBoundingClientRect();
+    const r = (id) => { const el = document.getElementById(id);
+      const b = el ? el.getBoundingClientRect() : { width: 0, height: 0 };
       return { w: Math.round(b.width), h: Math.round(b.height) }; };
     return { yes: r('consent-yes'), no: r('consent-no') };
   });
@@ -2783,7 +2810,9 @@ section('the analytics bar: nothing leaves the browser before a choice');
   ok(btns.yes.h >= 44 && btns.no.h >= 44,
      'both clear the 44px touch minimum (' + btns.yes.h + ', ' + btns.no.h + ')');
 
-  /* Declining: the bar goes, the choice is kept, and still nothing is sent. */
+  /* Declining: the bar goes, the choice is kept, and from here nothing at
+     all is sent. A no is an objection, so it stops the bare counts too. */
+  const sentBeforeNo = tracked.length;
   await p.click('#consent-no');
   await p.waitForTimeout(400);
   const after = await p.evaluate(() => ({
@@ -2794,7 +2823,6 @@ section('the analytics bar: nothing leaves the browser before a choice');
   ok(after.hidden === true, 'declining takes the bar down');
   ok(after.consent === 'no', 'and records the decision so it is not asked twice');
   ok(!after.keys.includes('ge-anon'), 'no identifier appears on a decline');
-  ok(tracked.length === 0, 'and still nothing has been sent');
 
   /* And it survives a reload, which is the whole point of recording it. */
   await p.reload({ waitUntil: 'domcontentloaded' });
@@ -2805,17 +2833,20 @@ section('the analytics bar: nothing leaves the browser before a choice');
   }));
   ok(reload.hidden === true, 'and the bar stays down on the next visit');
   ok(!reload.keys.includes('ge-anon'), 'with no identifier after a reload');
-  ok(tracked.length === 0, 'and no event on the second load either');
+  ok(tracked.length === sentBeforeNo,
+     'and not one event, counted or otherwise, is sent after a no (' + (tracked.length - sentBeforeNo) + ' seen)');
   await ctx.close();
 
   /* The other answer, in its own fresh context. */
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 860 } });
   const p2 = await ctx2.newPage();
   const tracked2 = [];
-  await p2.route('**/api/track', (route) => { tracked2.push(1); route.fulfill({ status: 204, body: '' }); });
+  await p2.route('**/api/track', (route) => { tracked2.push(body(route)); route.fulfill({ status: 204, body: '' }); });
   await p2.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
   await p2.waitForTimeout(1500);
-  ok(tracked2.length === 0, 'a second reader is asked before anything is sent');
+  await leaveFirstRun(p2);
+  ok(tracked2.every(bare), 'a second reader is asked before anything identifying is sent');
+  const sentBeforeYes = tracked2.length;
   await p2.click('#consent-yes');
   await p2.waitForTimeout(700);
   const yes = await p2.evaluate(() => ({
@@ -2826,7 +2857,9 @@ section('the analytics bar: nothing leaves the browser before a choice');
   ok(yes.hidden === true, 'allowing takes the bar down too');
   ok(yes.consent === 'yes', 'and records the yes');
   ok(typeof yes.anon === 'string' && yes.anon.length > 6, 'now an identifier exists');
-  ok(tracked2.length > 0, 'and events start flowing only from here (' + tracked2.length + ')');
+  const sinceYes = tracked2.slice(sentBeforeYes);
+  ok(sinceYes.length > 0 && sinceYes.every(e => e.anon_id === yes.anon),
+     'and identified events start flowing only from here (' + sinceYes.length + ')');
   await ctx2.close();
 }
 
