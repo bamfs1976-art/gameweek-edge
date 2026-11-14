@@ -294,7 +294,7 @@ exports.handler = async (event) => {
       /* The ask box only: one answer per free account, then the gate. */
       if (body.task === 'ask' && await claimTaster(supaUrl, serviceKey, user.id)) taster = true;
       else return json(403, { error: body.task === 'ask'
-        ? 'You have used your free answer from the AI scout. It is part of The Edge. Everything else in the app stays free.'
+        ? 'You have used your free answer from the AI scout. It is part of Pro. Everything else in the app stays free.'
         : 'AI features are part of Gameweek Edge Pro. Upgrade to unlock the scout — the rest of the app stays free.' });
     }
   }

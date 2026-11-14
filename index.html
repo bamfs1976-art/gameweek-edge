@@ -418,6 +418,10 @@ body[data-density="beginner"] .beginner-only{display:block}
 .prc-price{font-size:1.6rem;font-weight:800;color:var(--text);margin:4px 0 2px;font-variant-numeric:tabular-nums}
 .prc-price span{font-size:.8rem;font-weight:600;color:var(--text-3)}
 .prc-buy{display:flex;flex-wrap:wrap;gap:8px}
+.prc-hero .pro-prices{max-width:520px;margin-top:18px}
+.prc-adds{list-style:none;margin:10px 0 0;padding:10px 0 0;border-top:1px solid var(--border);display:grid;gap:5px;font-size:.8rem;color:var(--text-2);line-height:1.4}
+.prc-adds b{color:var(--text)}
+@media (max-width:560px){.prc-plans{grid-template-columns:1fr}}
 .prc-on{display:flex;flex-wrap:wrap;align-items:center;gap:10px;color:var(--green);font-weight:600}
 .prc-tbl{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
 .prc-row{display:grid;grid-template-columns:1fr 110px 110px;align-items:center;padding:8px 12px;border-top:1px solid var(--border);font-size:.84rem}
@@ -441,6 +445,13 @@ body[data-density="beginner"] .beginner-only{display:block}
   text-underline-offset:3px}
 .ltf-browse:hover{color:var(--text)}
 .ltf-hero{max-width:560px;margin:4vh auto 0;padding:28px 24px}
+.ob-pitch{max-width:560px;margin:2vh auto 0}
+.ob-pitch+.ltf-hero{margin-top:16px}
+.ob-pitch-t{font-family:var(--font-display);font-size:clamp(1.5rem,4.4vw,2rem);font-weight:800;letter-spacing:-.02em;line-height:1.15;color:var(--text);margin:0 0 8px;text-wrap:balance}
+.ob-pitch-s{font-size:15px;color:var(--text-2);line-height:1.55;margin:0}
+.ob-proof{max-width:560px;margin:14px auto 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.8rem;color:var(--text-3)}
+.ob-proof li::before{content:"\2713";color:var(--green);font-weight:800;margin-right:6px}
+.ob-proof a{color:var(--green-bright);text-decoration:underline}
 .ltf-hero-t{font-family:var(--font-display);font-size:1.6rem;letter-spacing:-.02em;margin:0 0 6px}
 .ltf-hero-s{font-size:14px;color:var(--text-2);line-height:1.55;margin:0 0 18px}
 .pe-wrap{position:relative;min-height:340px}
@@ -1642,13 +1653,34 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   color:var(--text-3);margin-bottom:16px}
 .pro-active .badge svg{width:11px;height:11px;vertical-align:-1px;margin-right:2px}
 /* Upgrade modal extras */
-#pro-body{text-align:center}
-#pro-body h3{font-family:var(--font-display);font-size:1.3rem;margin:12px 0 16px}
-.pro-prices{display:flex;gap:12px;margin:4px 0 16px}
-.pro-price{flex:1;background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;cursor:pointer;text-align:center;transition:border-color .14s,background .14s}
-.pro-price:hover{border-color:var(--green-bright);background:var(--green-soft)}
+#pro-body{text-align:center;max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain}
+#pro-body h3{font-family:var(--font-display);font-size:1.3rem;margin:12px 0 6px}
+#pro-body .pro-lede{font-size:.84rem;color:var(--text-2);margin:0 0 20px}
+#pro-body .pro-cmp{margin:0 0 12px}
+#pro-body .pro-cmp-row{padding:7px 12px;font-size:12.5px}
+.pro-prices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 12px;align-items:stretch}
+.pro-price{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;font:inherit;color:var(--text);
+  background:var(--surface-2);border:1px solid var(--border-2);border-radius:var(--r-md);padding:16px 12px 12px;cursor:pointer;text-align:center;transition:border-color .14s,background .14s}
+.pro-price:hover{border-color:var(--green-bright)}
+.pro-price-main{border:2px solid var(--green);background:var(--green-soft);padding:15px 11px 11px}
+.pro-price-tag{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  background:var(--green);color:var(--on-brand,#fff);font-size:var(--fs-min);font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;padding:2px 9px;border-radius:var(--r-pill)}
 .pro-price-v{font-family:var(--font-display);font-size:1.4rem;font-weight:800}
-.pro-price-l{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.pro-price-l{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em}
+.pro-price-n{font-size:.72rem;color:var(--text-2);line-height:1.4;margin:6px 0 10px;flex:1}
+.pro-price-go{display:block;width:100%;padding:11px 6px;line-height:1.25;border-radius:var(--r-md);font-size:.84rem;font-weight:800;
+  border:1px solid var(--border-3);background:var(--surface);color:var(--text)}
+.pro-price-main .pro-price-go{border-color:transparent;background:var(--accent-cta);color:var(--accent-cta-ink)}
+.pro-price:hover .pro-price-go{filter:brightness(1.08)}
+.pro-x{position:absolute;top:8px;right:8px;width:44px;height:44px;display:grid;place-items:center;
+  background:none;border:0;border-radius:var(--r-md);color:var(--text-3);cursor:pointer}
+.pro-x:hover{color:var(--text);background:var(--surface-2)}
+.pro-cmp-row span:first-child{text-align:left}
+.pro-cmp-row b{color:var(--text)}
+.modal-hint a,.prc-proof a{color:var(--green-bright);text-decoration:underline}
+.pro-proof{margin-top:0}
+@media(max-width:380px){.pro-prices{grid-template-columns:1fr}.pro-price-main{order:-1}}
 .acct-link{display:block;width:100%;text-align:center;margin-top:14px;
   font-size:.78rem;font-weight:600;color:var(--green-bright)}
 /* When Pro, hide the lock badges in the nav */
@@ -1964,7 +1996,9 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
    consent. Above the bottom nav on a phone, and clear of the home
    indicator. */
 .consent-bar{
-  position:fixed;left:0;right:0;bottom:0;z-index:180;
+  /* Above the sidebar (200): at 180 the desktop sidebar covered the first
+     words of the question, so it began mid-sentence. */
+  position:fixed;left:0;right:0;bottom:0;z-index:210;
   display:flex;align-items:center;gap:14px;flex-wrap:wrap;
   padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));
   background:var(--surface-2);border-top:1px solid var(--border-2);
@@ -3067,7 +3101,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .inj-chip{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;
   border:1px solid var(--amber);color:var(--amber);background:rgba(245,165,36,.09);flex-shrink:0;margin-left:8px}
 .inj-chip.out{border-color:var(--red);color:var(--red);background:rgba(255,77,79,.09)}
-/* Standard vs The Edge — compact comparison inside the upgrade modal */
+/* Free vs Pro — compact comparison inside the upgrade modal */
 .pro-cmp{border:1px solid var(--border-2);border-radius:var(--r-md);overflow:hidden;margin:2px 0 14px}
 .pro-cmp-row{display:grid;grid-template-columns:1fr 40px 44px;align-items:center;gap:8px;padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border)}
 .pro-cmp-row:last-child{border-bottom:0}
@@ -5134,6 +5168,42 @@ const PRO_BENEFITS=[
   ['users','Rival intelligence','Scout rivals, effective ownership and the top template. Your edge in every mini-league.'],
   ['question','Simulators & depth','What-If and season simulators, plus set-piece order and rotation risk on every player.']
 ];
+/* What Pro adds, said as what the manager gets. One list, read by the
+   upgrade sheet and the pricing page, so the two cannot drift apart. */
+const PRO_ADDS=[
+  ['Scout AI.','Reasoned answers about your squad.'],
+  ['Rival Scout.','How to overtake the manager above you.'],
+  ['Ownership.','Which popular players threaten your rank.'],
+  ['Simulators.','Test a transfer before you commit.'],
+  ['Live rank threats.','Danger players and auto-subs, live.'],
+  ['Start chance.','Who is likely to play this week.']
+];
+const PRO_PROOF='Every model prediction is graded in public, gameweek by gameweek. '+
+  '<a href="/record/" target="_blank" rel="noopener">See the record</a>.';
+/* How many months of the monthly price the season pass undercuts. Worked
+   out from PRICE, so the claim moves with the prices and cannot go stale. */
+function proSeasonMonths(){
+  const n=v=>parseFloat(String(v).replace(/[^0-9.]/g,''));
+  const m=n(PRICE.monthly),se=n(PRICE.season);
+  return (m>0&&se>0)?Math.floor(se/m)+1:0;
+}
+/* The two ways to pay. The season pass leads: it is the filled button and
+   carries the saving. Monthly is the quieter second choice. Each is plainly
+   a button with a verb on it; the old pair read as two price labels. */
+function proPricesHtml(){
+  const k=proSeasonMonths();
+  return '<div class="pro-prices">'+
+    '<button type="button" class="pro-price pro-price-main" onclick="startCheckout(\'season\')">'+
+      '<span class="pro-price-tag">Best value</span>'+
+      '<span class="pro-price-v">'+PRICE.season+'</span><span class="pro-price-l">season pass</span>'+
+      '<span class="pro-price-n">One payment, no renewal.'+(k?' Costs less than '+k+' months of monthly.':'')+'</span>'+
+      '<span class="pro-price-go">Get season pass</span></button>'+
+    '<button type="button" class="pro-price" onclick="startCheckout(\'monthly\')">'+
+      '<span class="pro-price-v">'+PRICE.monthly+'</span><span class="pro-price-l">per month</span>'+
+      '<span class="pro-price-n">Pay as you go. Cancel anytime.</span>'+
+      '<span class="pro-price-go">Go monthly</span></button>'+
+  '</div>';
+}
 function getTier(){try{return localStorage.getItem('ge-tier')==='pro'?'pro':'free';}catch(_){return 'free';}}
 function isPro(){return getTier()==='pro';}
 function setTier(t){const v=t==='pro'?'pro':'free';try{localStorage.setItem('ge-tier',v);}catch(_){}reflectTier();cloudProfile({tier:v});}
@@ -5144,12 +5214,12 @@ function proPreview(panel,content){
   const benefits=PRO_BENEFITS.map(b=>
     '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
   return '<div class="pro-hero">'+
-    '<span class="pro-chip">'+svg(ICON.lock,'width="12" height="12"')+' The Edge</span>'+
+    '<span class="pro-chip">'+svg(ICON.lock,'width="12" height="12"')+' Pro</span>'+
     '<h2>'+esc(panel.label)+'</h2>'+
     '<p class="pro-lead">'+esc(content.desc)+'</p>'+
     '<div class="pro-benefits">'+benefits+'</div>'+
-    '<button class="btn btn-primary" onclick="openUpgrade()">Unlock The Edge: from '+PRICE.monthly+'/mo</button>'+
-    '<p class="pro-foot">One subscription unlocks every tool in The Edge, across all your devices.</p>'+
+    '<button class="btn btn-primary" onclick="openUpgrade()">Unlock Pro: from '+PRICE.monthly+'/mo</button>'+
+    '<p class="pro-foot">Pro unlocks every paid tool, across all your devices.</p>'+
   '</div>';
 }
 
@@ -5158,28 +5228,27 @@ function openUpgrade(){
   if(!pro)track('upgrade_modal_shown');
   const benefits=PRO_BENEFITS.map(b=>
     '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
-  /* Free users see exactly what The Edge adds over the standard app. */
-  const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
-    '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
-    ['Scout AI &amp; Ask the Scout','Rival Scout: overtake your league','Ownership: your EO and the template',
-     'Simulators: season and what-if','Live DEFCON &amp; the Set Piece Register',
-     'Start chance for every player, and your own team news']
-      .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">–</span><span class="y">✓</span></div>').join('')+
+  /* Free users see exactly what Pro adds, each line written as the outcome
+     it buys rather than the tool's name. */
+  const compare='<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>Pro adds</span><span>Free</span><span>Pro</span></div>'+
+    PRO_ADDS.map(f=>'<div class="pro-cmp-row"><span><b>'+f[0]+'</b> '+f[1]+'</span><span class="x" aria-label="Not included">–</span><span class="y" aria-label="Included">✓</span></div>').join('')+
     '</div>';
   document.getElementById('pro-body').innerHTML=
-    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' The Edge</span>'+
-    '<h3 id="pro-title">'+(pro?'You’re on The Edge':'Unlock The Edge')+'</h3>'+
-    (pro?'<div class="pro-benefits">'+benefits+'</div>':compare)+
+    '<button type="button" class="pro-x" data-pro-close aria-label="Close">'+'<span aria-hidden="true" style="font-size:22px;line-height:1">\u00d7</span>'+'</button>'+
+    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' Pro</span>'+
+    '<h3 id="pro-title">'+(pro?'You’re on Pro':'Unlock Pro')+'</h3>'+
     (pro
-      ? '<div class="modal-row"><button class="btn btn-ghost" onclick="manageOrCancel()">Manage / cancel</button></div>'
-      : '<div class="pro-prices">'+
-          '<button class="pro-price" onclick="startCheckout(\'monthly\')"><div class="pro-price-v">'+PRICE.monthly+'</div><div class="pro-price-l">per month</div></button>'+
-          '<button class="pro-price" onclick="startCheckout(\'season\')"><div class="pro-price-v">'+PRICE.season+'</div><div class="pro-price-l">season pass</div></button>'+
-        '</div>'+
+      ? '<div class="pro-benefits">'+benefits+'</div>'+
+        '<div class="modal-row"><button class="btn btn-ghost" onclick="manageOrCancel()">Manage / cancel</button></div>'
+      /* The two buttons come first, so the way to buy is on screen without a
+         scroll on a phone; what Pro adds sits directly beneath them. */
+      : '<p class="pro-lede">Everything in Free stays free. Pro adds the tools for climbing your mini-league.</p>'+
+        proPricesHtml()+
         '<div class="modal-err" id="pro-err" role="alert"></div>'+
-        '<p class="modal-hint">Secure card payment via Stripe. '+(SESSION?'':'You’ll be asked to sign in first. ')+'Cancel anytime. '+
-          '<a href="/pricing" onclick="closeUpgrade();openPanel(\'pricing\');return false">Compare the plans in full</a>.</p>')+
-    '<div class="modal-row"><button class="btn btn-ghost" data-pro-close>Close</button></div>';
+        compare+
+        '<p class="modal-hint pro-proof">'+PRO_PROOF+'</p>'+
+        '<p class="modal-hint">Secure card payment via Stripe. '+(SESSION?'':'You’ll be asked to sign in first. ')+
+          '<a href="/pricing" onclick="closeUpgrade();openPanel(\'pricing\');return false">Compare the plans in full</a>.</p>');
   document.getElementById('pro-modal').classList.add('show');focusModal('pro-modal');
 }
 async function manageOrCancel(){
@@ -6296,32 +6365,30 @@ async function hydratePricing(host){
   track('pricing_view',{pro});
   const tick='<span class="prc-y" aria-label="Included">✓</span>',dash='<span class="prc-n" aria-label="Not included">–</span>';
   const table='<div class="prc-tbl" role="table" aria-label="What each plan includes">'+
-    '<div class="prc-row prc-head" role="row"><span role="columnheader">Feature</span><span role="columnheader">Standard</span><span role="columnheader">The Edge</span></div>'+
+    '<div class="prc-row prc-head" role="row"><span role="columnheader">Feature</span><span role="columnheader">Free</span><span role="columnheader">Pro</span></div>'+
     T.groups.map(g=>'<div class="prc-grp" role="row"><span role="cell">'+esc(g.label)+'</span></div>'+
       g.rows.map(r=>'<div class="prc-row'+(r.paid?' prc-paid':'')+'" role="row"><span role="cell">'+esc(r.name)+'</span>'+
         '<span role="cell">'+(r.paid?dash:tick)+'</span><span role="cell">'+tick+'</span></div>').join('')).join('')+
     '</div>';
   const cta=pro
-    ? '<div class="prc-on">'+svg(ICON.star,'width="14" height="14"')+' You are on The Edge. Thank you.'+
+    ? '<div class="prc-on">'+svg(ICON.star,'width="14" height="14"')+' You are on Pro. Thank you.'+
       ' <button type="button" class="btn btn-ghost btn-sm" onclick="manageOrCancel()">Manage or cancel</button></div>'
-    : '<div class="prc-buy">'+
-        '<button type="button" class="btn btn-cta" onclick="startCheckout(\'season\')">Season pass '+PRICE.season+'</button>'+
-        '<button type="button" class="btn btn-ghost" onclick="startCheckout(\'monthly\')">Monthly '+PRICE.monthly+'</button>'+
-      '</div><div class="modal-err" id="prc-err" role="alert"></div>'+
-      '<p class="dl-sub" style="margin:6px 0 0">Secure card payment through Stripe. '+(SESSION?'':'You will be asked to sign in first. ')+'Cancel anytime.</p>';
+    : proPricesHtml()+'<div class="modal-err" id="prc-err" role="alert"></div>'+
+      '<p class="dl-sub prc-proof" style="margin:6px 0 0">'+PRO_PROOF+' Secure card payment through Stripe. '+(SESSION?'':'You will be asked to sign in first.')+'</p>';
   host.innerHTML=
     '<div class="card mb-20 prc-hero">'+
       '<h2 class="prc-h">Core features always free</h2>'+
-      '<p class="dl-sub" style="margin:0 0 14px">'+T.free+' of the '+(T.free+T.paid)+' features below cost nothing, with no account needed: your squad, transfers, captaincy, chips, live points, fixtures and the full players table. The Edge adds '+T.paid+' more for managers who want the deeper read.</p>'+
+      '<p class="dl-sub" style="margin:0 0 14px">'+T.free+' of the '+(T.free+T.paid)+' features below cost nothing, with no account needed: your squad, transfers, captaincy, chips, live points, fixtures and the full players table. Pro adds '+T.paid+' more for managers who want to climb their mini-league.</p>'+
       '<div class="prc-plans">'+
-        '<div class="prc-plan"><div class="prc-name">Standard</div><div class="prc-price">£0</div><div class="dl-sub">Free, for good</div></div>'+
-        '<div class="prc-plan prc-edge"><div class="prc-name">'+svg(ICON.star,'width="12" height="12"')+' The Edge</div>'+
+        '<div class="prc-plan"><div class="prc-name">Free</div><div class="prc-price">£0</div><div class="dl-sub">Free, for good. No account needed.</div></div>'+
+        '<div class="prc-plan prc-edge"><div class="prc-name">'+svg(ICON.star,'width="12" height="12"')+' Pro</div>'+
           '<div class="prc-price">'+PRICE.season+'<span> a season</span></div>'+
-          '<div class="dl-sub">or '+PRICE.monthly+' a month</div></div>'+
+          '<div class="dl-sub">or '+PRICE.monthly+' a month</div>'+
+          '<ul class="prc-adds">'+PRO_ADDS.map(f=>'<li><b>'+f[0]+'</b> '+f[1]+'</li>').join('')+'</ul></div>'+
       '</div>'+cta+
     '</div>'+
     '<div class="card mb-20"><div class="card-title">What each plan includes</div>'+table+'</div>'+
-    '<div class="dl-sub">Prices in pounds. The Edge renews until you cancel, and you can cancel from your account at any time.</div>';
+    '<div class="dl-sub">Prices in pounds. The season pass is one payment and does not renew. Monthly renews until you cancel, and you can cancel from your account at any time.</div>';
 }
 async function hydrateGlossary(host){
   const rows=Object.keys(GLOSSARY).map(k=>'<div class="dl-row" style="display:block;padding:11px 0">'+
@@ -6459,7 +6526,7 @@ async function buildRightRail(){
 const PANEL_CONTENT = {
   more:{desc:'Everything beyond the four main tabs, planning tools, research, account and help, in one grouped index.',layout:'standard'},
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
-  pricing:{desc:'What is free, what The Edge adds, and what it costs. Core features stay free.',layout:'standard'},
+  pricing:{desc:'What is free, what Pro adds, and what it costs. Core features stay free.',layout:'standard'},
   fplbasics:{desc:'How Fantasy Premier League works. The whole game in two minutes.',layout:'standard'},
   archive:{
     desc:'Ten seasons of Fantasy Premier League, 2016-17 to 2025-26. The all-time records, any two careers side by side, a new player to guess every day, and for Pro readers every season as a table with the whole career behind each player.',
@@ -6750,7 +6817,7 @@ const MORE_GROUPS=[
     ['__account','Sign in, sync and manage your plan'],
     ['accountability','The model, graded in public'],
     ['glossary','Every term, in plain English'],
-    ['pricing','What is free, and what The Edge adds'],
+    ['pricing','What is free, and what Pro adds'],
     ['fplbasics','New to FPL? The game in two minutes'],
     ['__feedback','Tell the person who builds this what broke']]}
 ];
@@ -7318,6 +7385,38 @@ const RAIL_PANELS=new Set(['myweek','dashboard','captain']);
    a hub. Merging the Live boards made the second case necessary: three of
    the five views are paid and two are free, so the gate had to move inside
    the panel — the same journey the players table's column gate made. */
+/* THE BLUR IS NOT A LOCK. The preview renders the real tool, so the real
+   names and numbers sat in the page as text: select-all, reader mode or
+   the inspector read every paid figure straight through a CSS filter.
+   Anything rendered inside a .pro-blur host is therefore rewritten to
+   shape-only text (letters to e, digits to 8) as it arrives. The preview
+   keeps its layout and rhythm; the values are gone. Idempotent, so the
+   re-renders hydrators do are scrubbed again without looping. */
+function proScrubText(t){return t.replace(/[0-9]/g,'8').replace(/[A-ZÀ-Þ]/g,'E').replace(/[a-zß-ÿ]/g,'e');}
+function proScrub(host){
+  const w=document.createTreeWalker(host,NodeFilter.SHOW_TEXT);
+  let n;while((n=w.nextNode())){
+    const v=n.nodeValue;if(!v||!/[0-9A-Za-zÀ-ÿ]/.test(v))continue;
+    const pe=n.parentNode&&n.parentNode.nodeName;if(pe==='STYLE'||pe==='SCRIPT')continue;
+    const o=proScrubText(v);if(o!==v)n.nodeValue=o;
+  }
+  host.querySelectorAll('[alt],[title],[aria-label],[data-tip],[placeholder]').forEach(el=>{
+    ['alt','title','aria-label','data-tip','placeholder'].forEach(a=>{
+      const v=el.getAttribute(a);if(v){const o=proScrubText(v);if(o!==v)el.setAttribute(a,o);}
+    });
+  });
+}
+(function(){
+  if(typeof MutationObserver==='undefined'||typeof document==='undefined')return;
+  const live=document.getElementsByClassName('pro-blur');
+  let queued=false;
+  const run=()=>{queued=false;for(let i=0;i<live.length;i++){try{proScrub(live[i]);}catch(_){}}};
+  const start=()=>new MutationObserver(()=>{
+    if(!live.length||queued)return;
+    queued=true;run();
+  }).observe(document.body,{childList:true,subtree:true});
+  if(document.body)start();else document.addEventListener('DOMContentLoaded',start);
+})();
 function proLockWrap(inner,id,why){
   /* ProGate — preview, not paywall: the real tool renders blurred behind
      one quiet strip, so you can see the shape of the answer you'd get. */
@@ -7325,7 +7424,7 @@ function proLockWrap(inner,id,why){
     '<div'+(id?' id="'+id+'"':'')+' class="ge-host pro-blur" inert aria-hidden="true">'+inner+'</div>'+
     '<div class="pro-lockstrip"><span class="pls-tag">'+svg(ICON.lock,'width="11" height="11"')+' Pro</span>'+
       '<span class="pls-txt">'+(why||'This is the live tool, running now. Pro unlocks the specifics.')+'</span>'+
-      '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
+      '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock Pro</button></div></div>';
 }
 
 /* ── AREA TABS ─────────────────────────────────────────────
@@ -8017,7 +8116,14 @@ async function hydrateOnboard(host){
   const step=!mid?1:(ONBOARD_STEP===3?3:2);
   try{track('onboard_step',{step});}catch(_){}
   if(step===1){
-    host.innerHTML='<div class="ltf-hero card ob">'+obSteps(1)+
+    /* Direct traffic never sees /welcome (the gate only fires on a referrer),
+       so this screen has to say what the product is before it asks for an
+       ID. One line of pitch above the card, the proof beneath it. */
+    host.innerHTML='<div class="ob-pitch">'+
+        '<p class="ob-pitch-t">Know what to do with your FPL team this week.</p>'+
+        '<p class="ob-pitch-s">An independent Fantasy Premier League companion. A points model picks your captain, your next transfer and your chip timing, in plain English.</p>'+
+      '</div>'+
+      '<div class="ltf-hero card ob">'+obSteps(1)+
       '<h2 class="ltf-hero-t">Rate my squad</h2>'+
       '<p class="ltf-hero-s">Paste your FPL link or enter your Manager ID, and the model rates your eleven against its own, then tells you the one thing worth doing this week. Under a minute, no account needed.</p>'+
       linkTeamFlowHtml({browse:false})+
@@ -8029,7 +8135,12 @@ async function hydrateOnboard(host){
         '<button type="button" class="btn btn-ghost" onclick="obSkip()">Browse without a team</button>'+
         '<p class="dl-sub">See the model\u2019s team, this week\u2019s captain picks, price changes and fixtures. Link your team any time from the top bar.</p>'+
       '</div>'+
-      '</div>';
+      '</div>'+
+      '<ul class="ob-proof" aria-label="Why managers trust it">'+
+        '<li>Free, no account needed</li><li>Official FPL data</li><li>No ads</li>'+
+        '<li><a href="/record/" target="_blank" rel="noopener">Every prediction graded in public</a></li>'+
+        '<li><a href="/welcome">See what’s inside</a></li>'+
+      '</ul>';
     return;
   }
   host.innerHTML='<div class="ltf-hero card ob">'+obSteps(step)+skel(4)+'</div>';
@@ -14608,7 +14719,7 @@ function plSusp(e){
   return suspRisk(e.yellow_cards,gw);
 }
 /* A cell that says "there is a number here, and it isn't yours yet". */
-function plLockCell(){return '<span class="pl-lk" title="The Edge: unlock to see this column">'+svg(ICON.lock,'width="11" height="11"')+'</span>';}
+function plLockCell(){return '<span class="pl-lk" title="Pro: unlock to see this column">'+svg(ICON.lock,'width="11" height="11"')+'</span>';}
 
 function plCols(b,xpMap,ctx){
   ctx=ctx||{};
@@ -15010,7 +15121,7 @@ function renderPlayerTable(){
       const def=GLOSSARY[c.l]||GLOSSARY[String(c.l).replace(/\s.*$/,'')]||'';
       /* A locked heading carries no data-k, so the sort handler cannot see
          it at all — the lock is in the markup, not only in the handler. */
-      return '<th '+(lk?'data-lk="1" title="The Edge: unlock this column"':'data-k="'+c.k+'"'+
+      return '<th '+(lk?'data-lk="1" title="Pro: unlock this column"':'data-k="'+c.k+'"'+
           (def?' title="'+esc(def)+'"':''))+
         ' class="'+(c.num?'num':'')+(active?' active':'')+(lk?' lk':'')+'"'+
         (lk?'':' aria-sort="'+(active?(PL_STATE.dir===1?'ascending':'descending'):'none')+'"')+
@@ -15032,7 +15143,7 @@ function renderPlayerTable(){
     const lens=plLens(PL_STATE.lens);
     note.innerHTML=esc(lens.desc)+
       (plLensLocked(lens)
-        ? ' <a href="#" onclick="openUpgrade();return false"><b>Part of The Edge: unlock this lens</b></a>.'
+        ? ' <a href="#" onclick="openUpgrade();return false"><b>Part of Pro: unlock this lens</b></a>.'
         : '')+
       (PL_STATE.lens==='all'?' Tap a heading to sort, a row for the full profile.':'');
   }
@@ -24434,7 +24545,7 @@ async function sendAsk(text){
     else{const data=await r.json();ASK_MSGS.push({role:'assistant',content:data.text||'(no answer)'});window.GENative&&GENative.hapticLight();
       if(data.taster){
         track('taster_used');
-        ASK_MSGS.push({role:'assistant',content:'_That was your free answer from the AI scout. The Edge answers every question this way, from '+PRICE.monthly+' a month. The on-device model stays free._'});
+        ASK_MSGS.push({role:'assistant',content:'_That was your free answer from the AI scout. Pro answers every question this way, from '+PRICE.monthly+' a month. The on-device model stays free._'});
       }}
     }
   }catch(e){
