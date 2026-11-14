@@ -195,14 +195,16 @@ const SAMPLE={
   }
 };
 const R=window.__RECAP__||SAMPLE;
-const PHOTO=c=>'https://resources.premierleague.com/premierleague/photos/players/110x140/p'+c+'.png';
+/* New folder first, old folder second: see photoUrl() in index.html. */
+const PHOTO=c=>'https://resources.premierleague.com/premierleague25/photos/players/110x140/'+c+'.png';
+const PHOTO_OLD=c=>'https://resources.premierleague.com/premierleague/photos/players/110x140/p'+c+'.png';
 const initials=n=>String(n||'').replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
 const CREST={ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,LIV:14,MCI:43,MUN:1,NEW:4,NFO:17,TOT:6,WHU:21,WOL:39,LEE:2,SUN:56,BUR:90};
 const crestUrl=t=>CREST[t]?'https://resources.premierleague.com/premierleague/badges/50/t'+CREST[t]+'.png':'';
 function ava(size,name,code){
   return '<span class="ava" style="width:'+size+'px;height:'+size+'px">'+
     '<span class="ava-i">'+initials(name)+'</span>'+
-    (code?'<img src="'+PHOTO(code)+'" onerror="this.remove()">':'')+'</span>';
+    (code?'<img src="'+PHOTO(code)+'" data-fb="'+PHOTO_OLD(code)+'" onerror="var f=this.getAttribute(\'data-fb\');if(f){this.removeAttribute(\'data-fb\');this.src=f}else{this.remove()}">':'')+'</span>';
 }
 
 /* gwtag / intro numbers */
