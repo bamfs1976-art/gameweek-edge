@@ -312,7 +312,7 @@ try{
   --blue-soft:rgba(47,109,199,.10);
   --purple:#795ac6;
   --purple-soft:rgba(122,92,199,.10);
-  --accent-cta:#a46615;--accent-cta-ink:#ffffff;
+  --accent-cta:#147e48;--accent-cta-ink:#ffffff;
   --accent-alert:#c23632;
   --accent-warn:#8a690e;
   --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
@@ -1537,6 +1537,9 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   .seg{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
   .gwchip{max-width:48vw}
   .gwchip-dl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30vw}
+  /* "opens in 6d 2…" lost the one figure the chip exists for. The lead word
+     goes instead; the gameweek and the countdown both fit. */
+  .gwchip-w{display:none}
   #export-btn{display:none}
   #tbm-search kbd{display:none}
   .tb-crumb{display:none}
@@ -3464,6 +3467,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
            into every pre-rendered shell (those are built from this file) and
            they are there whether or not a script runs. -->
       <p class="sb-foot-links sb-foot-ref">
+        <a href="/pricing">Pricing</a>
         <a href="/tools/">FPL tools</a>
         <a href="/glossary">Glossary</a>
         <a href="/fplbasics">FPL basics</a>
@@ -6515,7 +6519,7 @@ async function buildRightRail(){
         const pred=m.pH>=m.pD&&m.pH>=m.pA?'H':(m.pA>=m.pD?'A':'D');
         const act=f.team_h_score>f.team_a_score?'H':(f.team_h_score<f.team_a_score?'A':'D');if(pred===act)hits++;});
       rec='<div class="rr-h">Recent model calls</div><div class="rr-stat">favourite correct <b>'+Math.round(100*hits/done.length)+'%</b></div>'+
-        '<div class="dl-sub" style="margin-top:6px">Over '+done.length+' graded matches this season. Per-gameweek captain calls build up here as more is played.</div>';
+        '<div class="dl-sub" style="margin-top:6px">Over '+done.length+' graded matches this season. A match has three possible results, so a blind guess is right about 33% of the time. Per-gameweek captain calls build up here as more is played.</div>';
     }else rec='<div class="rr-h">Recent model calls</div><div class="dl-sub">The model’s last three gameweek calls, what it said versus what happened, appear here once the season is under way.</div>';
     document.getElementById('rr-recent').innerHTML=rec;
   }catch(_){}
@@ -7397,7 +7401,9 @@ function proScrub(host){
   const w=document.createTreeWalker(host,NodeFilter.SHOW_TEXT);
   let n;while((n=w.nextNode())){
     const v=n.nodeValue;if(!v||!/[0-9A-Za-zÀ-ÿ]/.test(v))continue;
-    const pe=n.parentNode&&n.parentNode.nodeName;if(pe==='STYLE'||pe==='SCRIPT')continue;
+    const par=n.parentNode,pe=par&&par.nodeName;if(pe==='STYLE'||pe==='SCRIPT')continue;
+    /* Section headings name the tool, not its answer. They stay readable. */
+    if(par&&par.closest&&par.closest('.card-title'))continue;
     const o=proScrubText(v);if(o!==v)n.nodeValue=o;
   }
   host.querySelectorAll('[alt],[title],[aria-label],[data-tip],[placeholder]').forEach(el=>{
@@ -9074,7 +9080,7 @@ async function hydrateDashboard(host){
      than opening it. One strip: the live record when there is one, the
      held-out backtest when there is not, and the way to every prediction. */
   const trust='<div class="trust-strip"><span class="perf-h">Model performance</span>'+
-    (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> \u00b7 '+done.length+' matches</span>'+
+    (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> \u00b7 '+done.length+' matches \u00b7 a blind guess gets 33%</span>'+
       (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started: graded from kick-off</span>')+
     '<span class="expert-only">backtest '+jt('RPS')+' <b>0.2126</b> '+jt('held-out backtest','held-out')+' 25/26</span>'+
     '<span class="beginner-only">forecasts tested on unseen gameweeks, graded in public</span>'+
@@ -9139,7 +9145,11 @@ async function hydrateDashboard(host){
      and the league-wide numbers, before the model says anything. The
      three calls stay exactly where they were, one screen down. */
   const board=dashBoard(b,fixtures,mid,entry,histAll,liveGwPts);
-  host.innerHTML=hero+board+q1+q1b+jump+
+  /* Without a team the board opens on last week's finished match days,
+     which answers nothing for a newcomer. They get the captain call first:
+     the product's answer, before its scoreboard. A linked manager keeps
+     the board on top, because there it leads with their own points. */
+  host.innerHTML=hero+(mid?board+q1:q1+board)+q1b+jump+
     '<div class="quad-grid expert-only">'+q2+q3+q4+'</div>'+q5+
     dashNextSteps(mid)+trust;
   tickTicker();
@@ -30224,7 +30234,7 @@ function tickTicker(){
     const ms=new Date(focus.deadline_time)-Date.now();
     const t=cdShort(focus.deadline_time)||'–';
     setTone(ms<=36e5?'alert':ms<=216e5?'warn':'');
-    set('tk-dl','deadline <b>'+t+'</b>');
+    set('tk-dl','<span class="gwchip-w">deadline </span><b>'+t+'</b>');
   }else if(ph.phase==='live'){
     setTone('');
     set('tk-dl','<b class="pos">● live</b>: in play now');
@@ -30234,7 +30244,7 @@ function tickTicker(){
   }else if(ph.phase==='between'&&ph.target){
     setTone('');
     const t=cdShort(ph.target.deadline_time);
-    set('tk-dl','opens <b>'+(t||fmtDayShort(ph.target.deadline_time))+'</b>');
+    set('tk-dl','<span class="gwchip-w">opens </span><b>'+(t||fmtDayShort(ph.target.deadline_time))+'</b>');
   }else{
     setTone('');
     set('tk-dl','season <b>ended</b>');

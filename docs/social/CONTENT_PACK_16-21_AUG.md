@@ -43,7 +43,7 @@ want them; none of them were the payload.
 | **Mon 17** | DefCon by budget | yes | Studio → **DefCon by budget** |
 | **Tue 18** | Where the value is | yes | Studio → **Underpriced** |
 | **Wed 19** | First captaincy call ⭐ | yes | Studio → **Best captains** |
-| **Thu 20** | Standard vs The Edge | yes | `assets/social/gwe-standard-vs-edge.png` — already in the repo |
+| **Thu 20** | Free vs Pro | yes | `assets/social/gwe-standard-vs-edge.png` — already in the repo |
 | **Fri 21** | Deadline nudge ⭐ | none | Plain text, posted live ~1pm |
 
 **If the week gets away from you, do these three:** Sun 16, Wed 19, Fri 21.
@@ -197,24 +197,24 @@ Two days out, which is when people actually decide. **Card:** Studio →
 
 ---
 
-## Thu 20 Aug — Standard vs The Edge
+## Thu 20 Aug — Free vs Pro
 
 The one paid post of the week, the day before the deadline when intent is
 climbing. **Card:** `assets/social/gwe-standard-vs-edge.png` — already in the
 repo, nothing to render.
-**Alt text:** "Comparison table — Standard versus The Edge. Both include
+**Alt text:** "Comparison table — Free versus Pro. Both include
 predicted points, Match Centre and live rank, GW Debrief, the price and
-suspension model, and differentials. The Edge adds AI Scout, Rival Scout, EO
+suspension model, and differentials. Pro adds AI Scout, Rival Scout, EO
 Tracker and Template Meter, the season and what-if simulators, and DefCon tools."
 
 **X**
 > Gameweek Edge, two ways:
 >
-> **Standard** (free, ad-free) — predicted points, Match Centre, live rank, the price and suspension model, and a debrief that tells you what your captain actually cost you.
+> **Free** (ad-free) — predicted points, Match Centre, live rank, the price and suspension model, and a debrief that tells you what your captain actually cost you.
 >
-> **The Edge** (£3.99/mo · £24.99 season) — how to win your mini-league: AI Scout, Rival Scout, EO Tracker, the simulators.
+> **Pro** (£3.99/mo · £24.99 season) — how to win your mini-league: AI Scout, Rival Scout, EO Tracker, the simulators.
 >
-> Standard tells you what to do this week. The Edge tells you how to win your league.
+> Free tells you what to do this week. Pro tells you how to win your league.
 >
 > gameweekedge.co.uk
 > *Not affiliated with the Premier League or the official Fantasy Premier League game.*
@@ -222,8 +222,8 @@ Tracker and Template Meter, the season and what-if simulators, and DefCon tools.
 **Bluesky**
 > Gameweek Edge, two ways:
 >
-> Standard (free, ad-free) — what to do this week.
-> The Edge (£3.99) — how to win your league: AI Scout, Rival Scout, EO Tracker, the simulators.
+> Free (ad-free) — what to do this week.
+> Pro (£3.99) — how to win your league: AI Scout, Rival Scout, EO Tracker, the simulators.
 >
 > One app, one tap deeper. #FPL
 > gameweekedge.co.uk
@@ -244,7 +244,7 @@ rather than a guess.
 > ✅ Chips planned, not just picked
 > ✅ Your rivals' likely captains — and where your differential actually is
 >
-> The first three are free, for everyone. The fourth is The Edge.
+> The first three are free, for everyone. The fourth is Pro.
 >
 > Good luck tonight 👇 gameweekedge.co.uk
 

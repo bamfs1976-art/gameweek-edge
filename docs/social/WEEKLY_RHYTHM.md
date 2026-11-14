@@ -221,7 +221,7 @@ ones, and it costs nothing but nerve.
 *(This is the one post in the document with something to fill in, because the
 honest version has to name what happened. Keep it to one clause.)*
 
-**Standard vs The Edge** — the paid post. Every second or third cycle, never
+**Free vs Pro** — the paid post. Every second or third cycle, never
 more, and always after a run of free value rather than in front of it. Card is
 already in the repo: `assets/social/gwe-standard-vs-edge.png`. Copy is in
 `CONTENT_PACK_16-21_AUG.md`, Thu 20 Aug.

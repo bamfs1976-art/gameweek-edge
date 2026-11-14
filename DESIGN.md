@@ -30,7 +30,7 @@ applied before first paint by a head script, so neither theme ever flashes.
 | `--red` | `#ff4d4f` | `#c93834` | genuine negatives only: injury out, price fall, over budget |
 | `--amber` / `--lock` | `#f5a524` | `#8f5a12` / `#8a5410` | "watch this" and the Pro affordance |
 | `--blue` | `#4f92ff` | `#2e6ac2` | info. The brief's `#3b82f6` measures 4.45:1 on `--surface-3`, so it is lifted |
-| `--accent-cta` | green fill, canvas ink | amber fill, white ink | actions read as actions |
+| `--accent-cta` | green fill, canvas ink | green fill, white ink | actions read as actions, in the brand colour in both themes |
 
 Shadows are off in the terminal (`--shadow` is transparent); only floating
 layers cast (`--shadow-lg`). The brand gradient pair (`--grad-brand`,
