@@ -1628,6 +1628,7 @@ ok('detailed stats normalise with null preserved as null', () => {
 
 const ROUTES = [
   { path: 'index.html', url: '/fantasy-efl/', module: 'page-home.js' },
+  { path: 'checklist/index.html', url: '/fantasy-efl/checklist/', module: 'page-checklist.js' },
   { path: 'fixtures/index.html', url: '/fantasy-efl/fixtures/', module: 'page-fixtures.js' },
   { path: 'players/index.html', url: '/fantasy-efl/players/', module: 'page-players.js' },
   { path: 'availability/index.html', url: '/fantasy-efl/availability/', module: 'page-availability.js' },

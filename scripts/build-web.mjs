@@ -211,5 +211,5 @@ console.log(`✓ SEO → www/sitemap.xml (${seo.urls} urls), www/robots.txt, ${s
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');
 console.log(`✓ Build stamp ${stamp} → www/version.json`);
-console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${efl.files} files, 7 routes, `
+console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${efl.files} files, 8 routes, `
   + `${efl.record.rounds} recorded round(s), ${efl.record.graded} graded)`);

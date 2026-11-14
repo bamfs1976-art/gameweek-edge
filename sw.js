@@ -22,7 +22,7 @@
    removed; its shell is deliberately NOT listed below, and bumping VERSION
    is what evicts it from the caches of everyone who already had it. */
 
-const VERSION = 'ge-v12';
+const VERSION = 'ge-v13';
 const EFL = '/fantasy-efl/';
 /* Fantasy EFL's six routes and the modules behind them. Listed here rather
    than derived, because addAll() rejects the whole install if a single URL
@@ -30,6 +30,7 @@ const EFL = '/fantasy-efl/';
    user's phone. */
 const EFL_SHELL = [
   '/fantasy-efl/',
+  '/fantasy-efl/checklist/',
   '/fantasy-efl/fixtures/',
   '/fantasy-efl/players/',
   '/fantasy-efl/availability/',
@@ -41,8 +42,11 @@ const EFL_SHELL = [
   '/fantasy-efl/assets/model.js',
   '/fantasy-efl/assets/provider.js',
   '/fantasy-efl/assets/availability.js',
+  '/fantasy-efl/assets/deadline.js',
+  '/fantasy-efl/assets/deadline-bar.js',
   '/fantasy-efl/assets/sample-data.js',
   '/fantasy-efl/assets/page-home.js',
+  '/fantasy-efl/assets/page-checklist.js',
   '/fantasy-efl/assets/page-fixtures.js',
   '/fantasy-efl/assets/page-players.js',
   '/fantasy-efl/assets/page-availability.js',

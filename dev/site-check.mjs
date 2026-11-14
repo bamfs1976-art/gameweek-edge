@@ -22,6 +22,7 @@ const ORIGIN = (process.argv[2] || process.env.SITE_ORIGIN || 'https://gameweeke
 const CHECKS = [
   { path: '/', status: 200, why: 'the front door' },
   { path: '/fantasy-efl/', status: 200, why: 'Fantasy EFL dashboard' },
+  { path: '/fantasy-efl/checklist/', status: 200, why: 'deadline checklist' },
   { path: '/fantasy-efl/fixtures/', status: 200, why: 'fixture ticker' },
   { path: '/fantasy-efl/players/', status: 200, why: 'player finder' },
   { path: '/fantasy-efl/availability/', status: 200, why: 'availability hub' },

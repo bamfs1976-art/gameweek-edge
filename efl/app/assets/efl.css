@@ -506,6 +506,25 @@ details.coverage li{margin-bottom:5px}
 }
 .swap-why{margin:5px 0 0;font-size:var(--fs-min);color:var(--text-2)}
 
+/* ── DEADLINE BAR ────────────────────────────────────
+   One line under the tabs. Amber inside the last 24 hours, never red and
+   never animated: it informs, it does not nag. */
+.dl-bar{margin:0;padding:7px 0 8px;font-size:var(--fs-xs);color:var(--text-2);line-height:1.4}
+.dl-bar a{color:inherit;text-decoration:none}
+.dl-bar a:hover b,.dl-bar a:focus-visible b{text-decoration:underline}
+.dl-bar b{color:var(--text);font-weight:600}
+.dl-urgent{color:var(--amber)}
+.dl-urgent b,.dl-urgent .dl-left{color:var(--amber)}
+.dl-est{color:var(--text-3)}
+/* Checklist */
+.ck-items{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ck-item{display:flex;gap:10px;align-items:baseline;font-size:var(--fs-sm)}
+.ck-mark{font-family:var(--font-mono);font-weight:700;min-width:3.2em}
+.ck-ok .ck-mark{color:var(--green)}
+.ck-no .ck-mark{color:var(--amber)}
+.ck-deadline{font-size:var(--fs-lg);font-weight:700;margin:0 0 4px}
+.ck-fix{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--text-2)}
+
 /* ── FILTERS ─────────────────────────────────────────── */
 .filters{
   display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));

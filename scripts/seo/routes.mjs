@@ -31,6 +31,7 @@ export const STATIC_PAGES = [
   { path: '/privacy.html', file: 'privacy.html' },
   { path: '/record/', file: 'record/index.html' },
   { path: '/fantasy-efl/', file: 'efl/app/index.html' },
+  { path: '/fantasy-efl/checklist/', file: 'efl/app/checklist/index.html' },
   { path: '/fantasy-efl/fixtures/', file: 'efl/app/fixtures/index.html' },
   { path: '/fantasy-efl/players/', file: 'efl/app/players/index.html' },
   { path: '/fantasy-efl/availability/', file: 'efl/app/availability/index.html' },
