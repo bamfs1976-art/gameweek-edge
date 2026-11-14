@@ -1,12 +1,12 @@
 {
- "built": "2026-11-13T19:43:45.478Z",
+ "built": "2026-11-14T01:27:12.490Z",
  "round": 14,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-13T19:43:45.478Z",
+  "generatedAt": "2026-11-14T01:27:12.490Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -6048,6 +6048,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury, expected back 23 Nov"
+    },
+    {
+     "name": "C. Vickers",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "M. Dennis",
