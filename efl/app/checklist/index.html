@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fantasy EFL Deadline Checklist &amp; Reminders | GameweekEdge</title>
+<meta name="description" content="The next Fantasy EFL deadline, a pre-deadline check of your saved seven, next-round fixtures, blank and double rounds, and a calendar reminder for deadline eve.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/checklist/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="Fantasy EFL deadline checklist">
+<meta property="og:description" content="Check your Fantasy EFL seven before the deadline and add every deadline to your calendar.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/checklist/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fantasy EFL deadline checklist">
+<meta name="twitter:description" content="Your seven, their fixtures and the next deadline, in one check.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge, home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge, Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/checklist/" aria-current="page">Checklist</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/availability/">Availability</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/club-uses/">Club uses</a>
+      <a class="tab" href="/fantasy-efl/record/">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+    <p class="dl-bar" id="deadline-bar" hidden></p>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1 style="font-size:var(--fs-xl);margin-bottom:7px">Fantasy EFL deadline checklist</h1>
+    <p class="sec-note" style="margin-bottom:14px">One check before the deadline: your saved
+      seven, any availability flags on it, each player's next fixture and any blank or double
+      rounds coming for your clubs. Your seven is the one saved in the team builder on the
+      <a href="/fantasy-efl/#mine" style="color:var(--efl)">dashboard</a>, kept in this
+      browser only.</p>
+  </section>
+
+  <div id="source-banner" style="margin-bottom:14px"></div>
+
+  <section class="card" aria-labelledby="dl-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="dl-title" style="margin-bottom:9px">Deadline</h2>
+    <div id="deadline-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="ck-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="ck-title" style="margin-bottom:9px">Your seven</h2>
+    <div id="check-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="fx-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="fx-title" style="margin-bottom:9px">This round's fixtures</h2>
+    <div id="fixtures-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="bd-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="bd-title" style="margin-bottom:9px">Blank and double rounds ahead</h2>
+    <div id="ahead-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="rm-title">
+    <h2 class="sec-title" id="rm-title" style="margin-bottom:9px">Deadline reminders</h2>
+    <p class="sec-note" style="margin-bottom:10px">Download a calendar file with a reminder for
+      every deadline left this season. It works with Apple, Google and Outlook calendars, needs
+      no account and sends nothing to this site. If a deadline moves, download the file again:
+      the events update rather than doubling up.</p>
+    <div class="filters" style="margin-bottom:10px">
+      <div class="field">
+        <label for="rm-when">Remind me</label>
+        <select id="rm-when">
+          <option value="eve">7pm the evening before</option>
+          <option value="24">24 hours before</option>
+          <option value="3">3 hours before</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button type="button" class="btn btn-primary btn-sm" id="rm-download" disabled>Add deadlines to my calendar (.ics)</button>
+      </div>
+    </div>
+    <p class="sec-note" id="rm-note" role="status" aria-live="polite"></p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/checklist/">Deadline checklist</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/availability/">Availability</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/club-uses/">Club uses</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League or the official Fantasy EFL game. Competition and club names are used
+    descriptively only.</p>
+  <p id="data-note"></p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-checklist.js"></script>
+<script type="module" src="/fantasy-efl/assets/deadline-bar.js"></script>
+</body>
+</html>

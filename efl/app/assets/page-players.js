@@ -13,10 +13,11 @@
 import { loadSnapshot } from './provider.js';
 import { buildContext, playerScore, differentialScore, POSITION_NAMES, ordinal, PLAYER_WEIGHTS } from './model.js';
 import { POSITION_COLUMNS, TARIFF, statPoints } from './tariff.js';
+import { buildFlags, isWarning } from './availability.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
-  methodNote, divisionBadge, homeAwayBadge, availabilityBadge, meter, statCell, fmtDay,
-  suspensionBadge, DIVISION_LABELS
+  methodNote, divisionBadge, homeAwayBadge, meter, statCell, fmtDay,
+  suspensionBadge, flagBadge, flagDetail, DIVISION_LABELS
 } from './ui.js';
 
 initTheme();
@@ -29,6 +30,7 @@ const state = {
 };
 let ctx = null;
 let rows = [];       // every player, scored once
+let flags = new Map();
 
 start();
 
@@ -43,6 +45,7 @@ async function start() {
     if (note) note.textContent = `${snapshot.source.label} · round ${snapshot.currentRound} · `
       + `${snapshot.players.length} players.`;
     ctx = buildContext(snapshot);
+    flags = buildFlags(ctx, { feedCheckedAt: snapshot.source && snapshot.source.generatedAt });
     mount('legend', fdrLegend());
     mount('method', methodNote(
       `A player's modelled pick rating combines starts and minutes (${pc('minutes')}), recent `
@@ -59,6 +62,7 @@ async function start() {
       return {
         rec,
         player: p,
+        flag: flags.get(p.id) || null,
         club: ctx.clubById[p.clubId],
         differential: differentialScore(ctx, p),
         formPoints: p.last5.reduce((s, m) => s + m.points, 0),
@@ -150,10 +154,13 @@ function filtered() {
     if (state.division !== 'all' && p.division !== state.division) return false;
     if (state.position !== 'all' && p.position !== state.position) return false;
     if (state.club !== 'all' && p.clubId !== state.club) return false;
-    const status = p.availability.status;
-    if (state.availability === 'available' && status !== 'available') return false;
-    if (state.availability === 'risk' && status !== 'available' && status !== 'doubtful') return false;
-    if (state.availability === 'out' && (status === 'available' || status === 'doubtful')) return false;
+    /* The availability hub's flag, so this filter and the hub's page can
+       never disagree about who is out. */
+    const flag = isWarning(r.flag) ? r.flag.status : null;
+    if (state.availability === 'clear' && flag) return false;
+    if (state.availability === 'risk' && (flag === 'out' || flag === 'suspended')) return false;
+    if (state.availability === 'flagged' && !flag) return false;
+    if (['out', 'doubt', 'suspended', 'rotation'].includes(state.availability) && flag !== state.availability) return false;
     /* Ban risk is a separate axis from availability on purpose: a player one
        booking away is available THIS round and may not be next. */
     if (state.banRisk === 'safe' && r.rec.suspension.level === 'onEdge') return false;
@@ -312,7 +319,8 @@ function row(r, columns) {
     <td class="num" data-label="Starts">${p.starts}</td>
     ${statCells}
     <td data-label="Next fixture">${nextCell(rec.next, rec.fixtures)}</td>
-    <td data-label="Status">${availabilityBadge(p.availability)}${suspensionBadge(rec.suspension)}
+    <td data-label="Status">${flagBadge(isWarning(r.flag) ? r.flag : null)}${suspensionBadge(rec.suspension)}
+      ${isWarning(r.flag) ? flagDetail(r.flag) : ''}
       ${r.differential.score >= 55 ? `<span class="t-sub" title="${esc(r.differential.note)}">${esc(r.differential.label)} ${r.differential.score.toFixed(0)}</span>` : ''}</td>
     <td class="num" data-label="Modelled rating"><b>${rec.score.toFixed(1)}</b>
       <span class="t-sub">${esc(rec.summary)}</span></td>

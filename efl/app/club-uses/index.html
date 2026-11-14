@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fantasy EFL Club Uses Tracker | GameweekEdge</title>
+<meta name="description" content="Log your Fantasy EFL club picks, see how many of each club's five uses you have left, and which clubs are worth a use in the next three rounds.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/club-uses/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="Fantasy EFL club uses tracker">
+<meta property="og:description" content="Track each club's five uses a season and plan when to spend them.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/club-uses/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fantasy EFL club uses tracker">
+<meta name="twitter:description" content="Five uses per club per season. Know what you have left.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge, home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge, Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/checklist/">Checklist</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/availability/">Availability</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/club-uses/" aria-current="page">Club uses</a>
+      <a class="tab" href="/fantasy-efl/record/">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+    <p class="dl-bar" id="deadline-bar" hidden></p>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1 style="font-size:var(--fs-xl);margin-bottom:7px">Fantasy EFL club uses</h1>
+    <p class="sec-note" style="margin-bottom:14px">Each club can be one of your two weekly club
+      picks five times a season. Log the clubs you pick each round and this page keeps the count,
+      warns before you pick a club with no uses left, and reads the fixture ticker to show which
+      clubs are worth a use in the next three rounds and which are worth saving. Your log stays in
+      this browser only.</p>
+  </section>
+
+  <div id="source-banner" style="margin-bottom:14px"></div>
+
+  <section class="card" aria-labelledby="log-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="log-title" style="margin-bottom:9px">Log a round</h2>
+    <form id="log-form" class="admin-form" hidden>
+      <div class="field">
+        <label for="log-round">Round</label>
+        <select id="log-round"></select>
+      </div>
+      <div class="field">
+        <label for="log-club-1">First club</label>
+        <select id="log-club-1"></select>
+      </div>
+      <div class="field">
+        <label for="log-club-2">Second club</label>
+        <select id="log-club-2"></select>
+      </div>
+      <div class="filter-actions wide">
+        <button type="submit" class="btn btn-primary btn-sm">Save round</button>
+      </div>
+    </form>
+    <p class="result-count" id="log-msg" role="status" aria-live="polite"></p>
+    <div id="log-list"></div>
+  </section>
+
+  <section class="card" aria-labelledby="plan-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="plan-title" style="margin-bottom:9px">Spend or save</h2>
+    <div id="plan-body"></div>
+  </section>
+
+  <section class="card" aria-labelledby="all-title" style="margin-bottom:14px">
+    <div class="sec-head" style="margin-bottom:9px">
+      <h2 class="sec-title" id="all-title">Every club</h2>
+      <div class="field" style="min-width:160px">
+        <label for="all-division" class="sr-only">Division</label>
+        <select id="all-division">
+          <option value="all">All divisions</option>
+          <option value="championship">Championship</option>
+          <option value="league-one">League One</option>
+          <option value="league-two">League Two</option>
+        </select>
+      </div>
+    </div>
+    <div id="all-body"></div>
+  </section>
+
+  <section aria-labelledby="method-title" style="margin-top:24px">
+    <div class="sec-head"><h2 class="sec-title" id="method-title">How the read works</h2></div>
+    <p class="note note-method">A club with uses left should spend them on its best rounds. For
+      each club, the next twelve rounds are ranked by the same modelled fixture rating the
+      <a href="/fantasy-efl/fixtures/" style="color:var(--efl)">fixture ticker</a> uses, with a
+      double round counted as two chances. If one of the next three rounds is among a club's best
+      rounds for the uses it has left, it is marked <b>worth a use now</b>. If its best rounds all
+      come later, it is marked <b>worth saving</b>. Only the twelve top-rated clubs this round are
+      read this way; the rest are listed with their counts. Ratings are modelled from results and
+      fixtures, normalised inside each division.</p>
+    <p class="note note-method" style="margin-top:10px">The official game is the authority on how
+      many times you have picked a club. This log counts only what you enter, so check it against
+      your team history in the game if the two disagree.</p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/checklist/">Deadline checklist</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/availability/">Availability</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/club-uses/">Club uses</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League or the official Fantasy EFL game. Competition and club names are used
+    descriptively only.</p>
+  <p id="data-note"></p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-club-uses.js"></script>
+<script type="module" src="/fantasy-efl/assets/deadline-bar.js"></script>
+</body>
+</html>

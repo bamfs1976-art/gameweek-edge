@@ -1628,9 +1628,12 @@ ok('detailed stats normalise with null preserved as null', () => {
 
 const ROUTES = [
   { path: 'index.html', url: '/fantasy-efl/', module: 'page-home.js' },
+  { path: 'checklist/index.html', url: '/fantasy-efl/checklist/', module: 'page-checklist.js' },
   { path: 'fixtures/index.html', url: '/fantasy-efl/fixtures/', module: 'page-fixtures.js' },
   { path: 'players/index.html', url: '/fantasy-efl/players/', module: 'page-players.js' },
+  { path: 'availability/index.html', url: '/fantasy-efl/availability/', module: 'page-availability.js' },
   { path: 'clubs/index.html', url: '/fantasy-efl/clubs/', module: 'page-clubs.js' },
+  { path: 'club-uses/index.html', url: '/fantasy-efl/club-uses/', module: 'page-club-uses.js' },
   { path: 'record/index.html', url: '/fantasy-efl/record/', module: 'page-record.js' },
   { path: 'how-to-play/index.html', url: '/fantasy-efl/how-to-play/', module: 'page-guide.js' }
 ];

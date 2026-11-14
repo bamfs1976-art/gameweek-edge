@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Availability admin | GameweekEdge</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="Edit the Fantasy EFL team news file.">
+<meta name="theme-color" content="#0A0C0F">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge, home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge, Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/checklist/">Checklist</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/availability/">Availability</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/club-uses/">Club uses</a>
+      <a class="tab" href="/fantasy-efl/record/">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+    <p class="dl-bar" id="deadline-bar" hidden></p>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1 style="font-size:var(--fs-xl);margin-bottom:7px">Availability admin</h1>
+    <p class="sec-note" style="margin-bottom:14px">Add or change team news for the
+      <a href="/fantasy-efl/availability/" style="color:var(--efl)">availability page</a>.
+      Everything here stays in this browser until you download the file and commit it to
+      <code>efl/app/data/availability.json</code>. The site reads the new file on its next
+      deploy. This page cannot change what anyone else sees on its own.</p>
+  </section>
+
+  <div id="draft-note"></div>
+  <p class="result-count" id="a-export-note" role="status" aria-live="polite"></p>
+
+  <section class="card" aria-labelledby="add-title" style="margin-bottom:14px">
+    <h2 class="sec-title" id="add-title" style="margin-bottom:9px">Add or edit a flag</h2>
+    <div class="field">
+      <label for="a-search">Find a player</label>
+      <input type="search" id="a-search" placeholder="Player or club name" autocomplete="off" disabled>
+    </div>
+    <ul class="admin-results" id="a-results" aria-live="polite"></ul>
+    <form id="a-form" class="admin-form" hidden style="margin-top:12px">
+      <p class="wide" id="a-player" style="margin:0"></p>
+      <div class="field">
+        <label for="a-status">Status</label>
+        <select id="a-status">
+          <option value="out">Out</option>
+          <option value="doubt">Doubt</option>
+          <option value="suspended">Suspended</option>
+          <option value="rotation">Rotation risk</option>
+          <option value="fit">Cleared to play</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="a-expires">Expires after round</label>
+        <input type="number" id="a-expires" min="1" max="99" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label for="a-return">Expected back for round (optional)</label>
+        <input type="number" id="a-return" min="1" max="99" inputmode="numeric">
+      </div>
+      <div class="field wide">
+        <label for="a-note">Note, one line (<span id="a-count">0</span> of 90)</label>
+        <input type="text" id="a-note" maxlength="90" autocomplete="off">
+      </div>
+      <div class="field wide">
+        <label for="a-source">Source (optional)</label>
+        <input type="text" id="a-source" maxlength="140" placeholder="Press conference, 13 Nov" autocomplete="off">
+      </div>
+      <div class="filter-actions wide">
+        <button type="submit" class="btn btn-primary btn-sm">Save flag</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="a-cancel">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="list-title" style="margin-bottom:14px">
+    <div class="sec-head" style="margin-bottom:9px">
+      <h2 class="sec-title" id="list-title">Entries in the file</h2>
+      <button type="button" class="btn btn-ghost btn-sm" id="a-prune">Remove expired</button>
+    </div>
+    <div id="a-list"></div>
+  </section>
+
+  <section class="card" aria-labelledby="export-title">
+    <h2 class="sec-title" id="export-title" style="margin-bottom:9px">Export</h2>
+    <div class="mine-actions">
+      <button type="button" class="btn btn-primary btn-sm" id="a-download">Download availability.json</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="a-copy">Copy JSON</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="a-discard">Discard draft</button>
+    </div>
+    <div class="field">
+      <label for="a-json">File contents</label>
+      <textarea id="a-json" readonly spellcheck="false"></textarea>
+    </div>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/checklist/">Deadline checklist</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/availability/">Availability</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/club-uses/">Club uses</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League or the official Fantasy EFL game. Competition and club names are used
+    descriptively only.</p>
+  <p id="data-note"></p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-admin.js"></script>
+<script type="module" src="/fantasy-efl/assets/deadline-bar.js"></script>
+</body>
+</html>

@@ -21,6 +21,7 @@
 import { RATING_LABELS, AVAILABILITY_LABELS, POSITION_NAMES, divisionName } from './model.js';
 import { TARIFF, statPoints } from './tariff.js';
 import { riskBadgeText, ladderRows, SUSPENSION_LADDER } from './suspension.js';
+import { FLAG_LABELS, ORIGIN_LABELS, ago } from './availability.js';
 
 export const DIVISION_LABELS = {
   championship: 'Championship',
@@ -231,6 +232,32 @@ export function availabilityBadge(availability) {
   const word = AVAILABILITY_LABELS[a.status] || a.status;
   const detail = a.note ? `${word} — ${a.note}` : word;
   return `<span class="badge badge-avail av-${esc(a.status)}" title="${esc(detail)}">${esc(word)}</span>`;
+}
+
+/* ── Availability hub flags ─────────────────────────────
+   The word first, the colour second, the same rule as every other badge
+   here. A phone has no hover, so the note and the "checked" time are
+   printed by flagDetail() beside the badge rather than hidden in a title. */
+
+/** The badge alone. No flag means available, said the same way as before. */
+export function flagBadge(flag) {
+  if (!flag) return '<span class="badge badge-avail av-available">Available</span>';
+  const word = FLAG_LABELS[flag.status] || flag.status;
+  const modelled = flag.origin === 'computed' ? ' (modelled)' : '';
+  const title = [word + modelled, flag.note].filter(Boolean).join(': ');
+  return `<span class="badge badge-avail flag-${esc(flag.status)}" title="${esc(title)}">${esc(word)}</span>`;
+}
+
+/** One or two short lines under a badge: the note, then where it came from and when. */
+export function flagDetail(flag, now) {
+  if (!flag) return '';
+  const bits = [];
+  if (flag.note) bits.push(`<span class="flag-note">${esc(flag.note)}</span>`);
+  const when = `${ORIGIN_LABELS[flag.origin] || flag.origin}, checked ${ago(flag.checkedAt, now)}`
+    + (flag.returnRound ? ` · back for round ${flag.returnRound}` : '');
+  bits.push(`<span class="flag-when">${esc(when)}</span>`);
+  if (flag.stale) bits.push('<span class="flag-stale">May be out of date</span>');
+  return `<span class="flag-detail">${bits.join('')}</span>`;
 }
 
 /* ── Feed health ─────────────────────────────────────────

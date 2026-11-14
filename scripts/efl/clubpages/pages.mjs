@@ -21,9 +21,12 @@ const DISCLAIMER = 'Gameweek Edge is an independent app and is not affiliated wi
 
 const NAV = [
   { path: '/fantasy-efl/', label: 'Dashboard' },
+  { path: '/fantasy-efl/checklist/', label: 'Checklist' },
   { path: '/fantasy-efl/fixtures/', label: 'Fixtures' },
   { path: '/fantasy-efl/players/', label: 'Players' },
+  { path: '/fantasy-efl/availability/', label: 'Availability' },
   { path: '/fantasy-efl/clubs/', label: 'Clubs' },
+  { path: '/fantasy-efl/club-uses/', label: 'Club uses' },
   { path: '/fantasy-efl/how-to-play/', label: 'How to play' },
 ];
 

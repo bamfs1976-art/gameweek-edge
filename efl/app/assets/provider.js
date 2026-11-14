@@ -30,6 +30,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import { buildSampleSnapshot } from './sample-data.js';
+import { applyManualAvailability } from './availability.js';
 
 /** @typedef {import('./types.js')} */
 
@@ -73,7 +74,13 @@ export const DEFAULT_CONFIG = {
      enforces the cache TTLs that keep us a polite client. */
   base: '/api/efl',
   endpoint: '/api/efl/snapshot',
-  cacheMs: 5 * 60 * 1000
+  cacheMs: 5 * 60 * 1000,
+  /* The availability hub's manual layer: team news kept by hand from the
+     admin page and committed. An automated feed that returns the same
+     document shape (see normaliseManualDoc in availability.js) replaces it
+     by changing this one path, for example to '/api/efl/availability'.
+     Same-origin either way, so the CSP needs nothing new. */
+  availabilityUrl: '/fantasy-efl/data/availability.json'
 };
 
 /**
@@ -338,6 +345,38 @@ export function normaliseFixture(raw) {
  * @param {Object} [sourceOverride]
  * @returns {import('./types.js').EflSnapshot}
  */
+/**
+ * One round's deadline. The official feed publishes a lockout time per
+ * round; a source that does not is given the round's first kick-off and
+ * told so in `lockoutSource`, so no page can present a guess as the
+ * game's own deadline.
+ */
+export function normaliseRound(raw) {
+  const src = raw || {};
+  const t = Date.parse(src.lockoutAt);
+  return {
+    round: num(src.round),
+    lockoutAt: Number.isFinite(t) ? new Date(t).toISOString() : null,
+    lockoutSource: src.lockoutSource === 'official' ? 'official' : 'first-kickoff',
+    completed: Boolean(src.completed)
+  };
+}
+
+/** Rounds from fixtures alone: each round's first kick-off. */
+export function roundsFromFixtures(fixtures) {
+  const first = new Map();
+  const open = new Map();
+  for (const f of fixtures || []) {
+    const t = Date.parse(f.kickoff);
+    if (!Number.isFinite(t)) continue;
+    if (!first.has(f.round) || t < first.get(f.round)) first.set(f.round, t);
+    open.set(f.round, (open.get(f.round) || false) || !f.finished);
+  }
+  return [...first.entries()].sort((a, b) => a[0] - b[0]).map(([round, t]) => normaliseRound({
+    round, lockoutAt: new Date(t).toISOString(), lockoutSource: 'first-kickoff', completed: !open.get(round)
+  }));
+}
+
 export function normaliseSnapshot(payload, sourceOverride) {
   const src = payload || {};
   const clubs = (Array.isArray(src.clubs) ? src.clubs : []).map(normaliseClub).filter((c) => c.id);
@@ -364,7 +403,10 @@ export function normaliseSnapshot(payload, sourceOverride) {
        a row of dashes in a ranked table reads as a bug in the model. */
     players: players.filter((p) => knownClubs.has(p.clubId)),
     fixtures: fixtures.filter((f) => knownClubs.has(f.homeId) && knownClubs.has(f.awayId)),
-    currentRound: num(src.currentRound, 1)
+    currentRound: num(src.currentRound, 1),
+    rounds: Array.isArray(src.rounds) && src.rounds.length
+      ? src.rounds.map(normaliseRound).filter((r) => r.round > 0).sort((a, b) => a.round - b.round)
+      : roundsFromFixtures(fixtures)
   };
 }
 
@@ -662,6 +704,7 @@ export function mapOfficialPlayers(players, clubsById) {
 /** Official rounds → our Fixtures, plus the round being picked for. */
 export function mapOfficialRounds(rounds, clubsById, now) {
   const fixtures = [];
+  const roundList = [];
   let currentRound = 1;
   let earliestOpen = Infinity;
   const at = now == null ? Date.now() : now;
@@ -670,6 +713,12 @@ export function mapOfficialRounds(rounds, clubsById, now) {
     const roundNumber = num(round.roundNumber);
     const lockout = Date.parse(round.lockoutDate);
     const finished = round.status === 'completed';
+    roundList.push(normaliseRound({
+      round: roundNumber,
+      lockoutAt: Number.isFinite(lockout) ? new Date(lockout).toISOString() : null,
+      lockoutSource: Number.isFinite(lockout) ? 'official' : 'first-kickoff',
+      completed: finished
+    }));
     if (!finished && Number.isFinite(lockout) && lockout > at && lockout < earliestOpen) {
       earliestOpen = lockout;
       currentRound = roundNumber;
@@ -693,7 +742,7 @@ export function mapOfficialRounds(rounds, clubsById, now) {
   if (earliestOpen === Infinity) {
     currentRound = fixtures.reduce((m, f) => Math.max(m, f.round), 0) + 1;
   }
-  return { fixtures, currentRound };
+  return { fixtures, currentRound, rounds: roundList };
 }
 
 /**
@@ -711,10 +760,10 @@ export function buildOfficialSnapshot({ squads, players, rounds }, opts = {}) {
   const clubs = mapOfficialSquads(squads, competitions);
   const clubsById = Object.fromEntries(clubs.map((c) => [c.id, c]));
   const mappedPlayers = mapOfficialPlayers(players, clubsById);
-  const { fixtures, currentRound } = mapOfficialRounds(rounds, clubsById, opts.now);
+  const { fixtures, currentRound, rounds: roundList } = mapOfficialRounds(rounds, clubsById, opts.now);
 
   return normaliseSnapshot({
-    clubs, players: mappedPlayers, fixtures, currentRound
+    clubs, players: mappedPlayers, fixtures, currentRound, rounds: roundList
   }, {
     id: 'efl-official',
     live: true,
@@ -845,11 +894,68 @@ export function loadSnapshot(opts = {}) {
   if (inflight && !opts.force) return inflight;
   const cfg = readConfig(opts.window);
   const provider = createProvider(cfg, opts);
-  inflight = provider.load().catch((err) => {
-    inflight = null;   // a failure must not be cached as the answer
-    throw err;
-  });
+  inflight = provider.load()
+    .then((snapshot) => withManualAvailability(snapshot, cfg, opts))
+    .catch((err) => {
+      inflight = null;   // a failure must not be cached as the answer
+      throw err;
+    });
   return inflight;
 }
 
 export function resetSnapshotCache() { inflight = null; }
+
+/**
+ * Just the rounds and their deadlines, for the countdown bar on every page.
+ *
+ * The bar sits on pages that never need players (the guide, the record),
+ * so it must not pull the whole snapshot to tell the time. The official
+ * provider reads rounds.json alone, which the proxy caches for an hour. A
+ * page that has already asked for the snapshot gets it for free instead.
+ */
+let roundsInflight = null;
+export function loadRounds(opts = {}) {
+  if (inflight && !opts.force) return inflight.then((s) => ({ rounds: s.rounds, source: s.source }));
+  if (roundsInflight && !opts.force) return roundsInflight;
+  const cfg = readConfig(opts.window);
+  const doFetch = opts.fetch || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
+  roundsInflight = (async () => {
+    if (cfg.provider === 'official' && doFetch) {
+      const res = await doFetch(`${cfg.base}/rounds`, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`The official Fantasy EFL feed returned ${res.status} for rounds`);
+      const { rounds } = mapOfficialRounds(await res.json(), {}, cfg.now);
+      return { rounds, source: { id: 'efl-official', live: true } };
+    }
+    const snap = await loadSnapshot(opts);
+    return { rounds: snap.rounds, source: snap.source };
+  })().catch((err) => { roundsInflight = null; throw err; });
+  return roundsInflight;
+}
+
+/**
+ * Lay the manual availability document over a loaded snapshot.
+ *
+ * Unlike the snapshot itself, this layer is allowed to fail quietly: it
+ * only ever ADDS team news to real feed data, so a missing file leaves the
+ * page exactly as accurate as it was before the hub existed. What it may
+ * not do is fail invisibly, so `snapshot.availability` says what happened
+ * and the availability page prints it.
+ */
+export async function withManualAvailability(snapshot, cfg, opts = {}) {
+  const doFetch = opts.fetch || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
+  const url = cfg && cfg.availabilityUrl;
+  if (!doFetch || !url || opts.availability === false) {
+    return { ...snapshot, availability: { loaded: false, error: 'No availability file configured' } };
+  }
+  try {
+    /* no-cache: revalidate every load, so a commit reaches readers on
+       their next visit rather than whenever an HTTP cache lets go. */
+    const res = await doFetch(url, { headers: { Accept: 'application/json' }, cache: 'no-cache' });
+    if (!res.ok) throw new Error(`availability file answered ${res.status}`);
+    const doc = await res.json();
+    const { snapshot: merged, meta } = applyManualAvailability(snapshot, doc, { now: cfg.now });
+    return { ...merged, availability: meta };
+  } catch (err) {
+    return { ...snapshot, availability: { loaded: false, error: String(err && err.message || err) } };
+  }
+}
