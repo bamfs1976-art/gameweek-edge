@@ -87,7 +87,7 @@ with them; the plan is keyed to *events*, not clock times.
 |---|---|---|
 | ~07:00 | Overnight prices | Check what moved; the first changes of the season are a story |
 | ~18:00 | — | **P25 — first price changes** |
-| ~19:30 | — | **P26 — GW2 pivot + The Edge** |
+| ~19:30 | — | **P26 — GW2 pivot + Pro** |
 | Wed 26 | — | Weekly pack resumes; captaincy post runs 48h before the GW2 deadline |
 
 ---
@@ -456,7 +456,7 @@ probability score against the backtest baseline."
 
 ---
 
-### P26 — GW2 pivot + The Edge *(Tue ~19:30)*
+### P26 — GW2 pivot + Pro *(Tue ~19:30)*
 
 The weekend's one paid post, placed where intent peaks: everyone who had a bad
 GW1 is looking for an edge on Tuesday night. **Attach `gwe-standard-vs-edge.png`.**
@@ -466,19 +466,19 @@ GW1 is looking for an edge on Tuesday night. **Attach `gwe-standard-vs-edge.png`
 **X:**
 > One gameweek in, and your mini-league table already means something.
 >
-> **Standard** (free) — your live rank, the gap, the debrief, the model's GW2 picks.
+> **Free** — your live rank, the gap, the debrief, the model's GW2 picks.
 >
-> **The Edge** (£3.99) — Rival Scout: who owns what, where your differentials actually are, and the exact captain swing that overtakes the person above you. Plus EO Tracker, the simulators and the AI Scout.
+> **Pro** (£3.99) — Rival Scout: who owns what, where your differentials actually are, and the exact captain swing that overtakes the person above you. Plus EO Tracker, the simulators and the AI Scout.
 >
-> Standard tells you what to do this week. The Edge tells you how to win your league.
+> Free tells you what to do this week. Pro tells you how to win your league.
 >
 > gameweekedge.co.uk
 
 **Bluesky:**
 > One gameweek in and your mini-league table already means something.
 >
-> Standard (free) — live rank, the gap, the debrief.
-> The Edge (£3.99) — Rival Scout: who owns what, and the exact captain swing that overtakes them.
+> Free — live rank, the gap, the debrief.
+> Pro (£3.99) — Rival Scout: who owns what, and the exact captain swing that overtakes them.
 >
 > One app, one tap deeper. #FPL
 > gameweekedge.co.uk
@@ -577,7 +577,7 @@ are all switched on for the first time:
    usually around GW4.
 4. **Captaincy** — 48h before every deadline, without exception.
 
-Plus the per-decision *Standard vs The Edge* series — captaincy, mini-leagues,
+Plus the per-decision *Free vs Pro* series — captaincy, mini-leagues,
 transfers, the template, the run-in — one a week, each tied to a real gameweek
 moment rather than posted cold.
 

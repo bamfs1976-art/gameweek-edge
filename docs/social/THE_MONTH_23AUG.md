@@ -137,7 +137,7 @@ show up in your captain's legs on the Saturday.
 
 ## The one paid post
 
-**Standard vs The Edge** — `assets/social/gwe-standard-vs-edge.png`, already in
+**Free vs Pro** — `assets/social/gwe-standard-vs-edge.png`, already in
 the repo, nothing to render. Once in the month, no more, and always after a run
 of free value rather than in front of it. **Thu 3 Sep** is the natural slot:
 three gameweeks of free cards behind you and a break about to give people time

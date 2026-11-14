@@ -24,7 +24,7 @@ the moment the deadline passes on the 21st.
 |---|---|---|---|
 | 1 | ~~Render the DefCon explainer card.~~ **Done** — `assets/social/gwe-defcon-explainer.png`, built by `npm run social` from `scripts/social/defcon-explainer.html`. | Post 1 (Wed 5 Aug) needed it. | ☑ |
 | 2 | **Batch-render the Social Studio cards** listed in §2 and drop them in `assets/social/`. Must be done **in the app, signed in as owner** — the Studio draws from the live FPL API, so these cannot be generated from the repo. | Seven of the fourteen posts attach one. | ☐ |
-| 3 | **Bio + pin, both platforms.** Unofficial-status line in the bio (not on every post); pin the Standard vs The Edge post once it's up on the 14th. | Keeps individual posts clean and legally covered. | ☐ |
+| 3 | **Bio + pin, both platforms.** Unofficial-status line in the bio (not on every post); pin the Free vs Pro post once it's up on the 14th. | Keeps individual posts clean and legally covered. | ☐ |
 
 ---
 
@@ -48,7 +48,7 @@ is now *teach → prove → sharpen → convert*:
 |---|---|---|---|
 | **Job** | Give away real analysis; show the model grades itself | Turn analysis into a concrete GW1 squad | Highest-intent moment of the year |
 | **Posts** | 7 | 5 | 2 |
-| **The Edge push** | One (Fri 14, after a week of free value) | — | One, in the deadline post |
+| **Pro push** | One (Fri 14, after a week of free value) | — | One, in the deadline post |
 
 **Four ideas are new**, drawn from panels the earlier packs never used: the
 **Chip plan** (GW1–19), the **Pre-season Draft**, the **Set Piece Register**
@@ -93,7 +93,7 @@ design — Posts 4, 8b and 13.
 | Scheduling | Typefully | Buffer (Typefully is X-only) — **never auto-mirror the X copy** |
 
 **Brand quick-ref** — calm, British English, *"predicted points"* not *"nailed
-on"*. Paid tier is **The Edge**, £3.99/mo or £24.99 season. Free tier includes
+on"*. Paid tier is **Pro**, £3.99/mo or £24.99 season. Free tier includes
 live rank, Bonus Tracker, Match Centre and GW Debrief. Link:
 **gameweekedge.co.uk**. Disclaimer lives in the bio; it goes in a post only
 where noted.
@@ -279,25 +279,25 @@ the opening six gameweeks."
 
 ---
 
-## POST 7 — Standard vs The Edge *(Fri 14 Aug, 6–8pm)* — **pin this**
+## POST 7 — Free vs Pro *(Fri 14 Aug, 6–8pm)* — **pin this**
 
 Placed after nine days of free value, so it reads as a payoff rather than a
 pitch. **Attach `gwe-standard-vs-edge.png`.** Pin it on both platforms — it's the
 answer to "what's the paid bit?" for the rest of the run-in.
 
-**Alt text:** "Comparison table — Standard versus The Edge. Both include
+**Alt text:** "Comparison table — Free versus Pro. Both include
 predicted points, Match Centre and live rank, GW Debrief, the price and
-suspension model, and differentials. The Edge adds AI Scout, Rival Scout, EO
+suspension model, and differentials. Pro adds AI Scout, Rival Scout, EO
 Tracker and Template Meter, the season and what-if simulators, and DEFCON tools."
 
 **X:**
 > Gameweek Edge, two ways:
 >
-> **Standard** (free, ad-free) — predicted points, Match Centre, live rank, price & suspension model, and a debrief that tells you what your captain actually cost you.
+> **Free** (ad-free) — predicted points, Match Centre, live rank, price & suspension model, and a debrief that tells you what your captain actually cost you.
 >
-> **The Edge** (£3.99/mo · £24.99 season) — how to win your mini-league: AI Scout, Rival Scout, EO Tracker, the simulators.
+> **Pro** (£3.99/mo · £24.99 season) — how to win your mini-league: AI Scout, Rival Scout, EO Tracker, the simulators.
 >
-> Standard tells you what to do this week. The Edge tells you how to win your league.
+> Free tells you what to do this week. Pro tells you how to win your league.
 >
 > gameweekedge.co.uk
 > *Not affiliated with the Premier League or the official Fantasy Premier League game.*
@@ -305,8 +305,8 @@ Tracker and Template Meter, the season and what-if simulators, and DEFCON tools.
 **Bluesky:**
 > Gameweek Edge, two ways:
 >
-> Standard (free, ad-free) — what to do this week.
-> The Edge (£3.99) — how to win your league: AI Scout, Rival Scout, EO Tracker, the simulators.
+> Free (ad-free) — what to do this week.
+> Pro (£3.99) — how to win your league: AI Scout, Rival Scout, EO Tracker, the simulators.
 >
 > One app, one tap deeper. #FPL
 > gameweekedge.co.uk
@@ -479,9 +479,9 @@ each price point for gameweek 1."
 
 # PART THREE — Fri 21 Aug · *deadline day*
 
-## POST 13 — Deadline nudge + The Edge *(Fri 21 Aug, ~1pm)*
+## POST 13 — Deadline nudge + Pro *(Fri 21 Aug, ~1pm)*
 
-Highest-intent moment of the entire run-in. Free value in the body, The Edge as
+Highest-intent moment of the entire run-in. Free value in the body, Pro as
 the payoff. **Post this one live** so you can pin the real deadline time rather
 than a scheduled guess. No image — urgency reads better as plain text.
 
@@ -493,7 +493,7 @@ than a scheduled guess. No image — urgency reads better as plain text.
 > ✅ Chips planned, not just picked
 > ✅ Your rivals' likely captains — and where your differential actually is
 >
-> The first three are free, for everyone. The fourth is The Edge.
+> The first three are free, for everyone. The fourth is Pro.
 >
 > Good luck tonight 👇 gameweekedge.co.uk
 
@@ -521,14 +521,14 @@ that evening.
 | **9 Aug** | Sun | 4 | Conversation post | poll | single | ~7pm |
 | **11 Aug** | Tue | 5 | Model grades itself ⚓ | single + shot | single | 6–8pm |
 | **13 Aug** | Thu | 6 | Opening fixtures | single + card | single + card | 6–8pm |
-| **14 Aug** | Fri | 7 | Standard vs The Edge 📌 | single + card | single + card | 6–8pm |
+| **14 Aug** | Fri | 7 | Free vs Pro 📌 | single + card | single + card | 6–8pm |
 | **15 Aug** | Sat | 8 | Who takes what | single + card | single + card | late morning |
 | **16 Aug** | Sun | 8b | Reply-bait follow-up | single | single | ~7pm |
 | **17 Aug** | Mon | 9 | The Data XI ⭐ | single + card | thread ×2 + card | 6–8pm |
 | **18 Aug** | Tue | 10 | Price watch | single + shot | single + shot | 6–8pm |
 | **19 Aug** | Wed | 11 | Captaincy (switches on) | single + card | single + card | 6–8pm |
 | **20 Aug** | Thu | 12 | DefCon by budget | single + card | single + card | 6–8pm |
-| **21 Aug** | Fri | 13 | Deadline + The Edge | single, **live** | single, **live** | ~1pm |
+| **21 Aug** | Fri | 13 | Deadline + Pro | single, **live** | single, **live** | ~1pm |
 
 ⭐ shareable anchor · ⚓ credibility anchor · 📌 pin it
 
