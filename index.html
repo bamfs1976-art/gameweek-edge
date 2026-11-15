@@ -5123,6 +5123,35 @@ function enhanceA11y(root){
   Array.prototype.forEach.call(root.querySelectorAll('div.card-title:not([role])'),el=>{
     el.setAttribute('role','heading');el.setAttribute('aria-level','2');
   });
+  enhanceTableScroll(root);
+}
+/* A scrolling table wrapper is a region a keyboard user must be able to
+   reach and scroll (modern-web-guidance: responsive-table): tabindex=0,
+   role=region and a name. Big data tables (.pl-scroll) always get it.
+   Fixture strips (.fdr) only when they actually overflow, so a list of
+   twenty strips does not add twenty tab stops. Header cells without a
+   scope get scope="col". All reads happen before any write. */
+function enhanceTableScroll(root){
+  const wraps=Array.prototype.filter.call(
+    root.querySelectorAll('.pl-scroll:not([data-tsc]),.fdr:not([data-tsc])'),
+    w=>w.querySelector('table'));
+  if(!wraps.length)return;
+  const plan=wraps.map(w=>{
+    const t=w.querySelector('table');
+    const focus=w.classList.contains('pl-scroll')||w.scrollWidth>w.clientWidth+1;
+    const cap=t.getAttribute('aria-label')||(t.caption&&t.caption.textContent)||
+      (()=>{const c=w.closest('.card');const h=c&&c.querySelector('.card-title');return h&&h.textContent;})()||'Data table';
+    return {w,t,focus,label:cap.replace(/\s+/g,' ').trim()};
+  });
+  plan.forEach(({w,t,focus,label})=>{
+    w.dataset.tsc='1';
+    if(focus&&!w.hasAttribute('tabindex')){
+      w.tabIndex=0;
+      if(!w.getAttribute('role'))w.setAttribute('role','region');
+      if(!w.hasAttribute('aria-label')&&!w.hasAttribute('aria-labelledby'))w.setAttribute('aria-label',label+' (scrollable)');
+    }
+    Array.prototype.forEach.call(t.querySelectorAll('thead th:not([scope])'),th=>th.setAttribute('scope','col'));
+  });
 }
 function initA11y(){
   document.addEventListener('keydown',e=>{

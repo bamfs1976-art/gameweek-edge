@@ -31,7 +31,7 @@ Fix: split heavy start-up work into chunks and yield every 50 ms. Use `scheduler
 
 ### 2. Script loading order (guide: optimize-script-priority)
 12 external scripts load with no `defer` or `async`, so each one blocks parsing.
-Fix: add `defer` to scripts not needed for first paint. Add `fetchpriority="low"` to late, non-critical ones such as share and save helpers. Use `fetchpriority="high"` on no more than one or two.
+Update 15 Nov: closed, no change made. On closer reading the 12 scripts already sit at the end of the markup, directly before the main inline script, and that script calls them as it runs. An inline script cannot be deferred, so adding `defer` would make the app run before its helpers load and break it. The markup is already parsed by then, so the gain was small anyway. The real cost is item 1.
 
 ### 3. Modals built from divs (guides: light-dismiss-a-dialog, prevent-page-scroll-under-modal-dialog)
 Ten modals and drawers use `<div role="dialog" aria-modal>`. Focus trapping, Esc handling and background inertness are hand-written.
@@ -52,18 +52,18 @@ Fix: add a `speculationrules` script with `prefetch` at `moderate` eagerness on 
 ### 7. Tables on small screens (guide: responsive-table)
 29 tables, 1 caption, 7 `scope` attributes. 12 `overflow-x: auto` wrappers exist.
 Fix: add `<caption>` (can be visually hidden) and `scope="col"` to header cells. Make each scroll wrapper focusable with `tabindex="0"` and a label so keyboard users can scroll it.
+Update 15 Nov: done. `enhanceTableScroll()` runs from the existing a11y enhancer as panels paint. Every `.pl-scroll` wrapper, and every `.fdr` strip that actually overflows, gets `tabindex="0"`, `role="region"` and a name taken from the table label, caption or card title. Header cells without a scope get `scope="col"`. Visible captions were left for later, since they change the look of each panel.
 
 ### 8. Theme and polish
-- The app's `theme-color` is a single dark value. The landing page already uses light and dark versions. Match it in the app.
-- The privacy page has no `<main>` landmark and uses a different `theme-color` (#15824a) from the rest of the site.
-- Images built in JavaScript have no width and height. CLS is zero today, but set them to keep it that way.
+- Correction: the app's `theme-color` is already switched by script to match the light or dark theme. No change needed.
+- Done 15 Nov: the privacy page now has a `<main>` landmark and uses the site's light `theme-color` (#f4f6f8).
+- Images built in JavaScript have no width and height. CLS is zero today, so this stays low priority.
 
 ## Suggested order
 
-1. Script `defer` and priority (small change, quick win).
-2. Long-task chunking with `scheduler.yield()` and fallback.
-3. Native `<dialog>` migration, one modal at a time.
-4. `innerHTML` audit on external data.
-5. Buttons and tap targets.
-6. Speculation rules and view transitions.
-7. Table semantics and theme polish.
+1. Long-task chunking with `scheduler.yield()` and fallback.
+2. Native `<dialog>` migration, one modal at a time.
+3. `innerHTML` audit on external data.
+4. Buttons and tap targets.
+5. Speculation rules and view transitions.
+6. Visible table captions.
