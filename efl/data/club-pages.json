@@ -1,12 +1,12 @@
 {
- "built": "2026-11-14T22:25:59.492Z",
+ "built": "2026-11-15T06:35:20.549Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-14T22:25:59.492Z",
+  "generatedAt": "2026-11-15T06:35:20.549Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2378,7 +2378,7 @@
     {
      "name": "O. Hernández",
      "position": "FWD",
-     "rating": 73.2,
+     "rating": 73.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 13 of 13 (100%), away from home."
@@ -5076,20 +5076,20 @@
      "summary": "Started 13 of 15 (87%), 4 goals and 4 assists."
     },
     {
+     "name": "D. Matthews",
+     "position": "DEF",
+     "rating": 68.6,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
+    },
+    {
      "name": "S. Mols",
      "position": "MID",
      "rating": 68.5,
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 12 of 15 (80%), 2 goals and 4 assists."
-    },
-    {
-     "name": "D. Matthews",
-     "position": "DEF",
-     "rating": 68.2,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
     },
     {
      "name": "J. Anderson",
@@ -7304,7 +7304,7 @@
     {
      "name": "M. Kitching",
      "position": "DEF",
-     "rating": 68.4,
+     "rating": 68.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
@@ -7558,7 +7558,7 @@
     {
      "name": "N. Freeman",
      "position": "MID",
-     "rating": 73.4,
+     "rating": 73.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), 0 goals and 4 assists."
@@ -8220,7 +8220,7 @@
     {
      "name": "J. Thomson",
      "position": "MID",
-     "rating": 64.1,
+     "rating": 64.2,
      "status": "available",
      "minutesShare": 87,
      "summary": "Started 13 of 15 (87%), 1 goal and 2 assists."
@@ -8286,12 +8286,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury, expected back 10 Dec"
-    },
-    {
-     "name": "P. Glatzel",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury, expected back 15 Nov"
     },
     {
      "name": "G. Kilkenny",
@@ -11112,12 +11106,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "J. Aitchison",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 15 Nov"
     }
    ],
    "cardRisk": []
