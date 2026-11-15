@@ -19570,5 +19570,157 @@
       "3448": 89
     }
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-11-15T16:22:24.908Z",
+    "attribution": "clean",
+    "window": {
+      "lastKickoff": "2026-11-14T17:30:00.000Z",
+      "nextRoundKickoff": "2026-11-20T20:00:00.000Z"
+    },
+    "fixtures": {
+      "played": 15,
+      "total": 22
+    },
+    "pointsField": "totalPoints",
+    "clubBasis": "official-points",
+    "crowdClubs": {
+      "ids": [
+        "3448",
+        "25"
+      ],
+      "value": 3
+    },
+    "squad": {
+      "players": [
+        {
+          "id": "222340",
+          "name": "V. Johansson",
+          "club": "Stoke City",
+          "position": "GK",
+          "points": null
+        },
+        {
+          "id": "178186",
+          "name": "J. Bowen",
+          "club": "West Ham United",
+          "position": "FWD",
+          "points": null
+        },
+        {
+          "id": "197394",
+          "name": "A. Collins",
+          "club": "MK Dons",
+          "position": "FWD",
+          "points": 0
+        },
+        {
+          "id": "241289",
+          "name": "B. Wilmot",
+          "club": "Stoke City",
+          "position": "DEF",
+          "points": null
+        },
+        {
+          "id": "470255",
+          "name": "C. Taylor",
+          "club": "Millwall",
+          "position": "DEF",
+          "points": null
+        },
+        {
+          "id": "79934",
+          "name": "O. Norwood",
+          "club": "Stockport County",
+          "position": "MID",
+          "points": 4
+        },
+        {
+          "id": "244932",
+          "name": "B. Knight",
+          "club": "Cambridge United",
+          "position": "MID",
+          "points": null
+        }
+      ],
+      "total": 4,
+      "unresolved": 5,
+      "formation": "1-2-2-2"
+    },
+    "captain": null,
+    "clubs": {
+      "basis": "official-points",
+      "total": 12,
+      "perClub": [
+        {
+          "id": "3448",
+          "value": 3,
+          "outcome": {
+            "played": 1,
+            "wins": 0,
+            "draws": 1,
+            "losses": 0,
+            "goalsFor": 1,
+            "goalsAgainst": 1,
+            "cleanSheets": 0,
+            "leaguePoints": 1
+          }
+        },
+        {
+          "id": "22",
+          "value": 9,
+          "outcome": {
+            "played": 1,
+            "wins": 1,
+            "draws": 0,
+            "losses": 0,
+            "goalsFor": 6,
+            "goalsAgainst": 2,
+            "cleanSheets": 0,
+            "leaguePoints": 3
+          }
+        }
+      ],
+      "fieldMean": 4.3,
+      "fieldMeanTwo": 8.6,
+      "bestTwo": 22,
+      "percentile": 0.6583333333333333
+    },
+    "baselines": {
+      "randomMean": 4.988,
+      "randomMedian": 3,
+      "randomSamples": 2000,
+      "percentile": 0.564,
+      "naive": 13,
+      "ceiling": 103,
+      "ceilingFormation": "1-2-2-2",
+      "fieldMean": 0.7209496043315285,
+      "fieldMeanSeven": 5.0466472303206995
+    },
+    "model": {
+      "n": 2401,
+      "rho": 0.4297955455380378,
+      "topDecileLift": 3.450310514153668,
+      "byPosition": {
+        "GK": {
+          "n": 242,
+          "rho": 0.4172949713939918
+        },
+        "DEF": {
+          "n": 731,
+          "rho": 0.4538977690095268
+        },
+        "MID": {
+          "n": 842,
+          "rho": 0.4483441027692436
+        },
+        "FWD": {
+          "n": 586,
+          "rho": 0.40975238211059845
+        }
+      }
+    },
+    "universe": {
+      "players": 2401
+    }
+  }
 }
