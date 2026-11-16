@@ -1,12 +1,12 @@
 {
- "built": "2026-11-16T06:32:36.147Z",
+ "built": "2026-11-16T19:37:22.496Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-16T06:32:36.147Z",
+  "generatedAt": "2026-11-16T19:37:22.496Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -4430,10 +4430,22 @@
    ],
    "unavailable": [
     {
+     "name": "M. Boadu",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Leg Injury"
+    },
+    {
      "name": "S. Coulibaly",
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury, expected back 22 Nov"
+    },
+    {
+     "name": "K. Diatta",
+     "position": "MID",
+     "status": "injured",
+     "news": "Muscle Injury"
     },
     {
      "name": "E. Bove",
@@ -4768,12 +4780,12 @@
      "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "I. Kaboré",
-     "position": "DEF",
-     "rating": 60.7,
+     "name": "L. O'Brien",
+     "position": "MID",
+     "rating": 60.2,
      "status": "available",
-     "minutesShare": 87,
-     "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -4782,6 +4794,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Back Injury, expected back 25 Nov"
+    },
+    {
+     "name": "I. Kaboré",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
     },
     {
      "name": "S. Smith",
@@ -7584,12 +7602,6 @@
    ],
    "unavailable": [
     {
-     "name": "C. McManus",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Unknown injury"
-    },
-    {
      "name": "T. Eaves",
      "position": "FWD",
      "status": "doubtful",
@@ -7738,14 +7750,6 @@
      "summary": "Started 15 of 15 (100%), playing at home."
     },
     {
-     "name": "O. Norburn",
-     "position": "MID",
-     "rating": 75.8,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), 1 goal and 2 assists."
-    },
-    {
      "name": "M. Fondop",
      "position": "FWD",
      "rating": 72.3,
@@ -7776,9 +7780,29 @@
      "status": "available",
      "minutesShare": 87,
      "summary": "Started 13 of 15 (87%), playing at home."
+    },
+    {
+     "name": "D. Daniels",
+     "position": "DEF",
+     "rating": 67,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "O. Norburn",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "G. Scott-Morriss",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Hamstring injury"
+    },
     {
      "name": "R. Delaney",
      "position": "DEF",
@@ -8916,12 +8940,6 @@
      "news": "Unknown injury"
     },
     {
-     "name": "S. Goma",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knock"
-    },
-    {
      "name": "M. Stevens",
      "position": "FWD",
      "status": "injured",
@@ -9344,14 +9362,6 @@
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "E. Iandolo",
-     "position": "DEF",
-     "rating": 58.8,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. Payne",
      "position": "MID",
      "rating": 58.4,
@@ -9366,9 +9376,23 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "H. Anderson",
+     "position": "MID",
+     "rating": 50.1,
+     "status": "available",
+     "minutesShare": 71,
+     "summary": "In and out of the side (10 starts in 14), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "E. Iandolo",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Head Injury"
+    },
     {
      "name": "R. Hunt",
      "position": "DEF",
@@ -11096,6 +11120,12 @@
    ],
    "unavailable": [
     {
+     "name": "B. Purrington",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Unknown injury"
+    },
+    {
      "name": "R. Harbottle",
      "position": "DEF",
      "status": "injured",
@@ -11531,6 +11561,12 @@
      "news": "Thigh Injury, expected back 26 Dec"
     },
     {
+     "name": "C. Tasker",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 15 Dec"
+    },
+    {
      "name": "E. Dieseruvwe",
      "position": "FWD",
      "status": "injured",
@@ -11540,7 +11576,7 @@
      "name": "S. Sherring",
      "position": "DEF",
      "status": "injured",
-     "news": "Calf Injury"
+     "news": "Calf Injury, expected back 15 Dec"
     },
     {
      "name": "D. Moss",
@@ -11552,7 +11588,7 @@
      "name": "S. Beckwith",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 15 Dec"
     },
     {
      "name": "L. Maguire",
