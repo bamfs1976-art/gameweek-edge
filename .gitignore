@@ -28,3 +28,6 @@ scripts/recap/out/
 scripts/social/.challenge-build/
 www/
 .env
+
+# graphify knowledge graph (rebuilt locally with `graphify update .`)
+graphify-out/
