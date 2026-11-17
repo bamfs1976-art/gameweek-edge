@@ -1,12 +1,12 @@
 {
- "built": "2026-11-17T03:54:59.146Z",
+ "built": "2026-11-17T16:01:41.388Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-17T03:54:59.146Z",
+  "generatedAt": "2026-11-17T16:01:41.388Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -9404,12 +9404,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury"
-    },
-    {
-     "name": "L. Chiwome",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
     },
     {
      "name": "K. Kouassi",
