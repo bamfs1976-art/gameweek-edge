@@ -1,12 +1,12 @@
 {
- "built": "2026-11-18T11:45:02.619Z",
+ "built": "2026-11-18T20:33:22.641Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-18T11:45:02.619Z",
+  "generatedAt": "2026-11-18T20:33:22.641Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2592,6 +2592,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury"
+    },
+    {
+     "name": "J. Johnson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
     },
     {
      "name": "S. Sandal",
@@ -6135,7 +6141,7 @@
      "name": "R. James",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Groin Injury, expected back 1 Dec"
     },
     {
      "name": "M. Burstow",
@@ -6147,7 +6153,7 @@
      "name": "A. Maynard-Brewer",
      "position": "GK",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knock"
     },
     {
      "name": "M. Lowe",
@@ -10630,14 +10636,6 @@
      "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "H. Leonard",
-     "position": "FWD",
-     "rating": 58.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "H. Mills",
      "position": "DEF",
      "rating": 56.9,
@@ -10660,9 +10658,23 @@
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Khela",
+     "position": "MID",
+     "rating": 51.8,
+     "status": "available",
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "H. Leonard",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hip Injury"
+    },
     {
      "name": "O. Edwards",
      "position": "MID",
@@ -10673,13 +10685,31 @@
      "name": "C. Johnston",
      "position": "DEF",
      "status": "injured",
-     "news": "Illness"
+     "news": "Thigh Injury"
+    },
+    {
+     "name": "D. Ormerod",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury"
     },
     {
      "name": "B. Woods",
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury, expected back 4 Dec"
+    },
+    {
+     "name": "L. Mendonça",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 16 Dec"
+    },
+    {
+     "name": "T. O'Connor",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "R. Adebisi",
