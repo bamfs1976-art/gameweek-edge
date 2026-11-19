@@ -1,12 +1,12 @@
 {
- "built": "2026-11-19T02:34:35.509Z",
+ "built": "2026-11-19T11:41:58.737Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-19T02:34:35.509Z",
+  "generatedAt": "2026-11-19T11:41:58.737Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -6452,14 +6452,6 @@
      "summary": "Started 15 of 15 (100%), 2 goals and 1 assist."
     },
     {
-     "name": "B. Tóth",
-     "position": "GK",
-     "rating": 64.7,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "K. Montgomery",
      "position": "MID",
      "rating": 64.6,
@@ -6482,9 +6474,23 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "S. Morsy",
+     "position": "MID",
+     "rating": 60.2,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "B. Tóth",
+     "position": "GK",
+     "status": "injured",
+     "news": "Broken Finger injury, expected back 17 Jan"
+    },
     {
      "name": "R. Alebiosu",
      "position": "DEF",
