@@ -1,12 +1,12 @@
 {
- "built": "2026-11-19T11:41:58.737Z",
+ "built": "2026-11-19T20:39:13.100Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-19T11:41:58.737Z",
+  "generatedAt": "2026-11-19T20:39:13.100Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -788,6 +788,14 @@
      "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
     },
     {
+     "name": "F. López",
+     "position": "FWD",
+     "rating": 76.6,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), playing at home."
+    },
+    {
      "name": "André",
      "position": "MID",
      "rating": 75.3,
@@ -818,34 +826,14 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), playing at home."
-    },
-    {
-     "name": "A. Armstrong",
-     "position": "FWD",
-     "rating": 70.1,
-     "status": "available",
-     "minutesShare": 87,
-     "summary": "Started 13 of 15 (87%), playing at home."
     }
    ],
    "unavailable": [
     {
-     "name": "F. López",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock, expected back 22 Nov"
-    },
-    {
-     "name": "J. James",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 22 Nov"
-    },
-    {
      "name": "J. Bellegarde",
      "position": "MID",
      "status": "injured",
-     "news": "Knock"
+     "news": "Hamstring injury, expected back 22 Nov"
     },
     {
      "name": "R. Jiménez",
@@ -4301,12 +4289,6 @@
      "news": "ACL Knee Injury, expected back 2 May"
     },
     {
-     "name": "N. Madsen",
-     "position": "MID",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 22 Nov"
-    },
-    {
      "name": "R. Burrell",
      "position": "FWD",
      "status": "injured",
@@ -4646,25 +4628,25 @@
      "name": "G. Osho",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 9 Dec"
+     "news": "Knee Injury, expected back 6 Dec"
     },
     {
      "name": "I. Davies",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury, expected back 6 Dec"
+     "news": "Hamstring injury, expected back 13 Dec"
     },
     {
      "name": "D. Lawlor",
      "position": "DEF",
      "status": "injured",
-     "news": "Hamstring injury, expected back 22 Nov"
+     "news": "Hamstring injury, expected back 25 Nov"
     },
     {
      "name": "C. Chambers",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 22 Nov"
+     "news": "Knee Injury, expected back 25 Nov"
     }
    ],
    "cardRisk": []
@@ -4811,13 +4793,13 @@
      "name": "K. Moore",
      "position": "FWD",
      "status": "injured",
-     "news": "Back Injury, expected back 25 Nov"
+     "news": "Back Injury, expected back 22 Nov"
     },
     {
      "name": "I. Kaboré",
      "position": "DEF",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 22 Nov"
     },
     {
      "name": "S. Smith",
@@ -4829,19 +4811,19 @@
      "name": "C. O'Hare",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury, expected back 22 Nov"
+     "news": "Ankle Injury, expected back 20 Dec"
     },
     {
      "name": "J. Windass",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury, expected back 22 Nov"
+     "news": "Ankle Injury, expected back 6 Dec"
     },
     {
      "name": "N. Broadhead",
      "position": "FWD",
      "status": "injured",
-     "news": "Thigh Injury, expected back 22 Nov"
+     "news": "Thigh Injury, expected back 6 Dec"
     },
     {
      "name": "L. Cacace",
@@ -7044,19 +7026,19 @@
      "name": "H. Clarke",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 20 Dec"
+     "news": "Knee Injury, expected back 29 Nov"
     },
     {
      "name": "L. Gibson",
      "position": "DEF",
      "status": "injured",
-     "news": "Groin Injury, expected back 22 Nov"
+     "news": "Groin Injury, expected back 25 Nov"
     },
     {
      "name": "J. Kenny",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 17 Jan"
     },
     {
      "name": "L. Gibbs",
