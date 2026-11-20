@@ -1,12 +1,12 @@
 {
- "built": "2026-11-20T02:19:59.574Z",
+ "built": "2026-11-20T11:42:25.154Z",
  "round": 15,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-20T02:19:59.574Z",
+  "generatedAt": "2026-11-20T11:42:25.154Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -485,6 +485,14 @@
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
     },
     {
+     "name": "J. Beadle",
+     "position": "GK",
+     "rating": 69.8,
+     "status": "available",
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "B. Osayi-Samuel",
      "position": "DEF",
      "rating": 63.2,
@@ -499,29 +507,9 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Stansfield",
-     "position": "FWD",
-     "rating": 61.8,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "A. Priske",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Knock, expected back 22 Nov"
-    },
-    {
-     "name": "J. Beadle",
-     "position": "GK",
-     "status": "injured",
-     "news": "Knock, expected back 22 Nov"
-    },
     {
      "name": "K. Lund",
      "position": "DEF",
@@ -1297,12 +1285,6 @@
      "news": "Calf Injury, expected back 27 Jan"
     },
     {
-     "name": "G. Campbell",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 22 Nov"
-    },
-    {
      "name": "N. Galves",
      "position": "DEF",
      "status": "injured",
@@ -1461,12 +1443,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "P. Bamford",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Shoulder Injury, expected back 22 Nov"
-    },
     {
      "name": "J. Rothwell",
      "position": "MID",
@@ -4085,7 +4061,7 @@
      "name": "C. Bishop",
      "position": "FWD",
      "status": "injured",
-     "news": "Knee Injury, expected back 22 Nov"
+     "news": "Knee Injury, expected back 30 Dec"
     },
     {
      "name": "I. Mohamed",
@@ -4109,7 +4085,7 @@
      "name": "K. Anderson",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury, expected back 20 Dec"
+     "news": "Hamstring injury, expected back 22 Nov"
     },
     {
      "name": "H. Blair",
@@ -4121,7 +4097,7 @@
      "name": "C. Ogilvie",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 22 Nov"
+     "news": "Knee Injury"
     },
     {
      "name": "J. Swift",
@@ -4448,22 +4424,10 @@
      "news": "Leg Injury"
     },
     {
-     "name": "S. Coulibaly",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 22 Nov"
-    },
-    {
      "name": "K. Diatta",
      "position": "MID",
      "status": "injured",
-     "news": "Muscle Injury"
-    },
-    {
-     "name": "E. Bove",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury, expected back 22 Nov"
+     "news": "Ankle Injury"
     },
     {
      "name": "M. Antonio",
@@ -4476,12 +4440,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury"
-    },
-    {
-     "name": "N. Chikovani",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Broken Finger injury"
     }
    ],
    "cardRisk": []
@@ -5296,13 +5254,7 @@
      "name": "E. Erhahon",
      "position": "MID",
      "status": "doubtful",
-     "news": "Thigh Injury, expected back 22 Nov"
-    },
-    {
-     "name": "G. Bazunu",
-     "position": "GK",
-     "status": "doubtful",
-     "news": "Thigh Injury, expected back 22 Nov"
+     "news": "Thigh Injury, expected back 29 Nov"
     },
     {
      "name": "E. Toal",
@@ -5314,7 +5266,7 @@
      "name": "R. Hardie",
      "position": "FWD",
      "status": "injured",
-     "news": "Hamstring injury, expected back 22 Nov"
+     "news": "Hamstring injury, expected back 29 Nov"
     },
     {
      "name": "J. McAtee",
@@ -7198,20 +7150,7 @@
      "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
     }
    ],
-   "unavailable": [
-    {
-     "name": "N. Eile",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Illness, expected back 22 Nov"
-    },
-    {
-     "name": "G. Yah",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knock, expected back 22 Nov"
-    }
-   ],
+   "unavailable": [],
    "cardRisk": []
   },
   {
@@ -9281,6 +9220,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "A. Areola",
+     "position": "GK",
+     "status": "doubtful",
+     "news": "Unknown injury, expected back 25 Nov"
+    },
     {
      "name": "K. Walker-Peters",
      "position": "DEF",
