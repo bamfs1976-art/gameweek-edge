@@ -1,12 +1,12 @@
 {
- "built": "2026-11-21T02:17:12.269Z",
+ "built": "2026-11-21T11:05:02.766Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-21T02:17:12.269Z",
+  "generatedAt": "2026-11-21T11:05:02.766Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -9737,7 +9737,7 @@
      "name": "B. Humphreys",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 7 Dec"
+     "news": "Knee Injury, expected back 26 Nov"
     }
    ],
    "cardRisk": []
