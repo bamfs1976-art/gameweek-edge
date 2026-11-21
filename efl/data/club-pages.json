@@ -1,12 +1,12 @@
 {
- "built": "2026-11-20T20:23:00.161Z",
+ "built": "2026-11-21T02:17:12.269Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-20T20:23:00.161Z",
+  "generatedAt": "2026-11-21T02:17:12.269Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -485,7 +485,7 @@
     {
      "name": "S. Nombe",
      "position": "FWD",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Knock"
     },
     {
@@ -938,18 +938,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "R. Staunton",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury"
-    },
-    {
-     "name": "C. Gardner",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -1269,7 +1257,7 @@
    "slug": "oxford-united",
    "division": "league-one",
    "divisionName": "League One",
-   "position": 3,
+   "position": 4,
    "points": 0,
    "played": 0,
    "form": [
@@ -1417,12 +1405,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Broken Foot injury"
-    },
-    {
-     "name": "J. Jin-Woo",
-     "position": "MID",
-     "status": "injured",
-     "news": "Back Injury"
     }
    ],
    "cardRisk": []
@@ -1588,7 +1570,7 @@
    "slug": "luton-town",
    "division": "league-one",
    "divisionName": "League One",
-   "position": 4,
+   "position": 5,
    "points": 0,
    "played": 0,
    "form": [
@@ -1730,7 +1712,7 @@
      "name": "J. Johnson",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 27 Nov"
     },
     {
      "name": "S. Morris",
@@ -1886,18 +1868,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "A. Evans",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 31 Dec"
-    },
-    {
-     "name": "R. Dixon",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knock"
-    },
     {
      "name": "H. Williams",
      "position": "DEF",
@@ -2205,6 +2175,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "D. Lipsiuc",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 9 May"
+    },
     {
      "name": "O. Cooper",
      "position": "MID",
@@ -2671,6 +2647,166 @@
    "cardRisk": []
   },
   {
+   "id": "19",
+   "name": "Sheffield Wednesday",
+   "short": "SHW",
+   "slug": "sheffield-wednesday",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 3,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "W",
+    "D"
+   ],
+   "rating": 51.6,
+   "summary": "7 points from the last 3. 1 blank round in the next 3. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.75
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.35
+    },
+    {
+     "label": "Home matches",
+     "value": 0.33
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 16,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Reading",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Oxford United",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 17,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 18,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Leicester City",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "B. Bannan",
+     "position": "MID",
+     "rating": 77.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 15 of 15 (100%), 1 goal and 2 assists."
+    },
+    {
+     "name": "C. Slattery",
+     "position": "MID",
+     "rating": 76.5,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), 3 goals and 3 assists."
+    },
+    {
+     "name": "Y. Valery",
+     "position": "DEF",
+     "rating": 73.7,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Cooper",
+     "position": "DEF",
+     "rating": 73.6,
+     "status": "available",
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "D. Keillor-Dunn",
+     "position": "MID",
+     "rating": 73.1,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), 4 goals and 1 assist."
+    },
+    {
+     "name": "J. Lowe",
+     "position": "FWD",
+     "rating": 71.4,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), playing at home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "M. Burstow",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Groin Injury, expected back 1 Dec"
+    },
+    {
+     "name": "R. James",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 1 Dec"
+    },
+    {
+     "name": "M. Lowe",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 10 Dec"
+    },
+    {
+     "name": "C. McGhee",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Shoulder Injury"
+    },
+    {
+     "name": "T. Onyango",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "52",
    "name": "Queens Park Rangers",
    "short": "QPR",
@@ -2961,13 +3097,13 @@
      "name": "D. Costelloe",
      "position": "FWD",
      "status": "injured",
-     "news": "Groin Injury"
+     "news": "Groin Injury, expected back 4 Dec"
     },
     {
      "name": "L. Harris",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 31 Dec"
     }
    ],
    "cardRisk": []
@@ -3388,6 +3524,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Knock, expected back 27 Nov"
+    },
+    {
+     "name": "K. John",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock"
     },
     {
      "name": "B. Waine",
@@ -4882,12 +5024,6 @@
      "position": "GK",
      "status": "injured",
      "news": "Knock"
-    },
-    {
-     "name": "J. Price",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -6190,14 +6326,8 @@
     {
      "name": "C. McFarlane",
      "position": "DEF",
-     "status": "doubtful",
-     "news": "Knock"
-    },
-    {
-     "name": "J. Joseph",
-     "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Ankle Injury"
     },
     {
      "name": "J. Stolarczyk",
@@ -6512,166 +6642,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "19",
-   "name": "Sheffield Wednesday",
-   "short": "SHW",
-   "slug": "sheffield-wednesday",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 5,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "D"
-   ],
-   "rating": 44.6,
-   "summary": "5 points from the last 3 — steady. 1 blank round in the next 3. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.5
     },
     {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.35
-    },
-    {
-     "label": "Home matches",
-     "value": 0.33
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 16,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Reading",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Oxford United",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 17,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 18,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Leicester City",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "B. Bannan",
-     "position": "MID",
-     "rating": 77.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "C. Slattery",
-     "position": "MID",
-     "rating": 76.3,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), 3 goals and 3 assists."
-    },
-    {
-     "name": "L. Cooper",
-     "position": "DEF",
-     "rating": 73.1,
-     "status": "available",
-     "minutesShare": 87,
-     "summary": "Started 13 of 15 (87%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "D. Keillor-Dunn",
-     "position": "MID",
-     "rating": 73.1,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), 4 goals and 1 assist."
-    },
-    {
-     "name": "Y. Valery",
-     "position": "DEF",
-     "rating": 73,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Lowe",
-     "position": "FWD",
-     "rating": 71.4,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), playing at home."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "M. Burstow",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Groin Injury, expected back 1 Dec"
-    },
-    {
-     "name": "R. James",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 1 Dec"
-    },
-    {
-     "name": "M. Lowe",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 10 Dec"
-    },
-    {
-     "name": "C. McGhee",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Shoulder Injury"
-    },
-    {
-     "name": "T. Onyango",
+     "name": "J. Houghton",
      "position": "MID",
      "status": "injured",
-     "news": "ACL Knee Injury"
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -7236,22 +7212,34 @@
    ],
    "unavailable": [
     {
+     "name": "M. Clark",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "A. Munda",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
      "name": "O. Clarke",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 10 Dec"
     },
     {
+     "name": "L. Millard",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
      "name": "J. Hungbo",
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 15 Dec"
-    },
-    {
-     "name": "B. Middlemas",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury, expected back 15 Jan"
     },
     {
      "name": "R. Tafazolli",
@@ -7940,12 +7928,6 @@
      "news": "Shoulder Injury"
     },
     {
-     "name": "M. Jolliffe",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
      "name": "K. Lisbie",
      "position": "MID",
      "status": "injured",
@@ -8561,6 +8543,12 @@
      "news": "Calf Injury, expected back 9 Dec"
     },
     {
+     "name": "T. Bakinson",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury, expected back 27 Nov"
+    },
+    {
      "name": "M. Sorinola",
      "position": "DEF",
      "status": "injured",
@@ -8717,13 +8705,13 @@
     {
      "name": "R. Johnson",
      "position": "DEF",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Unknown injury"
     },
     {
      "name": "J. Bursik",
      "position": "GK",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Muscle Injury"
     },
     {
@@ -9045,12 +9033,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "MCL Knee Injury, expected back 18 Jan"
-    },
-    {
-     "name": "C. Hewitt",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -9399,7 +9381,7 @@
      "name": "D. Ormerod",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 14 Feb"
     },
     {
      "name": "C. Johnston",
@@ -9423,7 +9405,7 @@
      "name": "T. O'Connor",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Unknown injury, expected back 25 Dec"
     },
     {
      "name": "R. Adebisi",
@@ -9888,12 +9870,6 @@
    ],
    "unavailable": [
     {
-     "name": "J. Neufville",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
      "name": "T. Wright",
      "position": "FWD",
      "status": "injured",
@@ -10051,7 +10027,7 @@
      "name": "O. O'Neill",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knee Injury, expected back 28 Feb"
     },
     {
      "name": "O. Dovin",
@@ -10512,8 +10488,8 @@
    "played": 0,
    "form": [
     "L",
-    "D",
-    "L"
+    "L",
+    "D"
    ],
    "rating": 33.2,
    "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3. 2 double rounds in the next 3.",
@@ -10593,7 +10569,7 @@
     {
      "name": "A. Kay",
      "position": "DEF",
-     "rating": 75.6,
+     "rating": 75.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
@@ -10601,7 +10577,7 @@
     {
      "name": "R. Cleary",
      "position": "FWD",
-     "rating": 74.2,
+     "rating": 74.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), away from home."
@@ -10609,7 +10585,7 @@
     {
      "name": "P. Kelly",
      "position": "MID",
-     "rating": 73.7,
+     "rating": 74.2,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
@@ -10617,27 +10593,21 @@
     {
      "name": "T. Noslin",
      "position": "MID",
-     "rating": 69.3,
+     "rating": 72,
      "status": "available",
-     "minutesShare": 86,
-     "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "S. Gale",
      "position": "MID",
-     "rating": 68.7,
+     "rating": 69.1,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "C. O'Riordan",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Shoulder Injury"
-    },
     {
      "name": "T. Adeyemo",
      "position": "FWD",
@@ -11135,20 +11105,7 @@
      "summary": "Started 13 of 14 (93%), away from home."
     }
    ],
-   "unavailable": [
-    {
-     "name": "D. Ball",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "G. Ahadme",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Groin Injury"
-    }
-   ],
+   "unavailable": [],
    "cardRisk": []
   },
   {
@@ -11269,21 +11226,15 @@
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "R. Williams",
-     "position": "MID",
-     "rating": 70,
+     "name": "J. Brown",
+     "position": "FWD",
+     "rating": 71,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 93,
+     "summary": "Started 14 of 15 (93%), away from home."
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Brown",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Rib Injury"
-    },
     {
      "name": "P. Lane",
      "position": "FWD",
@@ -11407,14 +11358,6 @@
      "summary": "Started 12 of 14 (86%), 0 goals and 1 assist."
     },
     {
-     "name": "V. Adeboyejo",
-     "position": "FWD",
-     "rating": 70.7,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), playing at home."
-    },
-    {
      "name": "O. Sowunmi",
      "position": "DEF",
      "rating": 69.9,
@@ -11429,12 +11372,32 @@
      "status": "available",
      "minutesShare": 71,
      "summary": "In and out of the side (10 starts in 14), 1 goal and 1 assist."
+    },
+    {
+     "name": "M. Cheek",
+     "position": "FWD",
+     "rating": 68,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), playing at home."
     }
    ],
    "unavailable": [
     {
+     "name": "V. Adeboyejo",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "S. George",
      "position": "GK",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "J. Mendy",
+     "position": "DEF",
      "status": "injured",
      "news": "Unknown injury"
     },
