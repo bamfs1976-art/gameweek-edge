@@ -1,12 +1,12 @@
 {
- "built": "2026-11-21T19:17:34.317Z",
+ "built": "2026-11-22T01:20:40.056Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-21T19:17:34.317Z",
+  "generatedAt": "2026-11-22T01:20:40.056Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -180,18 +180,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury, expected back 27 Dec"
-    },
-    {
-     "name": "A. Cresswell",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 22 Nov"
-    },
-    {
-     "name": "A. Ampah",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
@@ -7463,12 +7451,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury"
-    },
-    {
-     "name": "M. Antonio",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 22 Nov"
     }
    ],
    "cardRisk": []
