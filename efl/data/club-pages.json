@@ -1,12 +1,12 @@
 {
- "built": "2026-11-22T11:27:24.873Z",
+ "built": "2026-11-22T19:42:30.592Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-22T11:27:24.873Z",
+  "generatedAt": "2026-11-22T19:42:30.592Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -142,14 +142,6 @@
      "summary": "Started 16 of 16 (100%), 5 clean sheets plus 4 attacking returns."
     },
     {
-     "name": "E. Galbraith",
-     "position": "MID",
-     "rating": 61.5,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 14 of 16 (88%), 3 goals and 5 assists."
-    },
-    {
      "name": "L. Graham",
      "position": "DEF",
      "rating": 61,
@@ -172,14 +164,40 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 16 of 16 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. McGlynn",
+     "position": "MID",
+     "rating": 53.9,
+     "status": "available",
+     "minutesShare": 75,
+     "summary": "In and out of the side (12 starts in 16), 5 goals and 2 assists."
     }
    ],
    "unavailable": [
+    {
+     "name": "E. Galbraith",
+     "position": "MID",
+     "status": "injured",
+     "news": "Illness"
+    },
     {
      "name": "L. Cissé",
      "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury, expected back 27 Dec"
+    },
+    {
+     "name": "A. Cresswell",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 26 Nov"
+    },
+    {
+     "name": "A. Ampah",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury, expected back 26 Nov"
     }
    ],
    "cardRisk": []
@@ -292,14 +310,6 @@
      "summary": "Started 13 of 13 (100%), away from home."
     },
     {
-     "name": "P. Farquharson",
-     "position": "DEF",
-     "rating": 69.3,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. Russell",
      "position": "DEF",
      "rating": 68,
@@ -314,9 +324,23 @@
      "status": "available",
      "minutesShare": 85,
      "summary": "Started 11 of 13 (85%), away from home."
+    },
+    {
+     "name": "D. Orsi",
+     "position": "FWD",
+     "rating": 64.5,
+     "status": "available",
+     "minutesShare": 77,
+     "summary": "Started 10 of 13 (77%), away from home."
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Farquharson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "A. Odimayo",
      "position": "DEF",
@@ -458,6 +482,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury"
+    },
+    {
+     "name": "N. Tavares",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -1349,6 +1379,18 @@
    ],
    "unavailable": [
     {
+     "name": "M. Adu-Poku",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Concussion injury"
+    },
+    {
+     "name": "M. Jacob",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock"
+    },
+    {
      "name": "T. Nyakuhwa",
      "position": "FWD",
      "status": "injured",
@@ -1463,14 +1505,6 @@
      "summary": "Started 16 of 16 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "L. Bonis",
-     "position": "FWD",
-     "rating": 74.8,
-     "status": "available",
-     "minutesShare": 94,
-     "summary": "Started 15 of 16 (94%), away from home."
-    },
-    {
      "name": "J. Koroma",
      "position": "FWD",
      "rating": 73.9,
@@ -1493,6 +1527,14 @@
      "status": "available",
      "minutesShare": 81,
      "summary": "Started 13 of 16 (81%), away from home."
+    },
+    {
+     "name": "J. Simpson",
+     "position": "DEF",
+     "rating": 72.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 16 of 16 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -1501,6 +1543,18 @@
      "position": "DEF",
      "status": "doubtful",
      "news": "Hamstring injury"
+    },
+    {
+     "name": "L. Bonis",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Leg Injury"
+    },
+    {
+     "name": "F. Bryden",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury"
     },
     {
      "name": "M. Owolabi-Belewu",
@@ -1644,6 +1698,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "M. Helm",
+     "position": "MID",
+     "status": "injured",
+     "news": "Foot Injury"
+    },
     {
      "name": "K. Thompson-Sommers",
      "position": "MID",
@@ -3843,6 +3903,172 @@
    "cardRisk": []
   },
   {
+   "id": "5",
+   "name": "Blackburn Rovers",
+   "short": "BLA",
+   "slug": "blackburn-rovers",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 13,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "D",
+    "W",
+    "L"
+   ],
+   "rating": 51.6,
+   "summary": "Next 3 rated 2.8 of 5 on average. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.44
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.55
+    },
+    {
+     "label": "Home matches",
+     "value": 0.75
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 16,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Charlton Athletic",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 17,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Bolton Wanderers",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Norwich City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 18,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Derby County",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "A. Gudjohnsen",
+     "position": "FWD",
+     "rating": 76.3,
+     "status": "available",
+     "minutesShare": 94,
+     "summary": "Started 15 of 16 (94%), playing at home."
+    },
+    {
+     "name": "S. McLoughlin",
+     "position": "DEF",
+     "rating": 75.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 16 of 16 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "T. Cantwell",
+     "position": "MID",
+     "rating": 75,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 16 of 16 (100%), 3 goals and 1 assist."
+    },
+    {
+     "name": "O. Afolayan",
+     "position": "FWD",
+     "rating": 73.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 16 of 16 (100%), playing at home."
+    },
+    {
+     "name": "K. Montgomery",
+     "position": "MID",
+     "rating": 72.3,
+     "status": "available",
+     "minutesShare": 94,
+     "summary": "Started 15 of 16 (94%), 1 goal and 1 assist."
+    },
+    {
+     "name": "J. Fevrier",
+     "position": "FWD",
+     "rating": 69.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 16 of 16 (100%), playing at home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "R. Alebiosu",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 14 Mar"
+    },
+    {
+     "name": "B. Tóth",
+     "position": "GK",
+     "status": "injured",
+     "news": "Broken Finger injury, expected back 17 Jan"
+    },
+    {
+     "name": "A. Forshaw",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hip Injury, expected back 30 Dec"
+    },
+    {
+     "name": "M. Jørgensen",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Thigh Injury, expected back 6 Dec"
+    },
+    {
+     "name": "L. Miller",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Achilles Tendon Rupture injury, expected back 2 Jan"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "35",
    "name": "West Bromwich Albion",
    "short": "WBA",
@@ -4619,178 +4845,6 @@
    "cardRisk": []
   },
   {
-   "id": "5",
-   "name": "Blackburn Rovers",
-   "short": "BLA",
-   "slug": "blackburn-rovers",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 13,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "L",
-    "L"
-   ],
-   "rating": 48.5,
-   "summary": "Next 3 rated 2.8 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.33
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.55
-    },
-    {
-     "label": "Home matches",
-     "value": 0.75
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 16,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Charlton Athletic",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 17,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Bolton Wanderers",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Norwich City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 18,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Derby County",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "A. Gudjohnsen",
-     "position": "FWD",
-     "rating": 74.6,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), playing at home."
-    },
-    {
-     "name": "S. McLoughlin",
-     "position": "DEF",
-     "rating": 74.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "T. Cantwell",
-     "position": "MID",
-     "rating": 73.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), 2 goals and 1 assist."
-    },
-    {
-     "name": "O. Afolayan",
-     "position": "FWD",
-     "rating": 73.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), playing at home."
-    },
-    {
-     "name": "K. Montgomery",
-     "position": "MID",
-     "rating": 72.2,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 14 of 15 (93%), 1 goal and 1 assist."
-    },
-    {
-     "name": "J. Fevrier",
-     "position": "FWD",
-     "rating": 69.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 15 of 15 (100%), playing at home."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "R. Alebiosu",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 14 Mar"
-    },
-    {
-     "name": "B. Tóth",
-     "position": "GK",
-     "status": "injured",
-     "news": "Broken Finger injury, expected back 17 Jan"
-    },
-    {
-     "name": "R. Morishita",
-     "position": "MID",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 23 Nov"
-    },
-    {
-     "name": "A. Forshaw",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hip Injury, expected back 30 Dec"
-    },
-    {
-     "name": "M. Jørgensen",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 6 Dec"
-    },
-    {
-     "name": "L. Miller",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Achilles Tendon Rupture injury, expected back 2 Jan"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "20",
    "name": "Southampton",
    "short": "SOU",
@@ -4914,15 +4968,27 @@
      "summary": "Started 16 of 16 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "J. Bree",
-     "position": "DEF",
-     "rating": 68.8,
+     "name": "F. Downes",
+     "position": "MID",
+     "rating": 68,
      "status": "available",
-     "minutesShare": 94,
-     "summary": "Started 15 of 16 (94%), even fixture (rated 3 of 5)."
+     "minutesShare": 88,
+     "summary": "Started 14 of 16 (88%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Bree",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Unknown injury, expected back 25 Nov"
+    },
+    {
+     "name": "L. Scienza",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Unknown injury, expected back 25 Nov"
+    },
     {
      "name": "K. Schlotterbeck",
      "position": "DEF",
@@ -7115,6 +7181,12 @@
    ],
    "unavailable": [
     {
+     "name": "N. Borges",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Ankle Injury, expected back 25 Nov"
+    },
+    {
      "name": "A. Jones",
      "position": "DEF",
      "status": "injured",
@@ -8054,14 +8126,6 @@
      "summary": "Started 16 of 16 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "L. Offord",
-     "position": "DEF",
-     "rating": 72.8,
-     "status": "available",
-     "minutesShare": 94,
-     "summary": "Started 15 of 16 (94%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "J. Stephenson",
      "position": "DEF",
      "rating": 72.8,
@@ -8076,9 +8140,23 @@
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 15 of 16 (94%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "T. Booth",
+     "position": "GK",
+     "rating": 71.7,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 14 of 16 (88%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Offord",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "J. Lankester",
      "position": "MID",
@@ -9312,8 +9390,8 @@
    "points": 0,
    "played": 0,
    "form": [
-    "L",
     "D",
+    "L",
     "D"
    ],
    "rating": 39.1,
@@ -9387,15 +9465,23 @@
     {
      "name": "J. Laurent",
      "position": "MID",
-     "rating": 55.7,
+     "rating": 58.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "K. Walker",
+     "position": "DEF",
+     "rating": 57.5,
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "K. Walker",
-     "position": "DEF",
-     "rating": 54.8,
+     "name": "L. Ramazani",
+     "position": "FWD",
+     "rating": 54,
      "status": "available",
      "minutesShare": 87,
      "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
@@ -9403,34 +9489,26 @@
     {
      "name": "M. Alleyne",
      "position": "DEF",
-     "rating": 51,
+     "rating": 53.4,
      "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "L. Ramazani",
-     "position": "FWD",
-     "rating": 50.8,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
+     "minutesShare": 87,
+     "summary": "Started 13 of 15 (87%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "R. Hatate",
      "position": "MID",
-     "rating": 49.9,
+     "rating": 52.5,
      "status": "available",
-     "minutesShare": 73,
-     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "I. Julio",
      "position": "DEF",
-     "rating": 48.6,
+     "rating": 51.9,
      "status": "available",
-     "minutesShare": 67,
-     "summary": "In and out of the side (10 starts in 15), tough fixture (rated 4 of 5)."
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -9451,12 +9529,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Groin Injury"
-    },
-    {
-     "name": "A. Ahmedhodzic",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Illness, expected back 23 Nov"
     },
     {
      "name": "D. Satpaev",
@@ -9913,6 +9985,24 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Cundle",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Illness, expected back 26 Nov"
+    },
+    {
+     "name": "J. Coburn",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Hamstring injury, expected back 26 Nov"
+    },
+    {
+     "name": "R. Esse",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Knock, expected back 26 Nov"
+    },
     {
      "name": "F. Marschall",
      "position": "GK",
@@ -10954,23 +11044,29 @@
      "summary": "Started 14 of 16 (88%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "H. Gilmour",
-     "position": "MID",
-     "rating": 68.2,
-     "status": "available",
-     "minutesShare": 94,
-     "summary": "Started 15 of 16 (94%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "A. Flint",
      "position": "DEF",
      "rating": 65.1,
      "status": "available",
      "minutesShare": 69,
      "summary": "In and out of the side (11 starts in 16), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "G. Middleton",
+     "position": "MID",
+     "rating": 63.9,
+     "status": "available",
+     "minutesShare": 75,
+     "summary": "In and out of the side (12 starts in 16), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "H. Gilmour",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "C. Tasker",
      "position": "DEF",
