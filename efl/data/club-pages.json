@@ -1,12 +1,12 @@
 {
- "built": "2026-11-22T19:42:30.592Z",
+ "built": "2026-11-23T01:45:00.005Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-22T19:42:30.592Z",
+  "generatedAt": "2026-11-23T01:45:00.005Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -9479,6 +9479,14 @@
      "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
     },
     {
+     "name": "L. Pires",
+     "position": "DEF",
+     "rating": 55.1,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "L. Ramazani",
      "position": "FWD",
      "rating": 54,
@@ -9501,23 +9509,9 @@
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "I. Julio",
-     "position": "DEF",
-     "rating": 51.9,
-     "status": "available",
-     "minutesShare": 73,
-     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "L. Pires",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Knock, expected back 23 Nov"
-    },
     {
      "name": "J. Bruun Larsen",
      "position": "FWD",
@@ -10316,12 +10310,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "G. Evans",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury, expected back 23 Nov"
     },
     {
      "name": "K. Lofthouse",
