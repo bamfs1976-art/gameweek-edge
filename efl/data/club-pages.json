@@ -1,12 +1,12 @@
 {
- "built": "2026-11-23T01:45:00.005Z",
+ "built": "2026-11-23T12:47:03.175Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-23T01:45:00.005Z",
+  "generatedAt": "2026-11-23T12:47:03.175Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2948,6 +2948,12 @@
    ],
    "unavailable": [
     {
+     "name": "J. Solís",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knock, expected back 29 Nov"
+    },
+    {
      "name": "K. Lund",
      "position": "DEF",
      "status": "injured",
@@ -4004,7 +4010,7 @@
     {
      "name": "T. Cantwell",
      "position": "MID",
-     "rating": 75,
+     "rating": 75.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 16 of 16 (100%), 3 goals and 1 assist."
@@ -4020,7 +4026,7 @@
     {
      "name": "K. Montgomery",
      "position": "MID",
-     "rating": 72.3,
+     "rating": 72.6,
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 15 of 16 (94%), 1 goal and 1 assist."
@@ -4046,6 +4052,12 @@
      "position": "GK",
      "status": "injured",
      "news": "Broken Finger injury, expected back 17 Jan"
+    },
+    {
+     "name": "T. Atcheson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Head Injury"
     },
     {
      "name": "A. Forshaw",
@@ -4366,6 +4378,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 29 Nov"
+    },
+    {
+     "name": "A. Moran",
+     "position": "MID",
+     "status": "injured",
+     "news": "Gashed Leg injury, expected back 29 Nov"
     },
     {
      "name": "L. Gibson",
@@ -6852,7 +6870,7 @@
      "name": "A. Areola",
      "position": "GK",
      "status": "doubtful",
-     "news": "Unknown injury, expected back 25 Nov"
+     "news": "Calf Injury, expected back 25 Nov"
     },
     {
      "name": "K. Walker-Peters",
@@ -7012,13 +7030,19 @@
      "name": "S. Szmodics",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury, expected back 29 Nov"
+     "news": "Knee Injury, expected back 6 Dec"
     },
     {
      "name": "S. Langås",
      "position": "DEF",
      "status": "injured",
      "news": "Groin Injury, expected back 17 Jan"
+    },
+    {
+     "name": "H. Meister",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "C. Taylor",
@@ -7517,6 +7541,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury"
+    },
+    {
+     "name": "M. Antonio",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Thigh Injury"
     }
    ],
    "cardRisk": []
@@ -9048,15 +9078,21 @@
      "summary": "Started 14 of 16 (88%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "F. Draper",
+     "name": "B. House",
      "position": "FWD",
-     "rating": 66.5,
+     "rating": 64.1,
      "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 14 of 16 (88%), playing at home."
+     "minutesShare": 81,
+     "summary": "Started 13 of 16 (81%), playing at home."
     }
    ],
    "unavailable": [
+    {
+     "name": "F. Draper",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Unknown injury, expected back 25 Nov"
+    },
     {
      "name": "T. Darikwa",
      "position": "DEF",
@@ -9465,7 +9501,7 @@
     {
      "name": "J. Laurent",
      "position": "MID",
-     "rating": 58.6,
+     "rating": 58.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), tough fixture (rated 4 of 5)."
@@ -9477,14 +9513,6 @@
      "status": "available",
      "minutesShare": 93,
      "summary": "Started 14 of 15 (93%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "L. Pires",
-     "position": "DEF",
-     "rating": 55.1,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "L. Ramazani",
@@ -9509,9 +9537,23 @@
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 12 of 15 (80%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "I. Julio",
+     "position": "DEF",
+     "rating": 51.9,
+     "status": "available",
+     "minutesShare": 73,
+     "summary": "In and out of the side (11 starts in 15), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Pires",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock, expected back 29 Nov"
+    },
     {
      "name": "J. Bruun Larsen",
      "position": "FWD",
