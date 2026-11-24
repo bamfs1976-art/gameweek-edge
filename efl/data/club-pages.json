@@ -1,12 +1,12 @@
 {
- "built": "2026-11-24T02:13:52.425Z",
+ "built": "2026-11-24T13:45:13.359Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-24T02:13:52.425Z",
+  "generatedAt": "2026-11-24T13:45:13.359Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -9455,6 +9455,12 @@
    ],
    "unavailable": [
     {
+     "name": "M. Yeo",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 30 Nov"
+    },
+    {
      "name": "G. Franco",
      "position": "MID",
      "status": "injured",
@@ -9470,7 +9476,7 @@
      "name": "R. Stewart",
      "position": "FWD",
      "status": "injured",
-     "news": "Illness"
+     "news": "Illness, expected back 30 Nov"
     },
     {
      "name": "C. Burgess",
