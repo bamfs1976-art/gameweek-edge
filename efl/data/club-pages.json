@@ -1,12 +1,12 @@
 {
- "built": "2026-11-23T12:47:03.175Z",
+ "built": "2026-11-24T02:13:52.425Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-23T12:47:03.175Z",
+  "generatedAt": "2026-11-24T02:13:52.425Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -158,20 +158,20 @@
      "summary": "Started 15 of 16 (94%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "D. Soumaré",
-     "position": "MID",
-     "rating": 59.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 16 of 16 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. McGlynn",
      "position": "MID",
      "rating": 53.9,
      "status": "available",
      "minutesShare": 75,
      "summary": "In and out of the side (12 starts in 16), 5 goals and 2 assists."
+    },
+    {
+     "name": "E. Bocat",
+     "position": "DEF",
+     "rating": 53.2,
+     "status": "available",
+     "minutesShare": 75,
+     "summary": "In and out of the side (12 starts in 16), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -180,6 +180,18 @@
      "position": "MID",
      "status": "injured",
      "news": "Illness"
+    },
+    {
+     "name": "D. Soumaré",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "G. Hirst",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "L. Cissé",
@@ -2309,23 +2321,35 @@
      "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "S. Dembélé",
-     "position": "MID",
-     "rating": 75.6,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), 2 goals and 4 assists."
-    },
-    {
      "name": "B. Spencer",
      "position": "DEF",
      "rating": 73.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 14 of 14 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "G. O'Donkor",
+     "position": "FWD",
+     "rating": 72.5,
+     "status": "available",
+     "minutesShare": 93,
+     "summary": "Started 13 of 14 (93%), away from home."
     }
    ],
    "unavailable": [
+    {
+     "name": "S. Dembélé",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "M. Helik",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "J. McDonnell",
      "position": "MID",
@@ -2474,6 +2498,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "W. Smallbone",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "C. McFarlane",
      "position": "DEF",
@@ -4164,14 +4194,6 @@
    ],
    "players": [
     {
-     "name": "I. Price",
-     "position": "MID",
-     "rating": 80.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 16 of 16 (100%), 7 goals and 5 assists."
-    },
-    {
      "name": "C. Styles",
      "position": "MID",
      "rating": 75.8,
@@ -4210,9 +4232,23 @@
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 15 of 16 (94%), playing at home."
+    },
+    {
+     "name": "R. Nzingoula",
+     "position": "MID",
+     "rating": 69,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 16 of 16 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "I. Price",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 29 Nov"
+    },
     {
      "name": "O. Diakité",
      "position": "MID",
@@ -5322,6 +5358,12 @@
    ],
    "unavailable": [
     {
+     "name": "J. Meghoma",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 27 Dec"
+    },
+    {
      "name": "Marezi",
      "position": "FWD",
      "status": "injured",
@@ -5511,6 +5553,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Ng",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
     {
      "name": "G. Osho",
      "position": "DEF",
@@ -7824,14 +7872,6 @@
      "summary": "Started 13 of 14 (93%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "F. Onyedinma",
-     "position": "FWD",
-     "rating": 73.5,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), playing at home."
-    },
-    {
      "name": "J. Wareham",
      "position": "FWD",
      "rating": 72.3,
@@ -7846,9 +7886,23 @@
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 12 of 14 (86%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Scowen",
+     "position": "MID",
+     "rating": 69.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 14 of 14 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "F. Onyedinma",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knock"
+    },
     {
      "name": "M. Macey",
      "position": "GK",
@@ -9401,10 +9455,22 @@
    ],
    "unavailable": [
     {
+     "name": "G. Franco",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
      "name": "Ronald",
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 20 Dec"
+    },
+    {
+     "name": "R. Stewart",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Illness"
     },
     {
      "name": "C. Burgess",
@@ -10684,6 +10750,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Calf Injury"
+    },
+    {
+     "name": "D. Taylor",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "M. Ihiekwe",
