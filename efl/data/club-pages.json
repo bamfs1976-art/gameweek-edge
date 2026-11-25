@@ -1,12 +1,12 @@
 {
- "built": "2026-11-24T23:54:25.049Z",
+ "built": "2026-11-25T08:37:15.459Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-24T23:54:25.049Z",
+  "generatedAt": "2026-11-25T08:37:15.459Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -179,19 +179,19 @@
      "name": "E. Galbraith",
      "position": "MID",
      "status": "injured",
-     "news": "Illness"
+     "news": "Illness, expected back 26 Nov"
     },
     {
      "name": "D. Soumaré",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knock"
     },
     {
      "name": "G. Hirst",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knock"
     },
     {
      "name": "L. Cissé",
@@ -642,7 +642,7 @@
      "name": "J. Dunne",
      "position": "DEF",
      "status": "injured",
-     "news": "Ankle Injury, expected back 25 Nov"
+     "news": "Ankle Injury, expected back 29 Nov"
     },
     {
      "name": "A. Mbengue",
@@ -803,12 +803,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 29 Nov"
-    },
-    {
-     "name": "L. Gibson",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 25 Nov"
     },
     {
      "name": "L. Gibbs",
@@ -1865,12 +1859,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Bellegarde",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 25 Nov"
-    },
     {
      "name": "R. Jiménez",
      "position": "FWD",
@@ -2972,22 +2960,10 @@
      "news": "Shoulder Injury, expected back 2 Jan"
     },
     {
-     "name": "P. Diallo",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 25 Nov"
-    },
-    {
      "name": "A. Ahmed",
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 2 May"
-    },
-    {
-     "name": "G. Forsyth",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury, expected back 25 Nov"
     }
    ],
    "cardRisk": []
@@ -4089,6 +4065,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 6 Dec"
+    },
+    {
+     "name": "M. Johnston",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
@@ -5296,7 +5278,7 @@
      "name": "L. Scienza",
      "position": "MID",
      "status": "doubtful",
-     "news": "Unknown injury, expected back 25 Nov"
+     "news": "Unknown injury, expected back 28 Nov"
     },
     {
      "name": "K. Schlotterbeck",
@@ -5308,7 +5290,7 @@
      "name": "C. Jander",
      "position": "MID",
      "status": "injured",
-     "news": "Muscle Injury, expected back 25 Nov"
+     "news": "Muscle Injury, expected back 28 Nov"
     }
    ],
    "cardRisk": []
@@ -5637,12 +5619,6 @@
      "news": "Back Injury, expected back 2 Jan"
     },
     {
-     "name": "K. Anderson",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 25 Nov"
-    },
-    {
      "name": "L. Brooke-Smith",
      "position": "FWD",
      "status": "injured",
@@ -5812,13 +5788,19 @@
      "name": "J. Rothwell",
      "position": "MID",
      "status": "doubtful",
-     "news": "Groin Injury, expected back 25 Nov"
+     "news": "Groin Injury, expected back 29 Nov"
     },
     {
      "name": "F. Seriki",
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "M. Doherty",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 30 Dec"
     },
     {
      "name": "R. Oné",
@@ -7175,12 +7157,6 @@
    ],
    "unavailable": [
     {
-     "name": "R. Hedges",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Hamstring injury, expected back 25 Nov"
-    },
-    {
      "name": "S. Szmodics",
      "position": "MID",
      "status": "injured",
@@ -7197,12 +7173,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "C. Taylor",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 25 Nov"
     },
     {
      "name": "L. Travis",
@@ -8641,7 +8611,7 @@
      "name": "A. Areola",
      "position": "GK",
      "status": "doubtful",
-     "news": "Calf Injury, expected back 25 Nov"
+     "news": "Calf Injury, expected back 29 Nov"
     },
     {
      "name": "K. Walker-Peters",
@@ -8650,10 +8620,16 @@
      "news": "Thigh Injury, expected back 9 Dec"
     },
     {
+     "name": "T. Soucek",
+     "position": "MID",
+     "status": "injured",
+     "news": "Head Injury"
+    },
+    {
      "name": "K. Lamadrid",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury, expected back 25 Nov"
+     "news": "Knee Injury, expected back 29 Nov"
     }
    ],
    "cardRisk": []
@@ -9093,12 +9069,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "M. Melia",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 25 Nov"
-    },
     {
      "name": "T. Darikwa",
      "position": "DEF",
@@ -9595,6 +9565,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 26 Nov"
+    },
+    {
+     "name": "S. Sambo",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hand Injury"
     }
    ],
    "cardRisk": []
@@ -9914,13 +9890,13 @@
      "name": "F. Marschall",
      "position": "GK",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 6 Dec"
     },
     {
      "name": "T. Crama",
      "position": "DEF",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 6 Dec"
     },
     {
      "name": "R. Leonard",
@@ -10069,7 +10045,14 @@
      "summary": "Started 15 of 17 (88%), tough fixture (rated 4 of 5)."
     }
    ],
-   "unavailable": [],
+   "unavailable": [
+    {
+     "name": "L. McNally",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    }
+   ],
    "cardRisk": []
   },
   {
