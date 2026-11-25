@@ -1,12 +1,12 @@
 {
- "built": "2026-11-25T08:37:15.459Z",
+ "built": "2026-11-25T19:18:01.597Z",
  "round": 16,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-25T08:37:15.459Z",
+  "generatedAt": "2026-11-25T19:18:01.597Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -314,14 +314,6 @@
      "summary": "Started 14 of 14 (100%), away from home."
     },
     {
-     "name": "J. Arthurs",
-     "position": "MID",
-     "rating": 69.3,
-     "status": "available",
-     "minutesShare": 93,
-     "summary": "Started 13 of 14 (93%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. Russell",
      "position": "DEF",
      "rating": 69.1,
@@ -344,9 +336,23 @@
      "status": "available",
      "minutesShare": 79,
      "summary": "Started 11 of 14 (79%), away from home."
+    },
+    {
+     "name": "C. Barker",
+     "position": "DEF",
+     "rating": 64.7,
+     "status": "available",
+     "minutesShare": 79,
+     "summary": "Started 11 of 14 (79%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Arthurs",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "P. Farquharson",
      "position": "DEF",
@@ -607,7 +613,7 @@
     {
      "name": "G. Kamara",
      "position": "MID",
-     "rating": 71.5,
+     "rating": 71.2,
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 16 of 17 (94%), 1 goal and 0 assists."
@@ -615,7 +621,7 @@
     {
      "name": "K. Adamson",
      "position": "DEF",
-     "rating": 69.7,
+     "rating": 69.9,
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 16 of 17 (94%), even fixture (rated 3 of 5)."
@@ -777,7 +783,7 @@
     {
      "name": "O. Offiah",
      "position": "DEF",
-     "rating": 66,
+     "rating": 65.9,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 15 of 17 (88%), even fixture (rated 3 of 5)."
@@ -803,6 +809,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 29 Nov"
+    },
+    {
+     "name": "L. Gibson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 29 Nov"
     },
     {
      "name": "L. Gibbs",
@@ -1106,6 +1118,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Walker",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
     {
      "name": "E. Pruti",
      "position": "DEF",
@@ -1860,6 +1878,12 @@
    ],
    "unavailable": [
     {
+     "name": "J. Bellegarde",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 29 Nov"
+    },
+    {
      "name": "R. Jiménez",
      "position": "FWD",
      "status": "injured",
@@ -2504,6 +2528,12 @@
      "news": "Groin Injury"
     },
     {
+     "name": "W. Mannion",
+     "position": "GK",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
      "name": "N. Chalobah",
      "position": "MID",
      "status": "injured",
@@ -2922,7 +2952,7 @@
     {
      "name": "R. McConville",
      "position": "DEF",
-     "rating": 59.6,
+     "rating": 59.7,
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 16 of 17 (94%), tough fixture (rated 4 of 5)."
@@ -2960,10 +2990,22 @@
      "news": "Shoulder Injury, expected back 2 Jan"
     },
     {
+     "name": "P. Diallo",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Thigh Injury, expected back 29 Nov"
+    },
+    {
      "name": "A. Ahmed",
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "G. Forsyth",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury, expected back 29 Nov"
     }
    ],
    "cardRisk": []
@@ -3190,7 +3232,7 @@
     {
      "name": "B. Bannan",
      "position": "MID",
-     "rating": 76.2,
+     "rating": 76.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 16 of 16 (100%), even fixture (rated 3 of 5)."
@@ -3862,7 +3904,7 @@
      "name": "S. Morsy",
      "position": "MID",
      "status": "doubtful",
-     "news": "Unknown injury, expected back 26 Nov"
+     "news": "Knock, expected back 26 Nov"
     },
     {
      "name": "S. Wharton",
@@ -4351,7 +4393,7 @@
     {
      "name": "J. Wormleighton",
      "position": "DEF",
-     "rating": 71.8,
+     "rating": 71.7,
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 15 of 16 (94%), tough fixture (rated 4 of 5)."
@@ -4805,7 +4847,7 @@
     {
      "name": "H. Souttar",
      "position": "DEF",
-     "rating": 72.4,
+     "rating": 72.6,
      "status": "available",
      "minutesShare": 87,
      "summary": "Started 13 of 15 (87%), even fixture (rated 3 of 5)."
@@ -5456,7 +5498,7 @@
      "name": "J. Nelson",
      "position": "FWD",
      "status": "injured",
-     "news": "Groin Injury, expected back 6 Dec"
+     "news": "Groin Injury, expected back 12 Dec"
     }
    ],
    "cardRisk": []
@@ -7157,6 +7199,12 @@
    ],
    "unavailable": [
     {
+     "name": "R. Hedges",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Hamstring injury, expected back 29 Nov"
+    },
+    {
      "name": "S. Szmodics",
      "position": "MID",
      "status": "injured",
@@ -7172,13 +7220,19 @@
      "name": "H. Meister",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Shoulder Injury, expected back 17 Jan"
+    },
+    {
+     "name": "C. Taylor",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 29 Nov"
     },
     {
      "name": "L. Travis",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 10 Dec"
     },
     {
      "name": "C. Forsyth",
@@ -7774,7 +7828,7 @@
     {
      "name": "C. Taylor",
      "position": "DEF",
-     "rating": 76.2,
+     "rating": 76.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 15 of 15 (100%), even fixture (rated 3 of 5)."
@@ -8584,7 +8638,7 @@
     {
      "name": "M. Kilman",
      "position": "DEF",
-     "rating": 72,
+     "rating": 71.8,
      "status": "available",
      "minutesShare": 94,
      "summary": "Started 16 of 17 (94%), even fixture (rated 3 of 5)."
@@ -8623,7 +8677,7 @@
      "name": "T. Soucek",
      "position": "MID",
      "status": "injured",
-     "news": "Head Injury"
+     "news": "Facial Injury"
     },
     {
      "name": "K. Lamadrid",
