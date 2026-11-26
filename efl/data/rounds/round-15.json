@@ -30251,5 +30251,167 @@
       "3448": 92
     }
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-11-26T03:34:54.759Z",
+    "attribution": "clean",
+    "window": {
+      "lastKickoff": "2026-11-25T20:00:00.000Z",
+      "nextRoundKickoff": "2026-11-26T20:00:00.000Z"
+    },
+    "fixtures": {
+      "played": 54,
+      "total": 54
+    },
+    "pointsField": "totalPoints",
+    "clubBasis": "official-points",
+    "crowdClubs": {
+      "ids": [
+        "3448",
+        "39"
+      ],
+      "value": 19
+    },
+    "squad": {
+      "players": [
+        {
+          "id": "222340",
+          "name": "V. Johansson",
+          "club": "Stoke City",
+          "position": "GK",
+          "points": 13
+        },
+        {
+          "id": "178186",
+          "name": "J. Bowen",
+          "club": "West Ham United",
+          "position": "FWD",
+          "points": 8
+        },
+        {
+          "id": "197203",
+          "name": "A. Baldwin",
+          "club": "Bradford City",
+          "position": "DEF",
+          "points": 13
+        },
+        {
+          "id": "241289",
+          "name": "B. Wilmot",
+          "club": "Stoke City",
+          "position": "DEF",
+          "points": 14
+        },
+        {
+          "id": "199584",
+          "name": "J. Tanganga",
+          "club": "Sheffield United",
+          "position": "DEF",
+          "points": 6
+        },
+        {
+          "id": "523851",
+          "name": "J. Moylan",
+          "club": "Cardiff City",
+          "position": "MID",
+          "points": 8
+        },
+        {
+          "id": "178342",
+          "name": "K. Dempsey",
+          "club": "Port Vale",
+          "position": "MID",
+          "points": 7
+        }
+      ],
+      "total": 69,
+      "unresolved": 0,
+      "formation": "1-3-2-1"
+    },
+    "captain": {
+      "id": "178186",
+      "points": 8,
+      "rank": 4,
+      "ties": 2,
+      "wasBest": false,
+      "bestPoints": 14,
+      "bestId": "241289",
+      "foregonePerMultiple": 6,
+      "vsOwnMean": -1.8571428571428577
+    },
+    "clubs": {
+      "basis": "official-points",
+      "total": 24,
+      "perClub": [
+        {
+          "id": "45",
+          "value": 10,
+          "outcome": {
+            "played": 2,
+            "wins": 1,
+            "draws": 1,
+            "losses": 0,
+            "goalsFor": 3,
+            "goalsAgainst": 2,
+            "cleanSheets": 0,
+            "leaguePoints": 4
+          }
+        },
+        {
+          "id": "110",
+          "value": 14,
+          "outcome": {
+            "played": 2,
+            "wins": 2,
+            "draws": 0,
+            "losses": 0,
+            "goalsFor": 3,
+            "goalsAgainst": 1,
+            "cleanSheets": 1,
+            "leaguePoints": 6
+          }
+        }
+      ],
+      "fieldMean": 6.402777777777778,
+      "fieldMeanTwo": 12.805555555555555,
+      "bestTwo": 32,
+      "percentile": 0.7916666666666667
+    },
+    "baselines": {
+      "randomMean": 11.9965,
+      "randomMedian": 10,
+      "randomSamples": 2000,
+      "percentile": 0.9995,
+      "naive": 33,
+      "ceiling": 167,
+      "ceilingFormation": "1-2-2-2",
+      "fieldMean": 1.7083109919571045,
+      "fieldMeanSeven": 11.958176943699732
+    },
+    "model": {
+      "n": 3730,
+      "rho": 0.629500373493846,
+      "topDecileLift": 3.570307595731325,
+      "byPosition": {
+        "GK": {
+          "n": 376,
+          "rho": 0.5429064532131649
+        },
+        "DEF": {
+          "n": 1154,
+          "rho": 0.6303203169928816
+        },
+        "MID": {
+          "n": 1271,
+          "rho": 0.6406502303411148
+        },
+        "FWD": {
+          "n": 929,
+          "rho": 0.6477128600528778
+        }
+      }
+    },
+    "universe": {
+      "players": 3730
+    }
+  }
 }
