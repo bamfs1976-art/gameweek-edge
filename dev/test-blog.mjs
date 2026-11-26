@@ -1,7 +1,7 @@
 /* The articles pipeline and the community links: markdown in, pages and
    a feed out, and one source of links for every footer.
    Run: node dev/test-blog.mjs */
-import { readFileSync, mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdtempSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { frontMatter, renderMarkdown, excerpt } from '../scripts/blog/markdown.mjs';
@@ -71,8 +71,11 @@ section('the build writes the set, or says why not');
   const empty = mkdtempSync(join(tmpdir(), 'ge-blog-empty-'));
   const none = await buildBlog(empty, out, L);
   ok(none.posts === 0 && none.urls.length === 1 && /no published post/.test(none.note) && existsSync(join(out, 'blog', 'index.html')) && existsSync(join(out, 'blog', 'feed.xml')), 'no published post still writes the index and the feed, and says why nothing else');
-  const repo = await buildBlog(ROOT, mkdtempSync(join(tmpdir(), 'ge-blog-repo-')), L);
-  ok(repo.posts === 0, 'the repository ships the scaffold and no content (' + repo.note + ')');
+  const repoOut = mkdtempSync(join(tmpdir(), 'ge-blog-repo-'));
+  const repo = await buildBlog(ROOT, repoOut, L);
+  const shipped = readdirSync(join(repoOut, 'blog'), { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => readFileSync(join(repoOut, 'blog', d.name, 'index.html'), 'utf8'));
+  ok(shipped.length === repo.posts && shipped.every((p) => !/—/.test(p)), 'every shipped article builds to a page with no em dash (' + repo.posts + ' published)');
+  rmSync(repoOut, { recursive: true, force: true });
   ok(existsSync(join(ROOT, 'content', 'posts', 'README.md')) && existsSync(join(ROOT, 'content', 'posts', '_template.md')), 'the folder carries the how-to and a template');
   rmSync(out, { recursive: true, force: true }); rmSync(empty, { recursive: true, force: true });
 }
