@@ -32,8 +32,9 @@ Gameweek number, deadline, work folder path, optional angle or players.
 ## Red flags (list every one you see)
 - The gameweek or deadline differs from what the Team Lead gave you.
 - Any tool failed, timed out or returned nothing.
-- A player's team or position looks wrong or has changed since earlier
-  data you have seen.
+- Two tools disagree about a player's team or position. Clubs come live
+  from the official game feed, so that feed is the authority. Never flag a
+  club from your own memory: transfers happen and your memory goes stale.
 - Three or more defenders in the top 5 captain options (possible, but
   check before anyone writes it as the headline).
 - Any captain option with start chance under 70%.

@@ -48,7 +48,9 @@ Use today's date. A future date hides the post until that day.
    headline call.
 2. `## The captaincy call` The top pick and the runner-up, with projected
    points, haul and blank chances, and start chance. One paragraph on why.
-3. `## Captain options at a glance` A table of the top 5 from the sheet.
+3. `## Captain options at a glance` The top 5 from the sheet as a bullet
+   list, one player per bullet. Never use a table: the news page does not
+   render Markdown tables.
 4. `## Differentials` Two or three low-owned picks, with the risk stated.
 5. `## Before the price changes` Likely rises and falls tonight.
 6. `## One yellow from a ban` The suspension watch, for owners to plan.
