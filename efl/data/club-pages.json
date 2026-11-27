@@ -1,12 +1,12 @@
 {
- "built": "2026-11-27T01:44:41.926Z",
+ "built": "2026-11-27T12:24:28.195Z",
  "round": 17,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-27T01:44:41.926Z",
+  "generatedAt": "2026-11-27T12:24:28.195Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1410,7 +1410,7 @@
      "name": "I. Price",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury, expected back 29 Nov"
+     "news": "MCL Knee Injury, expected back 17 Jan"
     },
     {
      "name": "O. Diakité",
@@ -2041,22 +2041,10 @@
    ],
    "unavailable": [
     {
-     "name": "H. Clarke",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 29 Nov"
-    },
-    {
      "name": "J. Kenny",
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 17 Jan"
-    },
-    {
-     "name": "L. Gibson",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 29 Nov"
     },
     {
      "name": "L. Gibbs",
@@ -2505,12 +2493,6 @@
    ],
    "unavailable": [
     {
-     "name": "K. Ramsay",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury"
-    },
-    {
      "name": "N. Chalobah",
      "position": "MID",
      "status": "injured",
@@ -2670,6 +2652,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "E. Laird",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock, expected back 29 Nov"
+    },
     {
      "name": "K. Lund",
      "position": "DEF",
@@ -4790,7 +4778,7 @@
      "name": "J. Meghoma",
      "position": "DEF",
      "status": "injured",
-     "news": "Ankle Injury, expected back 27 Dec"
+     "news": "Ankle Injury, expected back 7 Feb"
     },
     {
      "name": "Marezi",
@@ -8479,7 +8467,7 @@
      "name": "T. Soucek",
      "position": "MID",
      "status": "injured",
-     "news": "Facial Injury"
+     "news": "Facial Injury, expected back 29 Nov"
     },
     {
      "name": "K. Lamadrid",
@@ -8627,7 +8615,7 @@
      "name": "E. Erhahon",
      "position": "MID",
      "status": "doubtful",
-     "news": "Thigh Injury, expected back 29 Nov"
+     "news": "Thigh Injury, expected back 6 Dec"
     },
     {
      "name": "E. Toal",
@@ -9131,13 +9119,19 @@
      "name": "B. Humphreys",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 29 Nov"
     },
     {
      "name": "S. Sambo",
      "position": "DEF",
      "status": "injured",
      "news": "Hand Injury"
+    },
+    {
+     "name": "B. Amos",
+     "position": "GK",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -9279,7 +9273,7 @@
      "name": "L. McNally",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -9708,6 +9702,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "C. McGrandles",
+     "position": "MID",
+     "status": "injured",
+     "news": "Muscle Injury, expected back 6 Dec"
+    },
     {
      "name": "T. Darikwa",
      "position": "DEF",
