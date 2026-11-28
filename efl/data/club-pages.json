@@ -1,12 +1,12 @@
 {
- "built": "2026-11-27T23:28:09.722Z",
+ "built": "2026-11-28T07:51:16.734Z",
  "round": 17,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-11-27T23:28:09.722Z",
+  "generatedAt": "2026-11-28T07:51:16.734Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1233,14 +1233,7 @@
      "summary": "Started 17 of 18 (94%), tough fixture (rated 4 of 5)."
     }
    ],
-   "unavailable": [
-    {
-     "name": "L. Scienza",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Unknown injury, expected back 28 Nov"
-    }
-   ],
+   "unavailable": [],
    "cardRisk": []
   },
   {
